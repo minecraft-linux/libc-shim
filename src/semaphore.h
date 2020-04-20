@@ -52,7 +52,10 @@ namespace shim {
         struct arg_rewrite<host_sem_t *> {
             using source = sem_t *;
             host_sem_t *before(source src) {
-                return bionic::to_host(src);
+                if constexpr (sem_t_resolver::is_wrapped)
+                    return bionic::to_host(src);
+                else
+                    return src;
             }
             void after(source) {}
         };
