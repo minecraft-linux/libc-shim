@@ -25,6 +25,13 @@ namespace shim {
 #endif
         };
 
+        struct pthread_rwlock_t {
+            ::pthread_rwlock_t *wrapped;
+#if defined(__LP64__)
+            int64_t priv[6];
+#endif
+        };
+
         template <>
         auto to_host<pthread_mutex_t>(pthread_mutex_t const *m) { return m->wrapped; }
 
@@ -55,6 +62,9 @@ namespace shim {
     using pthread_cond_t_resolver = detail::wrapper_type_resolver<::pthread_cond_t, bionic::pthread_cond_t>;
     using pthread_cond_t = pthread_cond_t_resolver::type;
     using pthread_condattr_t = bionic::pthread_condattr_t;
+
+    using pthread_rwlock_t_resolver = detail::wrapper_type_resolver<::pthread_rwlock_t, bionic::pthread_rwlock_t>;
+    using pthread_rwlock_t = pthread_rwlock_t_resolver::type;
 
     struct host_mutexattr {
 
@@ -92,6 +102,9 @@ namespace shim {
     int pthread_condattr_setclock(pthread_condattr_t *attr, int clock);
     int pthread_condattr_getclock(const pthread_condattr_t *attr, int *clock);
 
+    int pthread_rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr);
+    int pthread_rwlock_destroy(pthread_rwlock_t* rwlock);
+
 
     void add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
@@ -102,6 +115,9 @@ namespace shim {
 
         template <>
         struct arg_rewrite<pthread_cond_t const *> : wrapper_resolved_const_ptr_rewriter<pthread_cond_t_resolver> {};
+
+        template <>
+        struct arg_rewrite<pthread_rwlock_t const *> : wrapper_resolved_const_ptr_rewriter<pthread_rwlock_t_resolver> {};
 
     }
 

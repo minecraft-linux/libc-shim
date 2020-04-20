@@ -101,11 +101,11 @@ int shim::pthread_condattr_init(pthread_condattr_t *attr) {
     return 0;
 }
 
-int shim::pthread_condattr_destroy(shim::pthread_condattr_t *attr) {
+int shim::pthread_condattr_destroy(pthread_condattr_t *attr) {
     return 0;
 }
 
-int shim::pthread_condattr_setclock(shim::pthread_condattr_t *attr, int clock) {
+int shim::pthread_condattr_setclock(pthread_condattr_t *attr, int clock) {
     if (clock != (int) bionic::clock_type::MONOTONIC &&
         clock != (int) bionic::clock_type::REALTIME)
         return EINVAL;
@@ -113,9 +113,19 @@ int shim::pthread_condattr_setclock(shim::pthread_condattr_t *attr, int clock) {
     return 0;
 }
 
-int shim::pthread_condattr_getclock(const shim::pthread_condattr_t *attr, int *clock) {
+int shim::pthread_condattr_getclock(const pthread_condattr_t *attr, int *clock) {
     *clock = (int) attr->clock;
     return 0;
+}
+
+int shim::pthread_rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr) {
+    if (attr != nullptr)
+        throw std::runtime_error("non-NULL rwlock attr is currently not supported");
+    return make_wrapped<pthread_rwlock_t_resolver, const ::pthread_rwlockattr_t *>(rwlock, &::pthread_rwlock_init, nullptr);
+}
+
+int shim::pthread_rwlock_destroy(pthread_rwlock_t *rwlock) {
+    return destroy_wrapped<pthread_rwlock_t_resolver>(rwlock, &::pthread_rwlock_destroy);
 }
 
 void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
@@ -139,5 +149,11 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
         {"pthread_condattr_destroy", pthread_condattr_destroy},
         {"pthread_condattr_setclock", pthread_condattr_setclock},
         {"pthread_condattr_getclock", pthread_condattr_getclock},
+
+        {"pthread_rwlock_init", pthread_rwlock_init},
+        {"pthread_rwlock_destroy", pthread_rwlock_destroy},
+        {"pthread_rwlock_rdlock", ArgRewritten(::pthread_rwlock_rdlock)},
+        {"pthread_rwlock_wrlock", ArgRewritten(::pthread_rwlock_wrlock)},
+        {"pthread_rwlock_unlock", ArgRewritten(::pthread_rwlock_unlock)}
     });
 }
