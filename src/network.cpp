@@ -84,6 +84,9 @@ int bionic::to_host_ipproto(bionic::ipproto proto) {
 
 void bionic::from_host(const ::sockaddr *in, bionic::sockaddr *out) {
     switch (in->sa_family) {
+        case AF_UNSPEC:
+            out->family = (uint16_t) af_family::UNSPEC;
+            break;
         case AF_INET:
             out->family = (uint16_t) af_family::INET;
             ((bionic::sockaddr_in *) out)->port = ((::sockaddr_in*) in)->sin_port;
@@ -102,6 +105,9 @@ void bionic::from_host(const ::sockaddr *in, bionic::sockaddr *out) {
 
 void bionic::to_host(const bionic::sockaddr *in, ::sockaddr *out) {
     switch ((af_family) in->family) {
+        case af_family::UNSPEC:
+            out->sa_family = AF_UNSPEC;
+            break;
         case af_family::INET:
             out->sa_family = AF_INET;
             ((::sockaddr_in*) out)->sin_port = ((bionic::sockaddr_in *) in)->port;
@@ -246,12 +252,44 @@ ssize_t shim::sendto(int sockfd, const void *buf, size_t len, int flags, const :
     return ::sendto(sockfd, buf, len, flags, addr, addrlen);
 }
 
+ssize_t shim::recvfrom(int sockfd, void *buf, size_t len, int flags, bionic::sockaddr *addr, socklen_t *addrlen) {
+    if (flags != 0)
+        throw std::runtime_error("recvfrom with unsupported flags");
+    if (addr == nullptr)
+        return ::recvfrom(sockfd, buf, len, flags, nullptr, nullptr);
+    sockaddr_storage haddr;
+    socklen_t haddrlen = sizeof(sockaddr_storage);
+    int ret = ::recvfrom(sockfd, buf, len, flags, (::sockaddr *) &haddr, &haddrlen);
+    if (ret != 0)
+        return ret;
+    if (bionic::get_bionic_len((::sockaddr *) &haddr) > *addrlen)
+        throw std::runtime_error("recvfrom with buffer not big enough");
+    bionic::from_host((::sockaddr *) &haddr, addr);
+    *addrlen = bionic::get_bionic_len((::sockaddr *) &haddr);
+    return 0;
+}
+
+int shim::getsockname(int sockfd, shim::bionic::sockaddr *addr, socklen_t *addrlen) {
+    sockaddr_storage haddr;
+    socklen_t haddrlen = sizeof(sockaddr_storage);
+    int ret = ::getsockname(sockfd, (::sockaddr *) &haddr, &haddrlen);
+    if (ret != 0)
+        return ret;
+    if (bionic::get_bionic_len((::sockaddr *) &haddr) > *addrlen)
+        throw std::runtime_error("getsockname with buffer not big enough");
+    bionic::from_host((::sockaddr *) &haddr, addr);
+    *addrlen = bionic::get_bionic_len((::sockaddr *) &haddr);
+    return 0;
+}
+
 void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"socket", socket},
         {"bind", &detail::arg_rewrite_helper<int (int, const ::sockaddr *, socklen_t)>::rewrite<::bind>},
         {"connect", &detail::arg_rewrite_helper<int (int, const ::sockaddr *, socklen_t)>::rewrite<::connect>},
         {"sendto", AutoArgRewritten(sendto)},
+        {"recvfrom", recvfrom},
+        {"getsockname", getsockname},
 
         {"getaddrinfo", getaddrinfo},
         {"freeaddrinfo", freeaddrinfo},

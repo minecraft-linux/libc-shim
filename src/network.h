@@ -119,6 +119,10 @@ namespace shim {
 
     ssize_t sendto(int sockfd, const void *buf, size_t len, int flags, const ::sockaddr *addr, socklen_t addrlen);
 
+    ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags, bionic::sockaddr *addr, socklen_t *addrlen);
+
+    int getsockname(int sockfd, bionic::sockaddr *addr, socklen_t *addrlen);
+
     void add_network_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     namespace detail {
