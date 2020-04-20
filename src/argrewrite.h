@@ -84,15 +84,4 @@ namespace shim {
 }
 
 
-#define DefBionicArgPtrRewriter(type) \
-namespace shim { \
-namespace detail { \
-template <> \
-struct arg_rewrite<type *> : bionic_ptr_rewriter<type, bionic::##type> {}; \
-template <> \
-struct arg_rewrite<const type *> : bionic_const_ptr_rewriter<type, bionic_##type> {}; \
-} \
-}
-
-
 #define ArgRewritten(ptr) (&shim::detail::arg_rewrite_helper<typeof(ptr)>::rewrite<ptr>)
