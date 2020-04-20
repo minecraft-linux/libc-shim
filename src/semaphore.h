@@ -26,6 +26,9 @@ namespace shim {
 #endif
         };
 
+        template <>
+        auto to_host<sem_t>(sem_t const *m) { return m->wrapped; }
+
     }
 
     using sem_t_resolver = detail::wrapper_type_resolver<host_sem_t, bionic::sem_t>;
@@ -46,7 +49,13 @@ namespace shim {
     namespace detail {
 
         template <>
-        struct arg_rewrite<host_sem_t *> : wrapper_resolved_const_ptr_rewriter<sem_t_resolver> {};
+        struct arg_rewrite<host_sem_t *> {
+            using source = sem_t *;
+            host_sem_t *before(source src) {
+                return bionic::to_host(src);
+            }
+            void after(source) {}
+        };
 
     }
 

@@ -60,24 +60,11 @@ namespace shim {
         template <typename T, typename BionicT>
         struct bionic_const_ptr_rewriter {
             using source = const BionicT *;
-            T host;
-            T *before(source src) {
-                host = bionic::to_host(src);
-                return &host;
+
+            T const *before(source src) {
+                return bionic::to_host(src);
             }
             void after(source src) {
-            }
-        };
-        template <typename T, typename BionicT>
-        struct bionic_ptr_rewriter {
-            using source = BionicT *;
-            T host;
-            T *before(source src) {
-                host = bionic::to_host(src);
-                return &host;
-            }
-            void after(source src) {
-                *src = bionic::from_host(host);
             }
         };
 
@@ -88,13 +75,6 @@ namespace shim {
         struct wrapper_resolved_const_ptr_rewriter<Resolver, true> : bionic_const_ptr_rewriter<typename Resolver::host_type, typename Resolver::wrapper_type> {};
         template <typename Resolver>
         struct wrapper_resolved_const_ptr_rewriter<Resolver, false> : arg_rewrite<typename Resolver::host_type const *> {};
-
-        template <typename Resolver, bool IsWrapped = Resolver::is_wrapped>
-        struct wrapper_resolved_ptr_rewriter;
-        template <typename Resolver>
-        struct wrapper_resolved_ptr_rewriter<Resolver, true> : bionic_ptr_rewriter<typename Resolver::host_type, typename Resolver::wrapper_type> {};
-        template <typename Resolver>
-        struct wrapper_resolved_ptr_rewriter<Resolver, false> : arg_rewrite<typename Resolver::host_type *> {};
 
     }
 
