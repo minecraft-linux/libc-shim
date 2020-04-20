@@ -17,6 +17,44 @@ bionic::pthread_cleanup_holder::~pthread_cleanup_holder() {
     }
 }
 
+void bionic::mutex_static_initializer(shim::pthread_mutex_t *mutex) {
+    static std::mutex mutex_guard;
+    std::lock_guard<std::mutex> guard (mutex_guard);
+
+    if (is_mutex_initialized(mutex))
+        return;
+
+#ifdef __LP64__
+    auto init_value = mutex->init_value;
+#else
+    auto init_value = (size_t) mutex->wrapped;
+#endif
+
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    if (init_value == recursive_mutex_init_value)
+        pthread_mutexattr_settype(&attr, (int) mutex_type::RECURSIVE);
+    else if (init_value == errorcheck_mutex_init_value)
+        pthread_mutexattr_settype(&attr, (int) mutex_type::ERRORCHECK);
+    if (pthread_mutex_init(mutex, &attr) != 0)
+        throw std::runtime_error("Failed to init mutex");
+    pthread_mutexattr_destroy(&attr);
+}
+
+void bionic::cond_static_initializer(shim::pthread_cond_t *cond) {
+    static std::mutex mutex_guard;
+    std::lock_guard<std::mutex> guard (mutex_guard);
+    if (!is_cond_initialized(cond))
+         pthread_cond_init(cond, nullptr);
+}
+
+void bionic::rwlock_static_initializer(shim::pthread_rwlock_t *rwlock) {
+    static std::mutex mutex_guard;
+    std::lock_guard<std::mutex> guard (mutex_guard);
+    if (!is_rwlock_initialized(rwlock))
+        pthread_rwlock_init(rwlock, nullptr);
+}
+
 int bionic::to_host_mutex_type(bionic::mutex_type type) {
     switch (type) {
         case mutex_type::NORMAL: return PTHREAD_MUTEX_NORMAL;
