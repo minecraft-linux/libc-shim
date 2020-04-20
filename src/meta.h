@@ -36,7 +36,7 @@ namespace shim {
                     delete object->wrapped;
                 return ret;
             } else {
-                return constructor(&object, args...);
+                return constructor(object, args...);
             }
         }
 
@@ -47,7 +47,7 @@ namespace shim {
                 free(object->wrapped);
                 return ret;
             } else {
-                return destructor(&object);
+                return destructor(object);
             }
         }
 
