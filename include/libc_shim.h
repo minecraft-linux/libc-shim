@@ -6,11 +6,11 @@ namespace shim {
 
     struct shimmed_symbol {
         const char *name;
-        void (*value)();
+        void *value;
 
         template <typename Ret, typename ...Args>
         shimmed_symbol(const char *name, Ret (*ptr)(Args...))
-            : name(name), value((void (*)()) ptr) {}
+            : name(name), value((void*) ptr) {}
     };
 
     std::vector<shimmed_symbol> get_shimmed_symbols();

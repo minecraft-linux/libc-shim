@@ -6,6 +6,7 @@
 #include "semaphore.h"
 #include "network.h"
 #include "dirent.h"
+#include "cstdio.h"
 
 using namespace shim;
 
@@ -23,5 +24,6 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_sem_shimmed_symbols(ret);
     add_network_shimmed_symbols(ret);
     add_dirent_shimmed_symbols(ret);
+    add_cstdio_shimmed_symbols(ret);
     return ret;
 }
