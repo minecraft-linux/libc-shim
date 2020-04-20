@@ -13,7 +13,7 @@ namespace shim {
     namespace detail {
 
         template <typename T>
-        struct arg_rewrite {
+        struct nop_arg_rewrite {
             using source = T;
             T before(T x) {
                 return x;
@@ -21,6 +21,9 @@ namespace shim {
             void after(T) {
             }
         };
+
+        template <typename T>
+        struct arg_rewrite : nop_arg_rewrite<T> {};
 
         template <typename ...Args>
         struct arg_rewriter_impl;
@@ -74,7 +77,7 @@ namespace shim {
         template <typename Resolver>
         struct wrapper_resolved_const_ptr_rewriter<Resolver, true> : bionic_const_ptr_rewriter<typename Resolver::host_type, typename Resolver::wrapper_type> {};
         template <typename Resolver>
-        struct wrapper_resolved_const_ptr_rewriter<Resolver, false> : arg_rewrite<typename Resolver::host_type const *> {};
+        struct wrapper_resolved_const_ptr_rewriter<Resolver, false> : nop_arg_rewrite<typename Resolver::host_type const *> {};
 
     }
 
