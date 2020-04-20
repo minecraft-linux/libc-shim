@@ -46,7 +46,7 @@ namespace shim {
     namespace detail {
 
         template <>
-        struct arg_rewrite<sem_t *> : wrapper_resolved_const_ptr_rewriter<sem_t_resolver> {};
+        struct arg_rewrite<host_sem_t *> : wrapper_resolved_const_ptr_rewriter<sem_t_resolver> {};
 
     }
 

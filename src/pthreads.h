@@ -190,13 +190,13 @@ namespace shim {
     namespace detail {
 
         template <>
-        struct arg_rewrite<pthread_mutex_t const *> : wrapper_resolved_const_ptr_rewriter<pthread_mutex_t_resolver> {};
+        struct arg_rewrite<::pthread_mutex_t const *> : wrapper_resolved_const_ptr_rewriter<pthread_mutex_t_resolver> {};
 
         template <>
-        struct arg_rewrite<pthread_cond_t const *> : wrapper_resolved_const_ptr_rewriter<pthread_cond_t_resolver> {};
+        struct arg_rewrite<::pthread_cond_t const *> : wrapper_resolved_const_ptr_rewriter<pthread_cond_t_resolver> {};
 
         template <>
-        struct arg_rewrite<pthread_rwlock_t const *> : wrapper_resolved_const_ptr_rewriter<pthread_rwlock_t_resolver> {};
+        struct arg_rewrite<::pthread_rwlock_t const *> : wrapper_resolved_const_ptr_rewriter<pthread_rwlock_t_resolver> {};
 
     }
 
