@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <limits.h>
 #include <mutex>
+#include <signal.h>
 #include "pthreads.h"
 
 using namespace shim;
@@ -22,6 +23,20 @@ int bionic::to_host_mutex_type(bionic::mutex_type type) {
         case mutex_type::RECURSIVE: return PTHREAD_MUTEX_RECURSIVE;
         case mutex_type::ERRORCHECK: return PTHREAD_MUTEX_ERRORCHECK;
         default: throw std::runtime_error("Invalid mutex type");
+    }
+}
+
+int bionic::to_host_sched_policy(shim::bionic::sched_policy type) {
+    switch (type) {
+        case sched_policy::OTHER: return SCHED_OTHER;
+        default: throw std::runtime_error("Invalid sched policy");
+    }
+}
+
+bionic::sched_policy bionic::from_host_sched_policy(int type) {
+    switch (type) {
+        case SCHED_OTHER: return sched_policy::OTHER;
+        default: return (sched_policy) -1;
     }
 }
 
@@ -93,6 +108,29 @@ static_assert(sizeof(pthread_t) <= sizeof(long), "pthread_t larger than bionic's
 int shim::pthread_create(pthread_t *thread, const shim::pthread_attr_t *attr, void *(*fn)(void *), void *arg) {
     host_pthread_attr hattr (attr);
     return pthread_create(thread, &hattr.attr, fn, arg);
+}
+
+int shim::pthread_setschedparam(pthread_t thread, bionic::sched_policy policy, const shim::bionic::sched_param *param) {
+    int hpolicy;
+    sched_param hparam;
+    int ret = ::pthread_getschedparam(thread, &hpolicy, &hparam);
+    if (ret != 0)
+        return ret;
+    if (policy != (bionic::sched_policy) -1)
+        hpolicy = bionic::to_host_sched_policy(policy);
+    hparam.sched_priority = param->sched_priority;
+    return ::pthread_setschedparam(thread, hpolicy, &hparam);
+}
+
+int shim::pthread_getschedparam(pthread_t thread, shim::bionic::sched_policy *policy, shim::bionic::sched_param *param) {
+    int hpolicy;
+    sched_param hparam;
+    int ret = ::pthread_getschedparam(thread, &hpolicy, &hparam);
+    if (ret != 0)
+        return ret;
+    *policy = bionic::from_host_sched_policy(hpolicy);
+    param->sched_priority = hparam.sched_priority;
+    return 0;
 }
 
 int shim::pthread_attr_init(pthread_attr_t *attr) {
@@ -256,6 +294,14 @@ int shim::pthread_once(pthread_once_t *control, void (*routine)()) {
 void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"pthread_create", pthread_create},
+        {"pthread_equal", ::pthread_equal},
+        {"pthread_join", ::pthread_join},
+        {"pthread_detach", ::pthread_detach},
+        {"pthread_kill", ::pthread_kill},
+        {"pthread_self", ::pthread_self},
+        {"pthread_atfork", ::pthread_atfork},
+        {"pthread_setschedparam", pthread_setschedparam},
+        {"pthread_getschedparam", pthread_getschedparam},
         {"pthread_attr_init", pthread_attr_init},
         {"pthread_attr_destroy", pthread_attr_destroy},
         {"pthread_attr_setdetachstate", pthread_attr_setdetachstate},

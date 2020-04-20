@@ -53,6 +53,13 @@ namespace shim {
             clock_type clock : 2;
         };
 
+        enum class sched_policy {
+            OTHER = 0
+        };
+
+        static int to_host_sched_policy(sched_policy type);
+        static sched_policy from_host_sched_policy(int type);
+
         struct pthread_attr_t {
             bool detached : 1;
             bool user_stack : 1;
@@ -60,7 +67,7 @@ namespace shim {
             void* stack_base;
             size_t stack_size;
             size_t guard_size;
-            int sched_policy;
+            sched_policy sched_policy;
             int sched_priority;
 #if defined(__LP64__)
             int64_t priv[2];
@@ -137,6 +144,8 @@ namespace shim {
     };
 
     int pthread_create(pthread_t *thread, pthread_attr_t const *attr, void* (*fn)(void *), void *arg);
+    int pthread_setschedparam(pthread_t thread, bionic::sched_policy policy, const bionic::sched_param *param);
+    int pthread_getschedparam(pthread_t thread, bionic::sched_policy *policy, bionic::sched_param *param);
 
     int pthread_attr_init(pthread_attr_t *attr);
     int pthread_attr_destroy(pthread_attr_t *attr);
