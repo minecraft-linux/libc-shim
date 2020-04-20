@@ -184,6 +184,19 @@ namespace shim {
             }
         };
 
+        struct sock_send_flags {
+            int fd;
+            int src_flags;
+            int flags;
+#ifdef __APPLE__
+            int saved_nosigpipe;
+#endif
+
+            sock_send_flags(int fd, int flags);
+
+            ~sock_send_flags();
+        };
+
     }
 
 }

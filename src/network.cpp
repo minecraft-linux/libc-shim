@@ -320,15 +320,13 @@ int shim::getnameinfo(const ::sockaddr *addr, socklen_t addrlen, char *host, soc
 }
 
 ssize_t shim::send(int sockfd, const void *buf, size_t len, int flags) {
-    if (flags != 0)
-        throw std::runtime_error("send with unsupported flags");
-    return ::send(sockfd, buf, len, flags);
+    detail::sock_send_flags hflags (sockfd, flags);
+    return ::send(sockfd, buf, len, hflags.flags);
 }
 
 ssize_t shim::sendmsg(int sockfd, const msghdr *data, int flags) {
-    if (flags != 0)
-        throw std::runtime_error("sendmsg with unsupported flags");
-    return ::sendmsg(sockfd, data, flags);
+    detail::sock_send_flags hflags (sockfd, flags);
+    return ::sendmsg(sockfd, data, hflags.flags);
 }
 
 ssize_t shim::recv(int sockfd, void *buf, size_t len, int flags) {
@@ -344,9 +342,8 @@ ssize_t shim::recvmsg(int sockfd, struct msghdr *data, int flags) {
 }
 
 ssize_t shim::sendto(int sockfd, const void *buf, size_t len, int flags, const ::sockaddr *addr, socklen_t addrlen) {
-    if (flags != 0)
-        throw std::runtime_error("sendto with unsupported flags");
-    return ::sendto(sockfd, buf, len, flags, addr, addrlen);
+    detail::sock_send_flags hflags (sockfd, flags);
+    return ::sendto(sockfd, buf, len, hflags.flags, addr, addrlen);
 }
 
 ssize_t shim::recvfrom(int sockfd, void *buf, size_t len, int flags, bionic::sockaddr *addr, socklen_t *addrlen) {
@@ -402,6 +399,28 @@ int shim::shutdown(int sockfd, int how) {
         default: throw std::runtime_error("Unexpected how parameter passed to shutdown");
     }
     return ::shutdown(sockfd, hhow);
+}
+
+detail::sock_send_flags::sock_send_flags(int fd, int flags) : fd(fd), src_flags(flags), flags(0) {
+    if (flags & 0x4000) {
+#ifdef __APPLE__
+        int value = 1;
+        getsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &saved_nosigpipe, sizeof(saved_nosigpipe));
+        setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &value, sizeof(value));
+#else
+        this->flags |= MSG_NOSIGNAL;
+#endif
+        flags &= ~0x4000;
+    }
+    if (flags != 0)
+        throw std::runtime_error("Unexpected flags in a socket send operation");
+}
+
+detail::sock_send_flags::~sock_send_flags() {
+#ifdef __APPLE__
+    if (src_flags & 0x4000)
+        setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &saved_nosigpipe, sizeof(saved_nosigpipe));
+#endif
 }
 
 void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
