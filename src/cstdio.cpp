@@ -61,9 +61,25 @@ int shim::fclose(bionic::FILE *file) {
     return ret;
 }
 
-int shim::pclose(shim::bionic::FILE *file) {
+int shim::pclose(bionic::FILE *file) {
     int ret = ::pclose(file->wrapped);
     delete file;
+    return ret;
+}
+
+int shim::fprintf(bionic::FILE *fp, const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    int ret = vfprintf(fp->wrapped, fmt, args);
+    va_end(args);
+    return ret;
+}
+
+int shim::fscanf(bionic::FILE *fp, const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    int ret = vfscanf(fp->wrapped, fmt, args);
+    va_end(args);
     return ret;
 }
 
@@ -81,34 +97,42 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"popen", popen},
         {"fclose", fclose},
         {"pclose", pclose},
-        {"clearerr", AutoArgRewritten(clearerr)},
-        {"feof", AutoArgRewritten(feof)},
-        {"ferror", AutoArgRewritten(ferror)},
-        {"ferror", AutoArgRewritten(ferror)},
-        {"fflush", AutoArgRewritten(fflush)},
-        {"fgetc", AutoArgRewritten(fgetc)},
-        {"fgets", AutoArgRewritten(fgets)},
-        {"fputc", AutoArgRewritten(fputc)},
-        {"fputs", AutoArgRewritten(fputs)},
-        {"fread", AutoArgRewritten(fread)},
-        {"fwrite", AutoArgRewritten(fwrite)},
-        {"getc", AutoArgRewritten(getc)},
-        {"getc_unlocked", AutoArgRewritten(getc_unlocked)},
-        {"getdelim", AutoArgRewritten(getdelim)},
-        {"getline", AutoArgRewritten(getline)},
-        {"putc", AutoArgRewritten(putc)},
-        {"putc_unlocked", AutoArgRewritten(putc_unlocked)},
-        {"rewind", AutoArgRewritten(rewind)},
-        {"setbuf", AutoArgRewritten(setbuf)},
-        {"setvbuf", AutoArgRewritten(setvbuf)},
-        {"setbuffer", AutoArgRewritten(setbuffer)},
-        {"setlinebuf", AutoArgRewritten(setlinebuf)},
-        {"ungetc", AutoArgRewritten(ungetc)},
-        {"fileno", AutoArgRewritten(fileno)},
-        {"pclose", AutoArgRewritten(pclose)},
-        {"flockfile", AutoArgRewritten(flockfile)},
-        {"ftrylockfile", AutoArgRewritten(ftrylockfile)},
-        {"funlockfile", AutoArgRewritten(funlockfile)},
+        {"clearerr", AutoArgRewritten(::clearerr)},
+        {"feof", AutoArgRewritten(::feof)},
+        {"fseek", AutoArgRewritten(::fseek)},
+        {"ftell", AutoArgRewritten(::ftell)},
+        {"ferror", AutoArgRewritten(::ferror)},
+        {"ferror", AutoArgRewritten(::ferror)},
+        {"fflush", AutoArgRewritten(::fflush)},
+        {"fgetc", AutoArgRewritten(::fgetc)},
+        {"fgets", AutoArgRewritten(::fgets)},
+        {"fputc", AutoArgRewritten(::fputc)},
+        {"fputs", AutoArgRewritten(::fputs)},
+        {"fread", AutoArgRewritten(::fread)},
+        {"fwrite", AutoArgRewritten(::fwrite)},
+        {"fprintf", fprintf},
+        {"vfprintf", AutoArgRewritten(::vfprintf)},
+        {"fscanf", fscanf},
+        {"vfscanf", AutoArgRewritten(::vfscanf)},
+        {"getc", AutoArgRewritten(::getc)},
+        {"getc_unlocked", AutoArgRewritten(::getc_unlocked)},
+        {"getdelim", AutoArgRewritten(::getdelim)},
+        {"getline", AutoArgRewritten(::getline)},
+        {"putc", AutoArgRewritten(::putc)},
+        {"putc_unlocked", AutoArgRewritten(::putc_unlocked)},
+        {"rewind", AutoArgRewritten(::rewind)},
+        {"setbuf", AutoArgRewritten(::setbuf)},
+        {"setvbuf", AutoArgRewritten(::setvbuf)},
+        {"setbuffer", AutoArgRewritten(::setbuffer)},
+        {"setlinebuf", AutoArgRewritten(::setlinebuf)},
+        {"ungetc", AutoArgRewritten(::ungetc)},
+        {"fileno", AutoArgRewritten(::fileno)},
+        {"pclose", AutoArgRewritten(::pclose)},
+        {"flockfile", AutoArgRewritten(::flockfile)},
+        {"ftrylockfile", AutoArgRewritten(::ftrylockfile)},
+        {"funlockfile", AutoArgRewritten(::funlockfile)},
+        {"getw", AutoArgRewritten(::getw)},
+        {"putw", AutoArgRewritten(::putw)},
 
         {"remove", ::remove},
         {"rename", ::rename},

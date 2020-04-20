@@ -56,6 +56,10 @@ namespace shim {
 
     int pclose(bionic::FILE *file);
 
+    int fprintf(bionic::FILE* fp, const char *fmt, ...);
+
+    int fscanf(bionic::FILE* fp, const char *fmt, ...);
+
     void add_cstdio_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     namespace detail {
