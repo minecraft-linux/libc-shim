@@ -4,6 +4,16 @@
 
 using namespace shim;
 
+thread_local bionic::pthread_cleanup_holder bionic::cleanup;
+
+bionic::pthread_cleanup_holder::~pthread_cleanup_holder() {
+    auto p = current;
+    while (p) {
+        p->routine(p->arg);
+        p = p->prev;
+    }
+}
+
 int bionic::to_host_mutex_type(bionic::mutex_type type) {
     switch (type) {
         case mutex_type::NORMAL: return PTHREAD_MUTEX_NORMAL;
@@ -128,6 +138,19 @@ int shim::pthread_rwlock_destroy(pthread_rwlock_t *rwlock) {
     return destroy_wrapped<pthread_rwlock_t_resolver>(rwlock, &::pthread_rwlock_destroy);
 }
 
+void shim::pthread_cleanup_push_impl(shim::bionic::pthread_cleanup_t *c, void (*cb)(void *), void *arg) {
+    c->prev = bionic::cleanup.current;
+    c->routine = cb;
+    c->arg = arg;
+    bionic::cleanup.current = c;
+}
+
+void shim::pthread_cleanup_pop_impl(shim::bionic::pthread_cleanup_t *c, int execute) {
+    bionic::cleanup.current = c->prev;
+    if (execute)
+        c->routine(c->arg);
+}
+
 void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"pthread_mutex_init", pthread_mutex_init},
@@ -154,6 +177,9 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
         {"pthread_rwlock_destroy", pthread_rwlock_destroy},
         {"pthread_rwlock_rdlock", ArgRewritten(::pthread_rwlock_rdlock)},
         {"pthread_rwlock_wrlock", ArgRewritten(::pthread_rwlock_wrlock)},
-        {"pthread_rwlock_unlock", ArgRewritten(::pthread_rwlock_unlock)}
+        {"pthread_rwlock_unlock", ArgRewritten(::pthread_rwlock_unlock)},
+
+        {"__pthread_cleanup_push", pthread_cleanup_push_impl},
+        {"__pthread_cleanup_pop", pthread_cleanup_pop_impl},
     });
 }

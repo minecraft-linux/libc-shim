@@ -53,6 +53,20 @@ namespace shim {
             clock_type clock : 2;
         };
 
+        struct pthread_cleanup_t {
+            pthread_cleanup_t *prev;
+            void (*routine)(void *);
+            void *arg;
+        };
+
+        struct pthread_cleanup_holder {
+            pthread_cleanup_t *current = nullptr;
+
+            ~pthread_cleanup_holder();
+        };
+
+        extern thread_local pthread_cleanup_holder cleanup;
+
     }
 
     using pthread_mutex_t_resolver = detail::wrapper_type_resolver<::pthread_mutex_t, bionic::pthread_mutex_t>;
@@ -105,6 +119,8 @@ namespace shim {
     int pthread_rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr);
     int pthread_rwlock_destroy(pthread_rwlock_t* rwlock);
 
+    void pthread_cleanup_push_impl(bionic::pthread_cleanup_t *c, void (*cb)(void *), void *arg);
+    void pthread_cleanup_pop_impl(bionic::pthread_cleanup_t *c, int execute);
 
     void add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
