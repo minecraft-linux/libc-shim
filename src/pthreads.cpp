@@ -289,9 +289,9 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
 
         {"pthread_mutex_init", pthread_mutex_init},
         {"pthread_mutex_destroy", pthread_mutex_destroy},
-        {"pthread_mutex_lock", ArgRewritten(::pthread_mutex_lock)},
-        {"pthread_mutex_unlock", ArgRewritten(::pthread_mutex_unlock)},
-        {"pthread_mutex_trylock", ArgRewritten(::pthread_mutex_trylock)},
+        {"pthread_mutex_lock", &detail::arg_rewrite_helper<int (::pthread_mutex_t *)>::rewrite<pthread_mutex_lock>},
+        {"pthread_mutex_unlock", &detail::arg_rewrite_helper<int (::pthread_mutex_t *)>::rewrite<pthread_mutex_unlock>},
+        {"pthread_mutex_trylock", &detail::arg_rewrite_helper<int (::pthread_mutex_t *)>::rewrite<pthread_mutex_trylock>},
         {"pthread_mutexattr_init", pthread_mutexattr_init},
         {"pthread_mutexattr_destroy", pthread_mutexattr_destroy},
         {"pthread_mutexattr_settype", pthread_mutexattr_settype},
@@ -299,9 +299,9 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
 
         {"pthread_cond_init", pthread_cond_init},
         {"pthread_cond_destroy", pthread_cond_destroy},
-        {"pthread_cond_wait", ArgRewritten(::pthread_cond_wait)},
-        {"pthread_cond_broadcast", ArgRewritten(::pthread_cond_broadcast)},
-        {"pthread_cond_timedwait", ArgRewritten(::pthread_cond_timedwait)},
+        {"pthread_cond_wait", &detail::arg_rewrite_helper<int (::pthread_cond_t*, ::pthread_mutex_t*)>::rewrite<pthread_cond_wait>},
+        {"pthread_cond_broadcast", &detail::arg_rewrite_helper<int (::pthread_cond_t *)>::rewrite<pthread_cond_broadcast>},
+        {"pthread_cond_timedwait", &detail::arg_rewrite_helper<int (::pthread_cond_t *, ::pthread_mutex_t*, const struct timespec *)>::rewrite<pthread_cond_timedwait>},
         {"pthread_condattr_init", pthread_condattr_init},
         {"pthread_condattr_destroy", pthread_condattr_destroy},
         {"pthread_condattr_setclock", pthread_condattr_setclock},
@@ -309,9 +309,9 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
 
         {"pthread_rwlock_init", pthread_rwlock_init},
         {"pthread_rwlock_destroy", pthread_rwlock_destroy},
-        {"pthread_rwlock_rdlock", ArgRewritten(::pthread_rwlock_rdlock)},
-        {"pthread_rwlock_wrlock", ArgRewritten(::pthread_rwlock_wrlock)},
-        {"pthread_rwlock_unlock", ArgRewritten(::pthread_rwlock_unlock)},
+        {"pthread_rwlock_rdlock", &detail::arg_rewrite_helper<int (::pthread_rwlock_t *)>::rewrite<pthread_rwlock_rdlock>},
+        {"pthread_rwlock_wrlock", &detail::arg_rewrite_helper<int (::pthread_rwlock_t *)>::rewrite<pthread_rwlock_wrlock>},
+        {"pthread_rwlock_unlock", &detail::arg_rewrite_helper<int (::pthread_rwlock_t *)>::rewrite<pthread_rwlock_unlock>},
 
         {"pthread_key_create", pthread_key_create},
         {"pthread_key_delete", pthread_key_delete},

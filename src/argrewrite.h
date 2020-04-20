@@ -73,11 +73,11 @@ namespace shim {
 
 
         template <typename Resolver, bool IsWrapped = Resolver::is_wrapped>
-        struct wrapper_resolved_const_ptr_rewriter;
+        struct wrapper_resolved_ptr_rewriter;
         template <typename Resolver>
-        struct wrapper_resolved_const_ptr_rewriter<Resolver, true> : bionic_ptr_rewriter<typename Resolver::host_type const *, typename Resolver::wrapper_type const *> {};
+        struct wrapper_resolved_ptr_rewriter<Resolver, true> : bionic_ptr_rewriter<typename Resolver::host_type *, typename Resolver::wrapper_type *> {};
         template <typename Resolver>
-        struct wrapper_resolved_const_ptr_rewriter<Resolver, false> : nop_arg_rewrite<typename Resolver::host_type const *> {};
+        struct wrapper_resolved_ptr_rewriter<Resolver, false> : nop_arg_rewrite<typename Resolver::host_type *> {};
 
     }
 

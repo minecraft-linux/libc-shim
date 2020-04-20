@@ -79,8 +79,8 @@ void shim::add_sem_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"sem_init", sem_init},
         {"sem_destroy", sem_destroy},
-        {"sem_wait", ArgRewritten(sem_wait)},
-        {"sem_timedwait", ArgRewritten(sem_timedwait)},
-        {"sem_post", ArgRewritten(sem_post)},
+        {"sem_wait", &detail::arg_rewrite_helper<int (::sem_t *)>::rewrite<sem_wait>},
+        {"sem_timedwait", &detail::arg_rewrite_helper<int (::sem_t *, const struct timespec *)>::rewrite<sem_timedwait>},
+        {"sem_post", &detail::arg_rewrite_helper<int (::sem_t *)>::rewrite<sem_post>},
     });
 }
