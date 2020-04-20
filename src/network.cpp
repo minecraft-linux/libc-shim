@@ -260,13 +260,13 @@ ssize_t shim::recvfrom(int sockfd, void *buf, size_t len, int flags, bionic::soc
     sockaddr_storage haddr;
     socklen_t haddrlen = sizeof(sockaddr_storage);
     int ret = ::recvfrom(sockfd, buf, len, flags, (::sockaddr *) &haddr, &haddrlen);
-    if (ret != 0)
+    if (ret < 0)
         return ret;
     if (bionic::get_bionic_len((::sockaddr *) &haddr) > *addrlen)
         throw std::runtime_error("recvfrom with buffer not big enough");
     bionic::from_host((::sockaddr *) &haddr, addr);
     *addrlen = bionic::get_bionic_len((::sockaddr *) &haddr);
-    return 0;
+    return ret;
 }
 
 int shim::getsockname(int sockfd, shim::bionic::sockaddr *addr, socklen_t *addrlen) {
