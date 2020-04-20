@@ -40,6 +40,10 @@ namespace shim {
 
         void init_standard_files();
 
+        inline void update_feof(bionic::FILE *file) {
+            file->_flags = (short) (feof_unlocked(file->wrapped) ? 0x0020 : 0);
+        }
+
     }
 
     bionic::FILE *fopen(const char *filename, const char *mode);
@@ -56,9 +60,13 @@ namespace shim {
 
     int pclose(bionic::FILE *file);
 
+    size_t fread(void *ptr, size_t size, size_t n, bionic::FILE *file);
+
     int fprintf(bionic::FILE* fp, const char *fmt, ...);
 
     int fscanf(bionic::FILE* fp, const char *fmt, ...);
+
+    int vfscanf(bionic::FILE* fp, const char *fmt, va_list va);
 
     void add_cstdio_shimmed_symbols(std::vector<shimmed_symbol> &list);
 

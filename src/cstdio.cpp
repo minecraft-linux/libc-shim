@@ -67,6 +67,12 @@ int shim::pclose(bionic::FILE *file) {
     return ret;
 }
 
+size_t shim::fread(void *ptr, size_t size, size_t n, shim::bionic::FILE *file) {
+    auto ret = ::fread(ptr, size, n, file->wrapped);
+    update_feof(file);
+    return ret;
+}
+
 int shim::fprintf(bionic::FILE *fp, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
@@ -80,6 +86,13 @@ int shim::fscanf(bionic::FILE *fp, const char *fmt, ...) {
     va_start(args, fmt);
     int ret = vfscanf(fp->wrapped, fmt, args);
     va_end(args);
+    update_feof(fp);
+    return ret;
+}
+
+int shim::vfscanf(shim::bionic::FILE *fp, const char *fmt, va_list va) {
+    int ret = vfscanf(fp->wrapped, fmt, va);
+    update_feof(fp);
     return ret;
 }
 
@@ -108,12 +121,12 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"fgets", AutoArgRewritten(::fgets)},
         {"fputc", AutoArgRewritten(::fputc)},
         {"fputs", AutoArgRewritten(::fputs)},
-        {"fread", AutoArgRewritten(::fread)},
+        {"fread", fread},
         {"fwrite", AutoArgRewritten(::fwrite)},
         {"fprintf", fprintf},
         {"vfprintf", AutoArgRewritten(::vfprintf)},
         {"fscanf", fscanf},
-        {"vfscanf", AutoArgRewritten(::vfscanf)},
+        {"vfscanf", vfscanf},
         {"getc", AutoArgRewritten(::getc)},
         {"getc_unlocked", AutoArgRewritten(::getc_unlocked)},
         {"getdelim", AutoArgRewritten(::getdelim)},
