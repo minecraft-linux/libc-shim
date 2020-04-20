@@ -133,9 +133,13 @@ namespace shim {
 
     int getsockname(int sockfd, bionic::sockaddr *addr, socklen_t *addrlen);
 
+    int getpeername(int sockfd, bionic::sockaddr *addr, socklen_t *addrlen);
+
     int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen);
 
     int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen);
+
+    int shutdown(int sockfd, int how);
 
     void add_network_shimmed_symbols(std::vector<shimmed_symbol> &list);
 

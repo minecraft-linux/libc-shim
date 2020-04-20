@@ -356,12 +356,36 @@ int shim::getsockname(int sockfd, shim::bionic::sockaddr *addr, socklen_t *addrl
     return 0;
 }
 
+int shim::getpeername(int sockfd, shim::bionic::sockaddr *addr, socklen_t *addrlen) {
+    sockaddr_storage haddr;
+    socklen_t haddrlen = sizeof(sockaddr_storage);
+    int ret = ::getpeername(sockfd, (::sockaddr *) &haddr, &haddrlen);
+    if (ret != 0)
+        return ret;
+    if (bionic::get_bionic_len((::sockaddr *) &haddr) > *addrlen)
+        throw std::runtime_error("getsockname with buffer not big enough");
+    bionic::from_host((::sockaddr *) &haddr, addr);
+    *addrlen = bionic::get_bionic_len((::sockaddr *) &haddr);
+    return 0;
+}
+
 int shim::getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen) {
     return ::getsockopt(sockfd, bionic::to_host_sockopt_level(level), bionic::to_host_sockopt(level, optname), optval, optlen);
 }
 
 int shim::setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen) {
     return ::setsockopt(sockfd, bionic::to_host_sockopt_level(level), bionic::to_host_sockopt(level, optname), optval, optlen);
+}
+
+int shim::shutdown(int sockfd, int how) {
+    int hhow = 0;
+    switch (how) {
+        case 0: hhow = SHUT_RD; break;
+        case 1: hhow = SHUT_WR; break;
+        case 2: hhow = SHUT_RDWR; break;
+        default: throw std::runtime_error("Unexpected how parameter passed to shutdown");
+    }
+    return ::shutdown(sockfd, hhow);
 }
 
 void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
@@ -372,11 +396,15 @@ void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) 
         {"sendto", AutoArgRewritten(sendto)},
         {"recvfrom", recvfrom},
         {"getsockname", getsockname},
+        {"getpeername", getpeername},
         {"getsockopt", getsockopt},
         {"setsockopt", setsockopt},
+        {"listen", ::listen},
+        {"shutdown", shutdown},
 
         {"getaddrinfo", getaddrinfo},
         {"freeaddrinfo", freeaddrinfo},
         {"getnameinfo", AutoArgRewritten(getnameinfo)},
+        {"gai_strerror", gai_strerror}
     });
 }
