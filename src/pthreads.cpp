@@ -196,6 +196,8 @@ int shim::pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *
 }
 
 int shim::pthread_mutex_destroy(pthread_mutex_t *mutex) {
+    if (!bionic::is_mutex_initialized(mutex))
+        return 0;
     return detail::destroy_c_wrapped<pthread_mutex_t>(mutex, &::pthread_mutex_destroy);
 }
 
@@ -226,6 +228,8 @@ int shim::pthread_cond_init(pthread_cond_t *cond, const shim::pthread_condattr_t
 }
 
 int shim::pthread_cond_destroy(pthread_cond_t *cond) {
+    if (!bionic::is_cond_initialized(cond))
+        return 0;
     return detail::destroy_c_wrapped<pthread_cond_t>(cond, &::pthread_cond_destroy);
 }
 
@@ -258,6 +262,8 @@ int shim::pthread_rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr
 }
 
 int shim::pthread_rwlock_destroy(pthread_rwlock_t *rwlock) {
+    if (!bionic::is_rwlock_initialized(rwlock))
+        return 0;
     return detail::destroy_c_wrapped<pthread_rwlock_t>(rwlock, &::pthread_rwlock_destroy);
 }
 
