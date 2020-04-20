@@ -81,9 +81,12 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"pthread_mutex_init", pthread_mutex_init},
         {"pthread_mutex_destroy", pthread_mutex_destroy},
+        {"pthread_mutex_lock", ArgRewritten(::pthread_mutex_lock)},
+        {"pthread_mutex_unlock", ArgRewritten(::pthread_mutex_unlock)},
+        {"pthread_mutex_trylock", ArgRewritten(::pthread_mutex_trylock)},
         {"pthread_mutexattr_init", pthread_mutexattr_init},
         {"pthread_mutexattr_destroy", pthread_mutexattr_destroy},
         {"pthread_mutexattr_settype", pthread_mutexattr_settype},
-        {"pthread_mutexattr_gettype", pthread_mutexattr_gettype},
+        {"pthread_mutexattr_gettype", pthread_mutexattr_gettype}
     });
 }

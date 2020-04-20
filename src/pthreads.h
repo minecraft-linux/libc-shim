@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <libc_shim.h>
 #include "meta.h"
+#include "argrewrite.h"
 
 namespace shim {
 
@@ -15,6 +16,9 @@ namespace shim {
             int64_t priv[4];
 #endif
         };
+
+        template <>
+        auto to_host<pthread_mutex_t>(pthread_mutex_t const *m) { return m->wrapped; }
 
         enum class mutex_type : uint32_t {
             NORMAL = 0,
@@ -55,5 +59,12 @@ namespace shim {
 
 
     void add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
+    namespace detail {
+
+        template <>
+        struct arg_rewrite<pthread_mutex_t const *> : wrapper_resolved_const_ptr_rewriter<pthread_mutex_t_resolver> {};
+
+    }
 
 }
