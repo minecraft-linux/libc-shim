@@ -199,6 +199,21 @@ void bionic::free_host_list(::addrinfo *list) {
     }
 }
 
+int bionic::to_host_nameinfo_flags(bionic::nameinfo_flags flags) {
+    int ret = 0;
+    if ((uint32_t) flags & (uint32_t) nameinfo_flags::NOFQDN)
+        ret |= NI_NOFQDN;
+    if ((uint32_t) flags & (uint32_t) nameinfo_flags::NUMERICHOST)
+        ret |= NI_NUMERICHOST;
+    if ((uint32_t) flags & (uint32_t) nameinfo_flags::NAMEREQD)
+        ret |= NI_NAMEREQD;
+    if ((uint32_t) flags & (uint32_t) nameinfo_flags::NUMERICSERV)
+        ret |= NI_NUMERICSERV;
+    if ((uint32_t) flags & (uint32_t) nameinfo_flags::DGRAM)
+        ret |= NI_DGRAM;
+    return ret;
+}
+
 int shim::getaddrinfo(const char *node, const char *service, const bionic::addrinfo *hints, bionic::addrinfo **res) {
     auto hhints = bionic::to_host_alloc(hints);
     ::addrinfo *hres;
@@ -215,9 +230,16 @@ void shim::freeaddrinfo(bionic::addrinfo *ai) {
     bionic::free_bionic_list(ai);
 }
 
+int shim::getnameinfo(const ::sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen,
+        char *serv, socklen_t servlen, bionic::nameinfo_flags flags) {
+    return ::getnameinfo(addr, addrlen, host, hostlen, serv, servlen,
+            bionic::to_host_nameinfo_flags(flags));
+}
+
 void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"getaddrinfo", getaddrinfo},
-        {"freeaddrinfo", freeaddrinfo}
+        {"freeaddrinfo", freeaddrinfo},
+        {"getnameinfo", AutoArgRewritten(getnameinfo)},
     });
 }

@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include "argrewrite.h"
 
 namespace shim {
 
@@ -93,12 +94,45 @@ namespace shim {
 
         void free_host_list(::addrinfo *list);
 
+        /* nameinfo */
+
+        enum class nameinfo_flags : int {
+            NOFQDN = 1,
+            NUMERICHOST = 2,
+            NAMEREQD = 4,
+            NUMERICSERV = 8,
+            DGRAM = 16
+        };
+
+        int to_host_nameinfo_flags(nameinfo_flags flags);
+
     }
 
     int getaddrinfo(const char *node, const char *service, const bionic::addrinfo *hints, bionic::addrinfo **res);
 
-    void freeaddrinfo(struct bionic::addrinfo *ai);
+    void freeaddrinfo(bionic::addrinfo *ai);
+
+    int getnameinfo(const ::sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen,
+            char *serv, socklen_t servlen, bionic::nameinfo_flags flags);
 
     void add_network_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
+    namespace detail {
+
+        template <>
+        struct arg_rewrite<const ::sockaddr *> {
+            using source = bionic::sockaddr *;
+
+            sockaddr_storage stor;
+
+            ::sockaddr *before(source src) {
+                bionic::to_host(src, (::sockaddr *) &stor);
+                return (::sockaddr *) &stor;
+            }
+            void after(source src) {
+            }
+        };
+
+    }
 
 }

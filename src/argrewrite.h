@@ -84,4 +84,4 @@ namespace shim {
 }
 
 
-#define ArgRewritten(ptr) (&shim::detail::arg_rewrite_helper<typeof(ptr)>::rewrite<ptr>)
+#define AutoArgRewritten(ptr) (&shim::detail::arg_rewrite_helper<typeof(ptr)>::rewrite<ptr>)
