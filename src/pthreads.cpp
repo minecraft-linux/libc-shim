@@ -1,6 +1,7 @@
 #include <cerrno>
 #include <stdexcept>
 #include <limits.h>
+#include <mutex>
 #include "pthreads.h"
 
 using namespace shim;
@@ -221,6 +222,16 @@ void shim::pthread_cleanup_pop_impl(shim::bionic::pthread_cleanup_t *c, int exec
         c->routine(c->arg);
 }
 
+int shim::pthread_once(pthread_once_t *control, void (*routine)()) {
+    static std::recursive_mutex mutex;
+    std::unique_lock<std::recursive_mutex> lock (mutex);
+    if (*control == 0) {
+        *control = 1;
+        routine();
+    }
+    return 0;
+}
+
 void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"pthread_create", pthread_create},
@@ -261,5 +272,7 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
 
         {"__pthread_cleanup_push", pthread_cleanup_push_impl},
         {"__pthread_cleanup_pop", pthread_cleanup_pop_impl},
+
+        {"pthread_once", pthread_once}
     });
 }
