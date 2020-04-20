@@ -3,6 +3,7 @@
 #include <libc_shim.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <stdexcept>
 #include <netdb.h>
 #include "argrewrite.h"
 
@@ -127,6 +128,10 @@ namespace shim {
     int getnameinfo(const ::sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen,
             char *serv, socklen_t servlen, bionic::nameinfo_flags flags);
 
+    ssize_t send(int sockfd, const void *buf, size_t len, int flags);
+
+    ssize_t recv(int sockfd, void *buf, size_t len, int flags);
+
     ssize_t sendto(int sockfd, const void *buf, size_t len, int flags, const ::sockaddr *addr, socklen_t addrlen);
 
     ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags, bionic::sockaddr *addr, socklen_t *addrlen);
@@ -134,6 +139,8 @@ namespace shim {
     int getsockname(int sockfd, bionic::sockaddr *addr, socklen_t *addrlen);
 
     int getpeername(int sockfd, bionic::sockaddr *addr, socklen_t *addrlen);
+
+    int accept(int sockfd, bionic::sockaddr *addr, socklen_t *addrlen);
 
     int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen);
 
@@ -156,6 +163,20 @@ namespace shim {
                 return (::sockaddr *) &stor;
             }
             void after(source src) {
+            }
+        };
+
+        struct sockaddr_out {
+            sockaddr_storage haddr = {};
+            socklen_t len = sizeof(sockaddr_storage);
+
+            ::sockaddr *ptr() { return (::sockaddr *) &haddr; }
+
+            void apply(bionic::sockaddr *addr, socklen_t *addrlen) {
+                if (bionic::get_bionic_len((::sockaddr *) &haddr) > *addrlen)
+                    throw std::runtime_error("buffer for sockaddr not big enough");
+                bionic::from_host((::sockaddr *) &haddr, addr);
+                *addrlen = bionic::get_bionic_len((::sockaddr *) &haddr);
             }
         };
 

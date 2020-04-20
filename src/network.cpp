@@ -1,6 +1,5 @@
 #include "network.h"
 
-#include <stdexcept>
 #include <netinet/in.h>
 #include <cstring>
 
@@ -320,6 +319,18 @@ int shim::getnameinfo(const ::sockaddr *addr, socklen_t addrlen, char *host, soc
             bionic::to_host_nameinfo_flags(flags));
 }
 
+ssize_t shim::send(int sockfd, const void *buf, size_t len, int flags) {
+    if (flags != 0)
+        throw std::runtime_error("send with unsupported flags");
+    return ::send(sockfd, buf, len, flags);
+}
+
+ssize_t shim::recv(int sockfd, void *buf, size_t len, int flags) {
+    if (flags != 0)
+        throw std::runtime_error("recv with unsupported flags");
+    return ::recv(sockfd, buf, len, flags);
+}
+
 ssize_t shim::sendto(int sockfd, const void *buf, size_t len, int flags, const ::sockaddr *addr, socklen_t addrlen) {
     if (flags != 0)
         throw std::runtime_error("sendto with unsupported flags");
@@ -331,42 +342,35 @@ ssize_t shim::recvfrom(int sockfd, void *buf, size_t len, int flags, bionic::soc
         throw std::runtime_error("recvfrom with unsupported flags");
     if (addr == nullptr)
         return ::recvfrom(sockfd, buf, len, flags, nullptr, nullptr);
-    sockaddr_storage haddr;
-    socklen_t haddrlen = sizeof(sockaddr_storage);
-    int ret = ::recvfrom(sockfd, buf, len, flags, (::sockaddr *) &haddr, &haddrlen);
-    if (ret < 0)
-        return ret;
-    if (bionic::get_bionic_len((::sockaddr *) &haddr) > *addrlen)
-        throw std::runtime_error("recvfrom with buffer not big enough");
-    bionic::from_host((::sockaddr *) &haddr, addr);
-    *addrlen = bionic::get_bionic_len((::sockaddr *) &haddr);
+    detail::sockaddr_out haddr;
+    int ret = ::recvfrom(sockfd, buf, len, flags, haddr.ptr(), &haddr.len);
+    if (ret >= 0)
+        haddr.apply(addr, addrlen);
     return ret;
 }
 
 int shim::getsockname(int sockfd, shim::bionic::sockaddr *addr, socklen_t *addrlen) {
-    sockaddr_storage haddr;
-    socklen_t haddrlen = sizeof(sockaddr_storage);
-    int ret = ::getsockname(sockfd, (::sockaddr *) &haddr, &haddrlen);
-    if (ret != 0)
-        return ret;
-    if (bionic::get_bionic_len((::sockaddr *) &haddr) > *addrlen)
-        throw std::runtime_error("getsockname with buffer not big enough");
-    bionic::from_host((::sockaddr *) &haddr, addr);
-    *addrlen = bionic::get_bionic_len((::sockaddr *) &haddr);
-    return 0;
+    detail::sockaddr_out haddr;
+    int ret = ::getsockname(sockfd, haddr.ptr(), &haddr.len);
+    if (ret == 0)
+        haddr.apply(addr, addrlen);
+    return ret;
 }
 
 int shim::getpeername(int sockfd, shim::bionic::sockaddr *addr, socklen_t *addrlen) {
-    sockaddr_storage haddr;
-    socklen_t haddrlen = sizeof(sockaddr_storage);
-    int ret = ::getpeername(sockfd, (::sockaddr *) &haddr, &haddrlen);
-    if (ret != 0)
-        return ret;
-    if (bionic::get_bionic_len((::sockaddr *) &haddr) > *addrlen)
-        throw std::runtime_error("getsockname with buffer not big enough");
-    bionic::from_host((::sockaddr *) &haddr, addr);
-    *addrlen = bionic::get_bionic_len((::sockaddr *) &haddr);
-    return 0;
+    detail::sockaddr_out haddr;
+    int ret = ::getpeername(sockfd, haddr.ptr(), &haddr.len);
+    if (ret == 0)
+        haddr.apply(addr, addrlen);
+    return ret;
+}
+
+int shim::accept(int sockfd, shim::bionic::sockaddr *addr, socklen_t *addrlen) {
+    detail::sockaddr_out haddr;
+    int ret = ::accept(sockfd, haddr.ptr(), &haddr.len);
+    if (ret >= 0)
+        haddr.apply(addr, addrlen);
+    return ret;
 }
 
 int shim::getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen) {
@@ -393,10 +397,13 @@ void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) 
         {"socket", socket},
         {"bind", &detail::arg_rewrite_helper<int (int, const ::sockaddr *, socklen_t)>::rewrite<::bind>},
         {"connect", &detail::arg_rewrite_helper<int (int, const ::sockaddr *, socklen_t)>::rewrite<::connect>},
+        {"send", send},
         {"sendto", AutoArgRewritten(sendto)},
+        {"recv", recv},
         {"recvfrom", recvfrom},
         {"getsockname", getsockname},
         {"getpeername", getpeername},
+        {"accept", accept},
         {"getsockopt", getsockopt},
         {"setsockopt", setsockopt},
         {"listen", ::listen},
