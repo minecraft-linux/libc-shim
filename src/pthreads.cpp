@@ -192,11 +192,11 @@ int shim::pthread_attr_getstacksize(shim::pthread_attr_t *attr, size_t *value) {
 
 int shim::pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr) {
     host_mutexattr hattr (attr);
-    return detail::make_c_wrapped<pthread_mutex_t_resolver, const ::pthread_mutexattr_t *>(mutex, &::pthread_mutex_init, &hattr.attr);
+    return detail::make_c_wrapped<pthread_mutex_t, const ::pthread_mutexattr_t *>(mutex, &::pthread_mutex_init, &hattr.attr);
 }
 
 int shim::pthread_mutex_destroy(pthread_mutex_t *mutex) {
-    return detail::destroy_c_wrapped<pthread_mutex_t_resolver>(mutex, &::pthread_mutex_destroy);
+    return detail::destroy_c_wrapped<pthread_mutex_t>(mutex, &::pthread_mutex_destroy);
 }
 
 int shim::pthread_mutexattr_init(pthread_mutexattr_t *attr) {
@@ -222,11 +222,11 @@ int shim::pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type) 
 
 int shim::pthread_cond_init(pthread_cond_t *cond, const shim::pthread_condattr_t *attr) {
     host_condattr hattr (attr);
-    return detail::make_c_wrapped<pthread_cond_t_resolver, const ::pthread_condattr_t *>(cond, &::pthread_cond_init, &hattr.attr);
+    return detail::make_c_wrapped<pthread_cond_t, const ::pthread_condattr_t *>(cond, &::pthread_cond_init, &hattr.attr);
 }
 
 int shim::pthread_cond_destroy(pthread_cond_t *cond) {
-    return detail::destroy_c_wrapped<pthread_cond_t_resolver>(cond, &::pthread_cond_destroy);
+    return detail::destroy_c_wrapped<pthread_cond_t>(cond, &::pthread_cond_destroy);
 }
 
 int shim::pthread_condattr_init(pthread_condattr_t *attr) {
@@ -254,11 +254,11 @@ int shim::pthread_condattr_getclock(const pthread_condattr_t *attr, int *clock) 
 int shim::pthread_rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr) {
     if (attr != nullptr)
         throw std::runtime_error("non-NULL rwlock attr is currently not supported");
-    return detail::make_c_wrapped<pthread_rwlock_t_resolver, const ::pthread_rwlockattr_t *>(rwlock, &::pthread_rwlock_init, nullptr);
+    return detail::make_c_wrapped<pthread_rwlock_t, const ::pthread_rwlockattr_t *>(rwlock, &::pthread_rwlock_init, nullptr);
 }
 
 int shim::pthread_rwlock_destroy(pthread_rwlock_t *rwlock) {
-    return detail::destroy_c_wrapped<pthread_rwlock_t_resolver>(rwlock, &::pthread_rwlock_destroy);
+    return detail::destroy_c_wrapped<pthread_rwlock_t>(rwlock, &::pthread_rwlock_destroy);
 }
 
 int shim::pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {

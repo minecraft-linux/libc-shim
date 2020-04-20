@@ -146,16 +146,13 @@ namespace shim {
 
     using pthread_attr_t = bionic::pthread_attr_t;
 
-    using pthread_mutex_t_resolver = detail::wrapper_type_resolver<::pthread_mutex_t, bionic::pthread_mutex_t>;
-    using pthread_mutex_t = pthread_mutex_t_resolver::type;
+    using pthread_mutex_t = bionic::pthread_mutex_t;
     using pthread_mutexattr_t = bionic::pthread_mutexattr_t;
 
-    using pthread_cond_t_resolver = detail::wrapper_type_resolver<::pthread_cond_t, bionic::pthread_cond_t>;
-    using pthread_cond_t = pthread_cond_t_resolver::type;
+    using pthread_cond_t = bionic::pthread_cond_t;
     using pthread_condattr_t = bionic::pthread_condattr_t;
 
-    using pthread_rwlock_t_resolver = detail::wrapper_type_resolver<::pthread_rwlock_t, bionic::pthread_rwlock_t>;
-    using pthread_rwlock_t = pthread_rwlock_t_resolver::type;
+    using pthread_rwlock_t = bionic::pthread_rwlock_t;
 
     using pthread_key_t = bionic::pthread_key_t;
     using pthread_once_t = bionic::pthread_once_t;
@@ -237,13 +234,13 @@ namespace shim {
     namespace detail {
 
         template <>
-        struct arg_rewrite<::pthread_mutex_t *> : wrapper_resolved_ptr_rewriter<pthread_mutex_t_resolver> {};
+        struct arg_rewrite<::pthread_mutex_t *> : bionic_ptr_rewriter<typename ::pthread_mutex_t *, pthread_mutex_t *> {};
 
         template <>
-        struct arg_rewrite<::pthread_cond_t *> : wrapper_resolved_ptr_rewriter<pthread_cond_t_resolver> {};
+        struct arg_rewrite<::pthread_cond_t *> : bionic_ptr_rewriter<typename ::pthread_cond_t *, pthread_cond_t *> {};
 
         template <>
-        struct arg_rewrite<::pthread_rwlock_t *> : wrapper_resolved_ptr_rewriter<pthread_rwlock_t_resolver> {};
+        struct arg_rewrite<::pthread_rwlock_t *> : bionic_ptr_rewriter<typename ::pthread_rwlock_t *, pthread_rwlock_t *> {};
 
     }
 

@@ -26,29 +26,46 @@ namespace shim {
         };
 
 
+        template <typename T>
+        struct unwrap_pointer {
+            using type = T;
+        };
+        template <typename T>
+        struct unwrap_pointer<T*> {
+            using type = T;
+        };
+
+
+        template <typename Wrapper, typename... Args>
+        int make_c_wrapped(Wrapper *object, int (*constructor)(decltype(object->wrapped), Args...), Args... args) {
+            object->wrapped = new typename unwrap_pointer<decltype(object->wrapped)>::type;
+            int ret = constructor(object->wrapped, args...);
+            if (ret)
+                delete object->wrapped;
+            return ret;
+        }
+
+        template <typename Wrapper>
+        int destroy_c_wrapped(Wrapper *object, int (*destructor)(decltype(object->wrapped))) {
+            int ret = destructor(object->wrapped);
+            delete object->wrapped;
+            return ret;
+        }
 
         template <typename Resolver, typename... Args>
-        int make_c_wrapped(typename Resolver::type *object, int (*constructor)(typename Resolver::host_type *, Args...), Args... args) {
-            if constexpr (Resolver::is_wrapped) {
-                object->wrapped = new typename Resolver::host_type;
-                int ret = constructor(object->wrapped, args...);
-                if (ret)
-                    delete object->wrapped;
-                return ret;
-            } else {
+        int make_c_wrapped_via_resolver(typename Resolver::type *object, int (*constructor)(typename Resolver::host_type *, Args...), Args... args) {
+            if constexpr (Resolver::is_wrapped)
+                return make_c_wrapped<typename Resolver::type, Args...>(object, constructor, args...);
+            else
                 return constructor(object, args...);
-            }
         }
 
         template <typename Resolver>
-        int destroy_c_wrapped(typename Resolver::type *object, int (*destructor)(typename Resolver::host_type *)) {
-            if constexpr (Resolver::is_wrapped) {
-                int ret = destructor(object->wrapped);
-                free(object->wrapped);
-                return ret;
-            } else {
+        int destroy_c_wrapped_via_resolver(typename Resolver::type *object, int (*destructor)(typename Resolver::host_type *)) {
+            if constexpr (Resolver::is_wrapped)
+                return destroy_c_wrapped<typename Resolver::type>(object, destructor);
+            else
                 return destructor(object);
-            }
         }
 
     }

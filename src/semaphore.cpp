@@ -8,11 +8,11 @@ using namespace shim;
 #ifndef __APPLE__
 
 int shim::sem_init(sem_t *sem, int pshared, unsigned int value) {
-    return detail::make_c_wrapped<sem_t_resolver, int, unsigned int>(sem, ::sem_init, pshared, value);
+    return detail::make_c_wrapped_via_resolver<sem_t_resolver, int, unsigned int>(sem, ::sem_init, pshared, value);
 }
 
 int shim::sem_destroy(sem_t *sem) {
-    return detail::destroy_c_wrapped<sem_t_resolver>(sem, ::sem_destroy);
+    return detail::destroy_c_wrapped_via_resolver<sem_t_resolver>(sem, ::sem_destroy);
 }
 
 #else
