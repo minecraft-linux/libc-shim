@@ -48,17 +48,15 @@ namespace shim {
 
     namespace detail {
 
+        template <bool IsWrapped = sem_t_resolver::is_wrapped>
+        struct sem_rewriter;
         template <>
-        struct arg_rewrite<host_sem_t *> {
-            using source = sem_t *;
-            host_sem_t *before(source src) {
-                if constexpr (sem_t_resolver::is_wrapped)
-                    return bionic::to_host(src);
-                else
-                    return src;
-            }
-            void after(source) {}
-        };
+        struct sem_rewriter<true> : bionic_ptr_rewriter<host_sem_t *, sem_t *> {};
+        template <>
+        struct sem_rewriter<false> : nop_arg_rewrite<host_sem_t *> {};
+
+        template <>
+        struct arg_rewrite<host_sem_t *> : sem_rewriter<> {};
 
     }
 
