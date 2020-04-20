@@ -445,6 +445,11 @@ void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) 
         {"getaddrinfo", getaddrinfo},
         {"freeaddrinfo", freeaddrinfo},
         {"getnameinfo", AutoArgRewritten(getnameinfo)},
-        {"gai_strerror", gai_strerror}
+        {"gai_strerror", gai_strerror},
+
+        {"gethostbyaddr", gethostbyaddr},
+        {"gethostbyname", gethostbyname},
+        {"gethostbyname2", gethostbyname2},
+        {"gethostent", gethostent}
     });
 }
