@@ -77,6 +77,7 @@ namespace shim {
             void *arg;
         };
 
+        using pthread_key_t = uint32_t;
         using pthread_once_t = int;
 
         struct pthread_cleanup_holder {
@@ -102,6 +103,7 @@ namespace shim {
     using pthread_rwlock_t_resolver = detail::wrapper_type_resolver<::pthread_rwlock_t, bionic::pthread_rwlock_t>;
     using pthread_rwlock_t = pthread_rwlock_t_resolver::type;
 
+    using pthread_key_t = bionic::pthread_key_t;
     using pthread_once_t = bionic::pthread_once_t;
 
     struct host_pthread_attr {
@@ -163,6 +165,11 @@ namespace shim {
 
     int pthread_rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr);
     int pthread_rwlock_destroy(pthread_rwlock_t* rwlock);
+
+    int pthread_key_create(pthread_key_t *key, void (*destructor)(void*));
+    int pthread_key_delete(pthread_key_t key);
+    int pthread_setspecific(pthread_key_t key, const void *value);
+    void *pthread_getspecific(pthread_key_t key);
 
     void pthread_cleanup_push_impl(bionic::pthread_cleanup_t *c, void (*cb)(void *), void *arg);
     void pthread_cleanup_pop_impl(bionic::pthread_cleanup_t *c, int execute);

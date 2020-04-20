@@ -209,6 +209,27 @@ int shim::pthread_rwlock_destroy(pthread_rwlock_t *rwlock) {
     return destroy_wrapped<pthread_rwlock_t_resolver>(rwlock, &::pthread_rwlock_destroy);
 }
 
+int shim::pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
+    ::pthread_key_t host_key;
+    int ret = ::pthread_key_create(&host_key, destructor);
+    if (host_key > INT_MAX)
+        throw std::runtime_error("Unsupported host pthread key implementation");
+    *key = host_key;
+    return ret;
+}
+
+int shim::pthread_key_delete(pthread_key_t key) {
+    return ::pthread_key_delete((::pthread_key_t) key);
+}
+
+int shim::pthread_setspecific(pthread_key_t key, const void *value) {
+    return ::pthread_setspecific((::pthread_key_t) key, value);
+}
+
+void* shim::pthread_getspecific(pthread_key_t key) {
+    return ::pthread_getspecific((::pthread_key_t) key);
+}
+
 void shim::pthread_cleanup_push_impl(shim::bionic::pthread_cleanup_t *c, void (*cb)(void *), void *arg) {
     c->prev = bionic::cleanup.current;
     c->routine = cb;
@@ -269,6 +290,11 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
         {"pthread_rwlock_rdlock", ArgRewritten(::pthread_rwlock_rdlock)},
         {"pthread_rwlock_wrlock", ArgRewritten(::pthread_rwlock_wrlock)},
         {"pthread_rwlock_unlock", ArgRewritten(::pthread_rwlock_unlock)},
+
+        {"pthread_key_create", pthread_key_create},
+        {"pthread_key_delete", pthread_key_delete},
+        {"pthread_setspecific", pthread_setspecific},
+        {"pthread_getspecific", pthread_getspecific},
 
         {"__pthread_cleanup_push", pthread_cleanup_push_impl},
         {"__pthread_cleanup_pop", pthread_cleanup_pop_impl},
