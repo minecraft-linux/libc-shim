@@ -35,9 +35,9 @@ namespace shim {
     int sem_destroy(sem_t *sem);
 
 #ifdef __APPLE__
-    int sem_wait(sem_t *sem);
-    int sem_timedwait(sem_t *sem, const struct timespec *abs_timeout);
-    int sem_post(sem_t *sem);
+    int sem_wait(host_sem_t *sem);
+    int sem_timedwait(host_sem_t *sem, const struct timespec *abs_timeout);
+    int sem_post(host_sem_t *sem);
 #endif
 
     void add_sem_shimmed_symbols(std::vector<shimmed_symbol> &list);

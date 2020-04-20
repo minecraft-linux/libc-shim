@@ -32,7 +32,7 @@ namespace shim {
             if constexpr (Resolver::is_wrapped) {
                 object->wrapped = new typename Resolver::host_type;
                 int ret = constructor(object->wrapped, args...);
-                if (!ret)
+                if (ret)
                     delete object->wrapped;
                 return ret;
             } else {
