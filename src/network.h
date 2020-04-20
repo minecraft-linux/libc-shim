@@ -33,7 +33,8 @@ namespace shim {
         enum class ipproto : int {
             IP = 0,
             TCP = 6,
-            UDP = 17
+            UDP = 17,
+            IPV6 = 41
         };
 
         ai_flags from_host_ai_flags(int flags);
@@ -106,6 +107,15 @@ namespace shim {
 
         int to_host_nameinfo_flags(nameinfo_flags flags);
 
+        /* sockopt */
+
+        int to_host_sockopt_so(int opt);
+        int to_host_sockopt_ip(int opt);
+        int to_host_sockopt_ipv6(int opt);
+
+        int to_host_sockopt_level(int level);
+        int to_host_sockopt(int level, int opt);
+
     }
 
     int socket(bionic::af_family domain, bionic::socktype type, bionic::ipproto proto);
@@ -122,6 +132,10 @@ namespace shim {
     ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags, bionic::sockaddr *addr, socklen_t *addrlen);
 
     int getsockname(int sockfd, bionic::sockaddr *addr, socklen_t *addrlen);
+
+    int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen);
+
+    int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen);
 
     void add_network_shimmed_symbols(std::vector<shimmed_symbol> &list);
 

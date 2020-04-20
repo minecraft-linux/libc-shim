@@ -69,6 +69,7 @@ bionic::ipproto bionic::from_host_ipproto(int proto) {
         case IPPROTO_IP: return ipproto::IP;
         case IPPROTO_TCP: return ipproto::TCP;
         case IPPROTO_UDP: return ipproto::UDP;
+        case IPPROTO_IPV6: return ipproto::IPV6;
         default: throw std::runtime_error("Unknown ipproto");
     }
 }
@@ -78,6 +79,7 @@ int bionic::to_host_ipproto(bionic::ipproto proto) {
         case ipproto::IP: return IPPROTO_IP;
         case ipproto::TCP: return IPPROTO_TCP;
         case ipproto::UDP: return IPPROTO_UDP;
+        case ipproto::IPV6: return IPPROTO_IPV6;
         default: throw std::runtime_error("Unknown ipproto");
     }
 }
@@ -220,6 +222,78 @@ int bionic::to_host_nameinfo_flags(bionic::nameinfo_flags flags) {
     return ret;
 }
 
+int bionic::to_host_sockopt_so(int opt) {
+    switch (opt) {
+        case 1: return SO_DEBUG;
+        case 2: return SO_REUSEADDR;
+        case 3: return SO_TYPE;
+        case 4: return SO_ERROR;
+        case 5: return SO_DONTROUTE;
+        case 6: return SO_BROADCAST;
+        case 7: return SO_SNDBUF;
+        case 8: return SO_RCVBUF;
+        case 9: return SO_KEEPALIVE;
+        case 10: return SO_OOBINLINE;
+        case 13: return SO_LINGER;
+        case 15: return SO_REUSEPORT;
+        default: throw std::runtime_error("Unknown SO sockopt");
+    }
+}
+
+int bionic::to_host_sockopt_ip(int opt) {
+    switch (opt) {
+        case 1: return IP_TOS;
+        case 2: return IP_TTL;
+        case 3: return IP_HDRINCL;
+        case 4: return IP_OPTIONS;
+        case 6: return IP_RECVOPTS;
+        case 7: return IP_RETOPTS;
+        case 16: return IP_IPSEC_POLICY;
+        case 32: return IP_MULTICAST_IF;
+        case 33: return IP_MULTICAST_TTL;
+        case 34: return IP_MULTICAST_LOOP;
+        case 35: return IP_ADD_MEMBERSHIP;
+        case 36: return IP_DROP_MEMBERSHIP;
+        default: throw std::runtime_error("Unknown IP sockopt");
+    }
+}
+
+int bionic::to_host_sockopt_ipv6(int opt) {
+    switch (opt) {
+        case 2: return IPV6_2292PKTINFO;
+        case 3: return IPV6_2292HOPOPTS;
+        case 4: return IPV6_2292DSTOPTS;
+        case 5: return IPV6_2292RTHDR;
+        case 6: return IPV6_2292PKTOPTIONS;
+        case 7: return IPV6_CHECKSUM;
+        case 8: return IPV6_2292HOPLIMIT;
+        case 16: return IPV6_UNICAST_HOPS;
+        case 17: return IPV6_MULTICAST_IF;
+        case 18: return IPV6_MULTICAST_HOPS;
+        case 19: return IPV6_MULTICAST_LOOP;
+        case 20: return IPV6_JOIN_GROUP;
+        case 21: return IPV6_LEAVE_GROUP;
+        case 26: return IPV6_V6ONLY;
+        case 34: return IPV6_IPSEC_POLICY;
+        default: throw std::runtime_error("Unknown IPv6 sockopt");
+    }
+}
+
+int bionic::to_host_sockopt_level(int level) {
+    if (level == 1) return SOL_SOCKET;
+    return to_host_ipproto((ipproto) level);
+}
+
+int bionic::to_host_sockopt(int level, int opt) {
+    level = to_host_sockopt_level(level);
+    switch (level) {
+        case SOL_SOCKET: return to_host_sockopt_so(opt);
+        case IPPROTO_IP: return to_host_sockopt_ip(opt);
+        case IPPROTO_IPV6: return to_host_sockopt_ipv6(opt);
+        default: throw std::runtime_error("Unknown sockopt level");
+    }
+}
+
 int shim::socket(bionic::af_family domain, bionic::socktype type, bionic::ipproto proto) {
     return ::socket(bionic::to_host_af_family(domain), bionic::to_host_socktype(type), bionic::to_host_ipproto(proto));
 }
@@ -282,6 +356,14 @@ int shim::getsockname(int sockfd, shim::bionic::sockaddr *addr, socklen_t *addrl
     return 0;
 }
 
+int shim::getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen) {
+    return ::getsockopt(sockfd, bionic::to_host_sockopt_level(level), bionic::to_host_sockopt(level, optname), optval, optlen);
+}
+
+int shim::setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen) {
+    return ::setsockopt(sockfd, bionic::to_host_sockopt_level(level), bionic::to_host_sockopt(level, optname), optval, optlen);
+}
+
 void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"socket", socket},
@@ -290,6 +372,8 @@ void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) 
         {"sendto", AutoArgRewritten(sendto)},
         {"recvfrom", recvfrom},
         {"getsockname", getsockname},
+        {"getsockopt", getsockopt},
+        {"setsockopt", setsockopt},
 
         {"getaddrinfo", getaddrinfo},
         {"freeaddrinfo", freeaddrinfo},
