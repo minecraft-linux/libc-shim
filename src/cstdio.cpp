@@ -43,13 +43,28 @@ bionic::FILE* shim::freopen(const char *filename, const char *mode, bionic::FILE
     return wrap_file(::freopen(filename, mode, stream->wrapped));
 }
 
-void shim::fclose(bionic::FILE *file) {
-    fclose(file->wrapped);
+bionic::FILE* shim::tmpfile() {
+    return wrap_file(::tmpfile());
+}
+
+bionic::FILE* shim::popen(const char *command, const char *mode) {
+    return wrap_file(::popen(command, mode));
+}
+
+int shim::fclose(bionic::FILE *file) {
+    int ret = fclose(file->wrapped);
     if (file == &bionic::standard_files[0] ||
         file == &bionic::standard_files[1] ||
         file == &bionic::standard_files[2])
-        return;
+        return ret;
     delete file;
+    return ret;
+}
+
+int shim::pclose(shim::bionic::FILE *file) {
+    int ret = ::pclose(file->wrapped);
+    delete file;
+    return ret;
 }
 
 void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
@@ -62,7 +77,10 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"fopen", fopen},
         {"fdopen", fdopen},
         {"freopen", freopen},
+        {"tmpfile", tmpfile},
+        {"popen", popen},
         {"fclose", fclose},
+        {"pclose", pclose},
         {"clearerr", AutoArgRewritten(clearerr)},
         {"feof", AutoArgRewritten(feof)},
         {"ferror", AutoArgRewritten(ferror)},
@@ -75,9 +93,11 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"fread", AutoArgRewritten(fread)},
         {"fwrite", AutoArgRewritten(fwrite)},
         {"getc", AutoArgRewritten(getc)},
+        {"getc_unlocked", AutoArgRewritten(getc_unlocked)},
         {"getdelim", AutoArgRewritten(getdelim)},
         {"getline", AutoArgRewritten(getline)},
         {"putc", AutoArgRewritten(putc)},
+        {"putc_unlocked", AutoArgRewritten(putc_unlocked)},
         {"rewind", AutoArgRewritten(rewind)},
         {"setbuf", AutoArgRewritten(setbuf)},
         {"setvbuf", AutoArgRewritten(setvbuf)},
@@ -85,5 +105,22 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"setlinebuf", AutoArgRewritten(setlinebuf)},
         {"ungetc", AutoArgRewritten(ungetc)},
         {"fileno", AutoArgRewritten(fileno)},
+        {"pclose", AutoArgRewritten(pclose)},
+        {"flockfile", AutoArgRewritten(flockfile)},
+        {"ftrylockfile", AutoArgRewritten(ftrylockfile)},
+        {"funlockfile", AutoArgRewritten(funlockfile)},
+
+        {"remove", ::remove},
+        {"rename", ::rename},
+
+        {"putchar", ::putchar},
+        {"puts", ::puts},
+        {"vprintf", ::vprintf},
+        {"sprintf", ::sprintf},
+        {"asprintf", ::asprintf},
+        {"vasprintf", ::vasprintf},
+        {"snprintf", ::snprintf},
+        {"vsprintf", ::vsprintf},
+        {"vsnprintf", ::vsnprintf},
     });
 }

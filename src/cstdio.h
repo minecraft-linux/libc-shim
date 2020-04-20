@@ -48,7 +48,13 @@ namespace shim {
 
     bionic::FILE *freopen(const char *filename, const char *mode, bionic::FILE *stream);
 
-    void fclose(bionic::FILE *file);
+    bionic::FILE *tmpfile();
+
+    bionic::FILE *popen(const char *command, const char *mode);
+
+    int fclose(bionic::FILE *file);
+
+    int pclose(bionic::FILE *file);
 
     void add_cstdio_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
