@@ -339,6 +339,7 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
         {"pthread_cond_destroy", pthread_cond_destroy},
         {"pthread_cond_wait", &detail::arg_rewrite_helper<int (::pthread_cond_t*, ::pthread_mutex_t*)>::rewrite<pthread_cond_wait>},
         {"pthread_cond_broadcast", &detail::arg_rewrite_helper<int (::pthread_cond_t *)>::rewrite<pthread_cond_broadcast>},
+        {"pthread_cond_signal", &detail::arg_rewrite_helper<int (::pthread_cond_t *)>::rewrite<pthread_cond_signal>},
         {"pthread_cond_timedwait", &detail::arg_rewrite_helper<int (::pthread_cond_t *, ::pthread_mutex_t*, const struct timespec *)>::rewrite<pthread_cond_timedwait>},
         {"pthread_condattr_init", pthread_condattr_init},
         {"pthread_condattr_destroy", pthread_condattr_destroy},
