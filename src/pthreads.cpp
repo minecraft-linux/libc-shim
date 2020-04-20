@@ -13,13 +13,24 @@ int bionic::to_host_mutex_type(bionic::mutex_type type) {
     }
 }
 
-host_mutexattr::host_mutexattr(shim::pthread_mutexattr_t const &bionic_attr) {
+host_mutexattr::host_mutexattr(pthread_mutexattr_t const *bionic_attr) {
     ::pthread_mutexattr_init(&attr);
-    ::pthread_mutexattr_settype(&attr, to_host_mutex_type(bionic_attr.type));
+    if (bionic_attr)
+        ::pthread_mutexattr_settype(&attr, bionic::to_host_mutex_type(bionic_attr->type));
 }
 
 host_mutexattr::~host_mutexattr() {
     ::pthread_mutexattr_destroy(&attr);
+}
+
+host_condattr::host_condattr(pthread_condattr_t const *bionic_attr) {
+    ::pthread_condattr_init(&attr);
+    if (bionic_attr)
+        ::pthread_condattr_setclock(&attr, bionic::to_host_clock_type(bionic_attr->clock));
+}
+
+host_condattr::~host_condattr() {
+    ::pthread_condattr_destroy(&attr);
 }
 
 template <typename Resolver, typename... Args>
@@ -47,7 +58,7 @@ int destroy_wrapped(typename Resolver::type *object, int (*destructor)(typename 
 }
 
 int shim::pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr) {
-    host_mutexattr hattr (*attr);
+    host_mutexattr hattr (attr);
     return make_wrapped<pthread_mutex_t_resolver, const ::pthread_mutexattr_t *>(mutex, &::pthread_mutex_init, &hattr.attr);
 }
 
@@ -76,6 +87,36 @@ int shim::pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type) 
     return 0;
 }
 
+int shim::pthread_cond_init(pthread_cond_t *cond, const shim::pthread_condattr_t *attr) {
+    host_condattr hattr (attr);
+    return make_wrapped<pthread_cond_t_resolver, const ::pthread_condattr_t *>(cond, &::pthread_cond_init, &hattr.attr);
+}
+
+int shim::pthread_cond_destroy(pthread_cond_t *cond) {
+    return destroy_wrapped<pthread_cond_t_resolver>(cond, &::pthread_cond_destroy);
+}
+
+int shim::pthread_condattr_init(pthread_condattr_t *attr) {
+    *attr = {false, bionic::clock_type::MONOTONIC};
+    return 0;
+}
+
+int shim::pthread_condattr_destroy(shim::pthread_condattr_t *attr) {
+    return 0;
+}
+
+int shim::pthread_condattr_setclock(shim::pthread_condattr_t *attr, int clock) {
+    if (clock != (int) bionic::clock_type::MONOTONIC &&
+        clock != (int) bionic::clock_type::REALTIME)
+        return EINVAL;
+    attr->clock = (bionic::clock_type) clock;
+    return 0;
+}
+
+int shim::pthread_condattr_getclock(const shim::pthread_condattr_t *attr, int *clock) {
+    *clock = (int) attr->clock;
+    return 0;
+}
 
 void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
     list.insert(list.end(), {
@@ -87,6 +128,16 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
         {"pthread_mutexattr_init", pthread_mutexattr_init},
         {"pthread_mutexattr_destroy", pthread_mutexattr_destroy},
         {"pthread_mutexattr_settype", pthread_mutexattr_settype},
-        {"pthread_mutexattr_gettype", pthread_mutexattr_gettype}
+        {"pthread_mutexattr_gettype", pthread_mutexattr_gettype},
+
+        {"pthread_cond_init", pthread_cond_init},
+        {"pthread_cond_destroy", pthread_cond_destroy},
+        {"pthread_cond_wait", ArgRewritten(::pthread_cond_wait)},
+        {"pthread_cond_broadcast", ArgRewritten(::pthread_cond_broadcast)},
+        {"pthread_cond_timedwait", ArgRewritten(::pthread_cond_timedwait)},
+        {"pthread_condattr_init", pthread_condattr_init},
+        {"pthread_condattr_destroy", pthread_condattr_destroy},
+        {"pthread_condattr_setclock", pthread_condattr_setclock},
+        {"pthread_condattr_getclock", pthread_condattr_getclock},
     });
 }
