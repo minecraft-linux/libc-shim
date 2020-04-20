@@ -25,7 +25,8 @@ namespace shim {
 
         enum class socktype : int {
             STREAM = 1,
-            DGRAM = 2
+            DGRAM = 2,
+            RAW = 3
         };
 
         enum class ipproto : int {
