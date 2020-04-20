@@ -25,6 +25,18 @@ namespace shim {
         template <typename T>
         struct arg_rewrite : nop_arg_rewrite<T> {};
 
+
+        template <typename T>
+        struct destroy_invoker {
+            T t;
+            destroy_invoker(T const &t) : t(t) {}
+            ~destroy_invoker() { t(); }
+        };
+        template <typename T>
+        destroy_invoker<T> make_destroy_invoker(T const &t) {
+            return destroy_invoker<T>(t);
+        }
+
         template <typename ...Args>
         struct arg_rewriter_impl;
         template <typename Arg, typename ...Args>
@@ -33,9 +45,8 @@ namespace shim {
             static auto rewrite(Invoke const &invoke, RArgs... rargs, typename arg_rewrite<Arg>::source arg, typename arg_rewrite<Args>::source... args) {
                 arg_rewrite<Arg> rewritten;
                 auto value = rewritten.before(arg);
-                auto ret = arg_rewriter_impl<Args...>::template rewrite<Invoke, RArgs..., typeof(value)>(invoke, rargs..., value, args...);
-                rewritten.after(arg);
-                return ret;
+                auto i = make_destroy_invoker ([&rewritten, &arg] { rewritten.after(arg); });
+                return arg_rewriter_impl<Args...>::template rewrite<Invoke, RArgs..., typeof(value)>(invoke, rargs..., value, args...);
             }
         };
         template <>
