@@ -27,7 +27,7 @@ namespace shim {
         };
 
         template <>
-        auto to_host<sem_t>(sem_t const *m) { return m->wrapped; }
+        inline auto to_host<sem_t>(sem_t const *m) { return m->wrapped; }
 
     }
 

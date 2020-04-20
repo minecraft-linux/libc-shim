@@ -33,11 +33,11 @@ namespace shim {
         };
 
         template <>
-        auto to_host<pthread_mutex_t>(pthread_mutex_t const *m) { return m->wrapped; }
+        inline auto to_host<pthread_mutex_t>(pthread_mutex_t const *m) { return m->wrapped; }
         template <>
-        auto to_host<pthread_cond_t>(pthread_cond_t const *m) { return m->wrapped; }
+        inline auto to_host<pthread_cond_t>(pthread_cond_t const *m) { return m->wrapped; }
         template <>
-        auto to_host<pthread_rwlock_t>(pthread_rwlock_t const *m) { return m->wrapped; }
+        inline auto to_host<pthread_rwlock_t>(pthread_rwlock_t const *m) { return m->wrapped; }
 
         enum class mutex_type : uint32_t {
             NORMAL = 0,

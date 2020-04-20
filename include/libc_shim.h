@@ -13,6 +13,6 @@ namespace shim {
             : name(name), value((void (*)()) ptr) {}
     };
 
-    static std::vector<shimmed_symbol> get_shimmed_symbols();
+    std::vector<shimmed_symbol> get_shimmed_symbols();
 
 }
