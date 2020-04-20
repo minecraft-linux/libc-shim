@@ -44,6 +44,12 @@ namespace shim {
             file->_flags = (short) (feof_unlocked(file->wrapped) ? 0x0020 : 0);
         }
 
+#if defined(__LP64__)
+        using off_t = ::off_t;
+#else
+        using off_t = int32_t;
+#endif
+
     }
 
     bionic::FILE *fopen(const char *filename, const char *mode);
@@ -67,6 +73,10 @@ namespace shim {
     int fscanf(bionic::FILE* fp, const char *fmt, ...);
 
     int vfscanf(bionic::FILE* fp, const char *fmt, va_list va);
+
+    int fseeko(bionic::FILE* fp, bionic::off_t off, int whence);
+
+    bionic::off_t ftello(bionic::FILE* fp);
 
     void add_cstdio_shimmed_symbols(std::vector<shimmed_symbol> &list);
 

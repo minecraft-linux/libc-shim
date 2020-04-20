@@ -67,7 +67,7 @@ int shim::pclose(bionic::FILE *file) {
     return ret;
 }
 
-size_t shim::fread(void *ptr, size_t size, size_t n, shim::bionic::FILE *file) {
+size_t shim::fread(void *ptr, size_t size, size_t n, bionic::FILE *file) {
     auto ret = ::fread(ptr, size, n, file->wrapped);
     update_feof(file);
     return ret;
@@ -90,10 +90,18 @@ int shim::fscanf(bionic::FILE *fp, const char *fmt, ...) {
     return ret;
 }
 
-int shim::vfscanf(shim::bionic::FILE *fp, const char *fmt, va_list va) {
+int shim::vfscanf(bionic::FILE *fp, const char *fmt, va_list va) {
     int ret = vfscanf(fp->wrapped, fmt, va);
     update_feof(fp);
     return ret;
+}
+
+int shim::fseeko(bionic::FILE *fp, bionic::off_t off, int whence) {
+    return ::fseeko(fp->wrapped, (off_t) off, whence);
+}
+
+bionic::off_t shim::ftello(bionic::FILE *fp) {
+    return (bionic::off_t) ::ftello(fp->wrapped);
 }
 
 void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
@@ -114,6 +122,8 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"feof", AutoArgRewritten(::feof)},
         {"fseek", AutoArgRewritten(::fseek)},
         {"ftell", AutoArgRewritten(::ftell)},
+        {"fseeko", fseeko},
+        {"ftello", ftello},
         {"ferror", AutoArgRewritten(::ferror)},
         {"ferror", AutoArgRewritten(::ferror)},
         {"fflush", AutoArgRewritten(::fflush)},
