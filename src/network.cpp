@@ -325,10 +325,22 @@ ssize_t shim::send(int sockfd, const void *buf, size_t len, int flags) {
     return ::send(sockfd, buf, len, flags);
 }
 
+ssize_t shim::sendmsg(int sockfd, const msghdr *data, int flags) {
+    if (flags != 0)
+        throw std::runtime_error("sendmsg with unsupported flags");
+    return ::sendmsg(sockfd, data, flags);
+}
+
 ssize_t shim::recv(int sockfd, void *buf, size_t len, int flags) {
     if (flags != 0)
         throw std::runtime_error("recv with unsupported flags");
     return ::recv(sockfd, buf, len, flags);
+}
+
+ssize_t shim::recvmsg(int sockfd, struct msghdr *data, int flags) {
+    if (flags != 0)
+        throw std::runtime_error("recvmsg with unsupported flags");
+    return ::recvmsg(sockfd, data, flags);
 }
 
 ssize_t shim::sendto(int sockfd, const void *buf, size_t len, int flags, const ::sockaddr *addr, socklen_t addrlen) {
@@ -398,8 +410,10 @@ void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) 
         {"bind", &detail::arg_rewrite_helper<int (int, const ::sockaddr *, socklen_t)>::rewrite<::bind>},
         {"connect", &detail::arg_rewrite_helper<int (int, const ::sockaddr *, socklen_t)>::rewrite<::connect>},
         {"send", send},
+        {"sendmsg", sendmsg},
         {"sendto", AutoArgRewritten(sendto)},
         {"recv", recv},
+        {"recvmsg", recvmsg},
         {"recvfrom", recvfrom},
         {"getsockname", getsockname},
         {"getpeername", getpeername},
