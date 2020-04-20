@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include "common.h"
 #include "pthreads.h"
+#include "semaphore.h"
 
 using namespace shim;
 
@@ -17,5 +18,6 @@ int bionic::to_host_clock_type(bionic::clock_type type) {
 std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     std::vector<shimmed_symbol> ret;
     add_pthread_shimmed_symbols(ret);
+    add_sem_shimmed_symbols(ret);
     return ret;
 }

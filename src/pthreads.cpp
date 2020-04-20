@@ -79,30 +79,6 @@ host_condattr::~host_condattr() {
     ::pthread_condattr_destroy(&attr);
 }
 
-template <typename Resolver, typename... Args>
-int make_wrapped(typename Resolver::type *object, int (*constructor)(typename Resolver::host_type *, Args...), Args... args) {
-    if constexpr (Resolver::is_wrapped) {
-        object->wrapped = new typename Resolver::host_type;
-        int ret = constructor(object->wrapped, args...);
-        if (!ret)
-            delete object->wrapped;
-        return ret;
-    } else {
-        return constructor(&object, args...);
-    }
-}
-
-template <typename Resolver>
-int destroy_wrapped(typename Resolver::type *object, int (*destructor)(typename Resolver::host_type *)) {
-    if constexpr (Resolver::is_wrapped) {
-        int ret = destructor(object->wrapped);
-        free(object->wrapped);
-        return ret;
-    } else {
-        return destructor(&object);
-    }
-}
-
 static_assert(sizeof(pthread_t) <= sizeof(long), "pthread_t larger than bionic's not supported");
 
 int shim::pthread_create(pthread_t *thread, const shim::pthread_attr_t *attr, void *(*fn)(void *), void *arg) {
@@ -134,7 +110,7 @@ int shim::pthread_getschedparam(pthread_t thread, shim::bionic::sched_policy *po
 }
 
 int shim::pthread_attr_init(pthread_attr_t *attr) {
-    *attr = pthread_attr_t{false, false, 0, nullptr, 0, 0, 0, 0};
+    *attr = pthread_attr_t{false, false, 0, nullptr, 0, 0, bionic::sched_policy::OTHER, 0};
     return 0;
 }
 
@@ -178,11 +154,11 @@ int shim::pthread_attr_getstacksize(shim::pthread_attr_t *attr, size_t *value) {
 
 int shim::pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr) {
     host_mutexattr hattr (attr);
-    return make_wrapped<pthread_mutex_t_resolver, const ::pthread_mutexattr_t *>(mutex, &::pthread_mutex_init, &hattr.attr);
+    return detail::make_c_wrapped<pthread_mutex_t_resolver, const ::pthread_mutexattr_t *>(mutex, &::pthread_mutex_init, &hattr.attr);
 }
 
 int shim::pthread_mutex_destroy(pthread_mutex_t *mutex) {
-    return destroy_wrapped<pthread_mutex_t_resolver>(mutex, &::pthread_mutex_destroy);
+    return detail::destroy_c_wrapped<pthread_mutex_t_resolver>(mutex, &::pthread_mutex_destroy);
 }
 
 int shim::pthread_mutexattr_init(pthread_mutexattr_t *attr) {
@@ -208,11 +184,11 @@ int shim::pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type) 
 
 int shim::pthread_cond_init(pthread_cond_t *cond, const shim::pthread_condattr_t *attr) {
     host_condattr hattr (attr);
-    return make_wrapped<pthread_cond_t_resolver, const ::pthread_condattr_t *>(cond, &::pthread_cond_init, &hattr.attr);
+    return detail::make_c_wrapped<pthread_cond_t_resolver, const ::pthread_condattr_t *>(cond, &::pthread_cond_init, &hattr.attr);
 }
 
 int shim::pthread_cond_destroy(pthread_cond_t *cond) {
-    return destroy_wrapped<pthread_cond_t_resolver>(cond, &::pthread_cond_destroy);
+    return detail::destroy_c_wrapped<pthread_cond_t_resolver>(cond, &::pthread_cond_destroy);
 }
 
 int shim::pthread_condattr_init(pthread_condattr_t *attr) {
@@ -240,11 +216,11 @@ int shim::pthread_condattr_getclock(const pthread_condattr_t *attr, int *clock) 
 int shim::pthread_rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr) {
     if (attr != nullptr)
         throw std::runtime_error("non-NULL rwlock attr is currently not supported");
-    return make_wrapped<pthread_rwlock_t_resolver, const ::pthread_rwlockattr_t *>(rwlock, &::pthread_rwlock_init, nullptr);
+    return detail::make_c_wrapped<pthread_rwlock_t_resolver, const ::pthread_rwlockattr_t *>(rwlock, &::pthread_rwlock_init, nullptr);
 }
 
 int shim::pthread_rwlock_destroy(pthread_rwlock_t *rwlock) {
-    return destroy_wrapped<pthread_rwlock_t_resolver>(rwlock, &::pthread_rwlock_destroy);
+    return detail::destroy_c_wrapped<pthread_rwlock_t_resolver>(rwlock, &::pthread_rwlock_destroy);
 }
 
 int shim::pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {

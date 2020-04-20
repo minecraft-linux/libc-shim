@@ -25,6 +25,32 @@ namespace shim {
             using type = typename type_resolver<is_wrapped, Wrapper, Host>::type;
         };
 
+
+
+        template <typename Resolver, typename... Args>
+        int make_c_wrapped(typename Resolver::type *object, int (*constructor)(typename Resolver::host_type *, Args...), Args... args) {
+            if constexpr (Resolver::is_wrapped) {
+                object->wrapped = new typename Resolver::host_type;
+                int ret = constructor(object->wrapped, args...);
+                if (!ret)
+                    delete object->wrapped;
+                return ret;
+            } else {
+                return constructor(&object, args...);
+            }
+        }
+
+        template <typename Resolver>
+        int destroy_c_wrapped(typename Resolver::type *object, int (*destructor)(typename Resolver::host_type *)) {
+            if constexpr (Resolver::is_wrapped) {
+                int ret = destructor(object->wrapped);
+                free(object->wrapped);
+                return ret;
+            } else {
+                return destructor(&object);
+            }
+        }
+
     }
 
 }
