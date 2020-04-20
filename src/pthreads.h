@@ -53,6 +53,24 @@ namespace shim {
             clock_type clock : 2;
         };
 
+        struct pthread_attr_t {
+            bool detached : 1;
+            bool user_stack : 1;
+            uint32_t filler : 32-2;
+            void* stack_base;
+            size_t stack_size;
+            size_t guard_size;
+            int sched_policy;
+            int sched_priority;
+#if defined(__LP64__)
+            int64_t priv[2];
+#endif
+        };
+
+        struct sched_param {
+            int sched_priority;
+        };
+
         struct pthread_cleanup_t {
             pthread_cleanup_t *prev;
             void (*routine)(void *);
@@ -69,6 +87,8 @@ namespace shim {
 
     }
 
+    using pthread_attr_t = bionic::pthread_attr_t;
+
     using pthread_mutex_t_resolver = detail::wrapper_type_resolver<::pthread_mutex_t, bionic::pthread_mutex_t>;
     using pthread_mutex_t = pthread_mutex_t_resolver::type;
     using pthread_mutexattr_t = bionic::pthread_mutexattr_t;
@@ -79,6 +99,16 @@ namespace shim {
 
     using pthread_rwlock_t_resolver = detail::wrapper_type_resolver<::pthread_rwlock_t, bionic::pthread_rwlock_t>;
     using pthread_rwlock_t = pthread_rwlock_t_resolver::type;
+
+    struct host_pthread_attr {
+
+        ::pthread_attr_t attr;
+
+        host_pthread_attr(bionic::pthread_attr_t const *bionic_attr);
+
+        ~host_pthread_attr();
+
+    };
 
     struct host_mutexattr {
 
@@ -100,13 +130,24 @@ namespace shim {
 
     };
 
+    int pthread_create(pthread_t *thread, pthread_attr_t const *attr, void* (*fn)(void *), void *arg);
+
+    int pthread_attr_init(pthread_attr_t *attr);
+    int pthread_attr_destroy(pthread_attr_t *attr);
+    int pthread_attr_setdetachstate(pthread_attr_t *attr, int value);
+    int pthread_attr_getdetachstate(pthread_attr_t *attr, int *value);
+    int pthread_attr_setschedparam(pthread_attr_t *attr, const bionic::sched_param *value);
+    int pthread_attr_getschedparam(pthread_attr_t *attr, bionic::sched_param *value);
+    int pthread_attr_setstacksize(pthread_attr_t *attr, size_t value);
+    int pthread_attr_getstacksize(pthread_attr_t *attr, size_t *value);
+
     int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr);
     int pthread_mutex_destroy(pthread_mutex_t *mutex);
 
     int pthread_mutexattr_init(pthread_mutexattr_t *attr);
     int pthread_mutexattr_destroy(pthread_mutexattr_t *attr);
-    int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type);
     int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
+    int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type);
 
     int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr);
     int pthread_cond_destroy(pthread_cond_t* cond);

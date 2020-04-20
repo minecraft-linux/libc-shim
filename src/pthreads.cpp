@@ -1,5 +1,6 @@
 #include <cerrno>
 #include <stdexcept>
+#include <limits.h>
 #include "pthreads.h"
 
 using namespace shim;
@@ -21,6 +22,25 @@ int bionic::to_host_mutex_type(bionic::mutex_type type) {
         case mutex_type::ERRORCHECK: return PTHREAD_MUTEX_ERRORCHECK;
         default: throw std::runtime_error("Invalid mutex type");
     }
+}
+
+host_pthread_attr::host_pthread_attr(shim::pthread_attr_t const *bionic_attr) {
+    ::pthread_attr_init(&attr);
+    if (bionic_attr) {
+        ::pthread_attr_setdetachstate(&attr, bionic_attr->detached ? PTHREAD_CREATE_DETACHED : PTHREAD_CREATE_JOINABLE);
+        if (bionic_attr->stack_size)
+            ::pthread_attr_setstacksize(&attr, bionic_attr->stack_size);
+        if (bionic_attr->sched_priority) {
+            sched_param param;
+            ::pthread_attr_getschedparam(&attr, &param);
+            param.sched_priority = bionic_attr->sched_priority;
+            ::pthread_attr_setschedparam(&attr, &param);
+        }
+    }
+}
+
+host_pthread_attr::~host_pthread_attr() {
+    ::pthread_attr_destroy(&attr);
 }
 
 host_mutexattr::host_mutexattr(pthread_mutexattr_t const *bionic_attr) {
@@ -65,6 +85,56 @@ int destroy_wrapped(typename Resolver::type *object, int (*destructor)(typename 
     } else {
         return destructor(&object);
     }
+}
+
+static_assert(sizeof(pthread_t) <= sizeof(long), "pthread_t larger than bionic's not supported");
+
+int shim::pthread_create(pthread_t *thread, const shim::pthread_attr_t *attr, void *(*fn)(void *), void *arg) {
+    host_pthread_attr hattr (attr);
+    return pthread_create(thread, &hattr.attr, fn, arg);
+}
+
+int shim::pthread_attr_init(pthread_attr_t *attr) {
+    *attr = pthread_attr_t{false, false, 0, nullptr, 0, 0, 0, 0};
+    return 0;
+}
+
+int shim::pthread_attr_destroy(shim::pthread_attr_t *attr) {
+    return 0;
+}
+
+int shim::pthread_attr_setdetachstate(shim::pthread_attr_t *attr, int value) {
+    if (value != 0 && value != 1)
+        return EINVAL;
+    attr->detached = value;
+    return 0;
+}
+
+int shim::pthread_attr_getdetachstate(shim::pthread_attr_t *attr, int *value) {
+    *value = attr->detached;
+    return 0;
+}
+
+int shim::pthread_attr_setschedparam(shim::pthread_attr_t *attr, const shim::bionic::sched_param *value) {
+    attr->sched_priority = value->sched_priority;
+    return 0;
+}
+
+int shim::pthread_attr_getschedparam(shim::pthread_attr_t *attr, shim::bionic::sched_param *value) {
+    value->sched_priority = attr->sched_priority;
+    return 0;
+}
+
+int shim::pthread_attr_setstacksize(shim::pthread_attr_t *attr, size_t value) {
+    if (value < PTHREAD_STACK_MIN)
+        return 0;
+    attr->stack_size = value;
+    return 0;
+}
+
+int shim::pthread_attr_getstacksize(shim::pthread_attr_t *attr, size_t *value) {
+    *value = attr->stack_size;
+    return 0;
 }
 
 int shim::pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr) {
@@ -153,6 +223,16 @@ void shim::pthread_cleanup_pop_impl(shim::bionic::pthread_cleanup_t *c, int exec
 
 void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
     list.insert(list.end(), {
+        {"pthread_create", pthread_create},
+        {"pthread_attr_init", pthread_attr_init},
+        {"pthread_attr_destroy", pthread_attr_destroy},
+        {"pthread_attr_setdetachstate", pthread_attr_setdetachstate},
+        {"pthread_attr_getdetachstate", pthread_attr_getdetachstate},
+        {"pthread_attr_setschedparam", pthread_attr_setschedparam},
+        {"pthread_attr_getschedparam", pthread_attr_getschedparam},
+        {"pthread_attr_setstacksize", pthread_attr_setstacksize},
+        {"pthread_attr_getstacksize", pthread_attr_getstacksize},
+
         {"pthread_mutex_init", pthread_mutex_init},
         {"pthread_mutex_destroy", pthread_mutex_destroy},
         {"pthread_mutex_lock", ArgRewritten(::pthread_mutex_lock)},
