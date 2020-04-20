@@ -214,6 +214,10 @@ int bionic::to_host_nameinfo_flags(bionic::nameinfo_flags flags) {
     return ret;
 }
 
+int shim::socket(bionic::af_family domain, bionic::socktype type, bionic::ipproto proto) {
+    return ::socket(bionic::to_host_af_family(domain), bionic::to_host_socktype(type), bionic::to_host_ipproto(proto));
+}
+
 int shim::getaddrinfo(const char *node, const char *service, const bionic::addrinfo *hints, bionic::addrinfo **res) {
     auto hhints = bionic::to_host_alloc(hints);
     ::addrinfo *hres;
@@ -236,8 +240,19 @@ int shim::getnameinfo(const ::sockaddr *addr, socklen_t addrlen, char *host, soc
             bionic::to_host_nameinfo_flags(flags));
 }
 
+ssize_t shim::sendto(int sockfd, const void *buf, size_t len, int flags, const ::sockaddr *addr, socklen_t addrlen) {
+    if (flags != 0)
+        throw std::runtime_error("sendto with unsupported flags");
+    return ::sendto(sockfd, buf, len, flags, addr, addrlen);
+}
+
 void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
+        {"socket", socket},
+        {"bind", &detail::arg_rewrite_helper<int (int, const ::sockaddr *, socklen_t)>::rewrite<::bind>},
+        {"connect", &detail::arg_rewrite_helper<int (int, const ::sockaddr *, socklen_t)>::rewrite<::connect>},
+        {"sendto", AutoArgRewritten(sendto)},
+
         {"getaddrinfo", getaddrinfo},
         {"freeaddrinfo", freeaddrinfo},
         {"getnameinfo", AutoArgRewritten(getnameinfo)},

@@ -108,12 +108,16 @@ namespace shim {
 
     }
 
+    int socket(bionic::af_family domain, bionic::socktype type, bionic::ipproto proto);
+
     int getaddrinfo(const char *node, const char *service, const bionic::addrinfo *hints, bionic::addrinfo **res);
 
     void freeaddrinfo(bionic::addrinfo *ai);
 
     int getnameinfo(const ::sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen,
             char *serv, socklen_t servlen, bionic::nameinfo_flags flags);
+
+    ssize_t sendto(int sockfd, const void *buf, size_t len, int flags, const ::sockaddr *addr, socklen_t addrlen);
 
     void add_network_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
