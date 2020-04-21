@@ -26,6 +26,7 @@ int bionic::to_host_file_status_flags(bionic::file_status_flags flags) {
     if ((uint32_t) flags & (uint32_t) flag::TRUNC) ret |= O_TRUNC;
     if ((uint32_t) flags & (uint32_t) flag::APPEND) ret |= O_APPEND;
     if ((uint32_t) flags & (uint32_t) flag::NONBLOCK) ret |= O_NONBLOCK;
+    if ((uint32_t) flags & (uint32_t) flag::CLOEXEC) ret |= O_CLOEXEC;
     return ret;
 }
 

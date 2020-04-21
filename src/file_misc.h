@@ -18,8 +18,9 @@ namespace shim {
             TRUNC = 01000,
             APPEND = 02000,
             NONBLOCK = 04000,
+            CLOEXEC = 02000000,
 
-            KNOWN_FLAGS = RDONLY|WRONLY|RDWR|CREAT|EXCL|NOCTTY|TRUNC|APPEND|NONBLOCK
+            KNOWN_FLAGS = RDONLY|WRONLY|RDWR|CREAT|EXCL|NOCTTY|TRUNC|APPEND|NONBLOCK|CLOEXEC
         };
 
         int to_host_file_status_flags(bionic::file_status_flags flags);
