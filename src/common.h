@@ -106,4 +106,6 @@ namespace shim {
 
     void add_prctl_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
+    void add_setjmp_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
 }

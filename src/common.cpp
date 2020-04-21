@@ -18,10 +18,11 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
+#include <setjmp.h>
+#include <log.h>
 #ifndef __APPLE__
 #include <sys/prctl.h>
 #include <sys/auxv.h>
-#include <log.h>
 #endif
 
 using namespace shim;
@@ -34,6 +35,11 @@ extern "C" long __divdi3(long a, long b);
 
 extern "C" int __cxa_atexit(void (*)(void*), void*, void*);
 extern "C" void __cxa_finalize(void * d);
+
+#ifdef USE_BIONIC_SETJMP
+extern "C" void bionic_setjmp();
+extern "C" void bionic_longjmp();
+#endif
 
 uintptr_t bionic::stack_chk_guard = []() {
 #ifndef __APPLE__
@@ -485,6 +491,18 @@ void shim::add_prctl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.push_back({"prctl", prctl});
 }
 
+void shim::add_setjmp_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+#ifdef USE_BIONIC_SETJMP
+        {"setjmp", bionic_setjmp},
+        {"longjmp", bionic_longjmp},
+#else
+        {"setjmp", _setjmp},
+        {"longjmp", longjmp},
+#endif
+    });
+}
+
 std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     std::vector<shimmed_symbol> ret;
     add_common_shimmed_symbols(ret);
@@ -507,5 +525,6 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_mman_shimmed_symbols(ret);
     add_resource_shimmed_symbols(ret);
     add_prctl_shimmed_symbols(ret);
+    add_setjmp_shimmed_symbols(ret);
     return ret;
 }
