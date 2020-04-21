@@ -538,5 +538,6 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_setjmp_shimmed_symbols(ret);
     add_ioctl_shimmed_symbols(ret);
     add_fcntl_shimmed_symbols(ret);
+    add_poll_select_shimmed_symbols(ret);
     return ret;
 }

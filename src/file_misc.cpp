@@ -89,6 +89,39 @@ int shim::fcntl(int fd, bionic::fcntl_index cmd, void *arg) {
     }
 }
 
+int shim::poll_via_select(struct pollfd *fds, nfds_t nfds, int timeout) {
+    // Mac OS has a broken poll implementation
+    struct timeval t;
+    t.tv_sec = timeout / 1000;
+    t.tv_usec = (timeout % 1000) * 1000;
+
+    fd_set r_fdset, w_fdset, e_fdset;
+    int maxfd = 0;
+    FD_ZERO(&r_fdset);
+    FD_ZERO(&w_fdset);
+    FD_ZERO(&e_fdset);
+    for (nfds_t i = 0; i < nfds; i++) {
+        if (fds[i].fd > maxfd)
+            maxfd = fds[i].fd;
+        if (fds[i].events & POLLIN || fds[i].events & POLLPRI)
+            FD_SET(fds[i].fd, &r_fdset);
+        if (fds[i].events & POLLOUT)
+            FD_SET(fds[i].fd, &w_fdset);
+        FD_SET(fds[i].fd, &e_fdset);
+    }
+    int ret = select(maxfd + 1, &r_fdset, &w_fdset, &e_fdset, &t);
+    for (nfds_t i = 0; i < nfds; i++) {
+        fds[i].revents = 0;
+        if (FD_ISSET(fds[i].fd, &r_fdset))
+            fds[i].revents |= POLLIN;
+        if (FD_ISSET(fds[i].fd, &w_fdset))
+            fds[i].revents |= POLLOUT;
+        if (FD_ISSET(fds[i].fd, &e_fdset))
+            fds[i].revents |= POLLERR;
+    }
+    return ret;
+}
+
 void shim::add_ioctl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.push_back({"ioctl", ioctl});
 }
@@ -97,5 +130,16 @@ void shim::add_fcntl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"open", open},
         {"fcntl", fcntl},
+    });
+}
+
+void shim::add_poll_select_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+#ifdef __APPLE__
+        {"poll", poll_via_select},
+#else
+        {"poll", ::poll},
+#endif
+        {"select", ::select},
     });
 }

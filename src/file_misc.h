@@ -1,6 +1,7 @@
 #pragma once
 
 #include <libc_shim.h>
+#include <poll.h>
 #include "common.h"
 
 namespace shim {
@@ -51,8 +52,12 @@ namespace shim {
 
     int fcntl(int fd, bionic::fcntl_index cmd, void *arg);
 
+    int poll_via_select(struct pollfd *fds, nfds_t nfds, int timeout);
+
     void add_ioctl_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     void add_fcntl_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
+    void add_poll_select_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
 }
