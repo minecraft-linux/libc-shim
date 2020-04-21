@@ -13,7 +13,14 @@ namespace shim {
 
         int to_host_clock_type(clock_type type);
 
+        extern uintptr_t stack_chk_guard;
+
+        void on_stack_chk_fail();
+
     }
+
+    void assert(const char* file, int line, const char* msg);
+    void assert2(const char* file, int line, const char* function, const char* msg);
 
     void add_common_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
