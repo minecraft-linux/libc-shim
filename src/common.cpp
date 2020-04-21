@@ -13,6 +13,8 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <wctype.h>
+#include <signal.h>
+#include <string.h>
 #ifndef __APPLE__
 #include <sys/auxv.h>
 #endif
@@ -57,6 +59,15 @@ void shim::assert(const char *file, int line, const char *msg) {
 void shim::assert2(const char *file, int line, const char *function, const char *msg) {
     fprintf(stderr, "assert failed: %s:%i %s: %s\n", file, line, function, msg);
     abort();
+}
+
+size_t shim::strlen_chk(const char *str, size_t max_len) {
+    auto ret = strlen(str);
+    if (ret >= max_len) {
+        fprintf(stderr, "strlen_chk: string longer than expected\n");
+        abort();
+    }
+    return ret;
 }
 
 #ifndef __LP64__
@@ -298,6 +309,56 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     });
 }
 
+void shim::add_signal_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+        {"signal", signal},
+        {"bsd_signal", signal},
+        {"kill", kill},
+        {"killpg", killpg},
+        {"raise", raise},
+        {"sigaction", sigaction},
+        {"sigprocmask", sigprocmask}
+    });
+}
+
+void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+        {"memccpy", ::memccpy},
+        {"memchr", (void *(*)(void *, int, size_t)) ::memchr},
+        {"memcmp", (int (*)(const void *, const void *, size_t)) ::memcmp},
+        {"memcpy", ::memcpy},
+        {"memmove", ::memmove},
+        {"memset", ::memset},
+        {"memmem", ::memmem},
+        {"strchr", (char *(*)(char *, int)) ::strchr},
+        {"strrchr", (char *(*)(char *, int)) ::strrchr},
+        {"strlen", ::strlen},
+        {"__strlen_chk", strlen_chk},
+        {"strcmp", ::strcmp},
+        {"strcpy", ::strcpy},
+        {"strcat", ::strcat},
+        {"strdup", ::strdup},
+        {"strstr", (char *(*)(char *, const char *)) ::strstr},
+        {"strtok", ::strtok},
+        {"strtok_r", ::strtok_r},
+        {"strerror", ::strerror},
+        {"strerror_r", ::strerror_r},
+        {"strnlen", ::strnlen},
+        {"strncat", ::strncat},
+        {"strndup", ::strndup},
+        {"strncmp", ::strncmp},
+        {"strncpy", ::strncpy},
+        // TODO: {"strlcpy", strlcpy},
+        {"strcspn", ::strcspn},
+        {"strpbrk", (char *(*)(char *, const char *)) ::strpbrk},
+        {"strsep", ::strsep},
+        {"strspn", ::strspn},
+        {"strsignal", ::strsignal},
+        {"strcoll", ::strcoll},
+        {"strxfrm", ::strxfrm},
+    });
+}
+
 void shim::add_wchar_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         /* wchar.h */
@@ -333,6 +394,8 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_time_shimmed_symbols(ret);
     add_sched_shimmed_symbols(ret);
     add_unistd_shimmed_symbols(ret);
+    add_signal_shimmed_symbols(ret);
+    add_string_shimmed_symbols(ret);
     add_wchar_shimmed_symbols(ret);
     add_pthread_shimmed_symbols(ret);
     add_sem_shimmed_symbols(ret);

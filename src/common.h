@@ -28,6 +28,8 @@ namespace shim {
     void assert(const char* file, int line, const char* msg);
     void assert2(const char* file, int line, const char* function, const char* msg);
 
+    size_t strlen_chk(const char *str, size_t max_len);
+
 #ifndef __LP64__
     /* Bionic uses a 32-bit off_t; this doesn't match up on Darwin so let's
      * overkill and apply it on all 32-bit platforms. */
@@ -56,6 +58,10 @@ namespace shim {
     void add_sched_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     void add_unistd_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
+    void add_signal_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
+    void add_string_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     void add_wchar_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
