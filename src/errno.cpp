@@ -7,6 +7,16 @@ char *shim::strerror(int err) {
     return ::strerror(bionic::translate_errno_to_host(err));
 }
 
+int shim::strerror_r(int err, char* buf, size_t len) {
+#ifdef __USE_GNU
+    if (::strerror_r(bionic::translate_errno_to_host(err), buf, len) != nullptr)
+        return 0;
+    return -1;
+#else
+    return ::strerror_r(bionic::translate_errno_to_host(err), buf, len);
+#endif
+}
+
 int* shim::bionic::errno_with_translation() {
     int* ret = &errno;
     *ret = translate_errno_from_host(*ret);

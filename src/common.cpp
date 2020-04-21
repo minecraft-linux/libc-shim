@@ -24,6 +24,7 @@
 #include <setjmp.h>
 #include <utime.h>
 #include <sys/uio.h>
+#include <syslog.h>
 #ifndef __APPLE__
 #include <sys/prctl.h>
 #include <sys/auxv.h>
@@ -98,6 +99,10 @@ void shim::assert(const char *file, int line, const char *msg) {
 void shim::assert2(const char *file, int line, const char *function, const char *msg) {
     fprintf(stderr, "assert failed: %s:%i %s: %s\n", file, line, function, msg);
     abort();
+}
+
+void shim::android_set_abort_message(const char *msg) {
+    fprintf(stderr, "abort message: %s\n", msg);
 }
 
 size_t shim::strlen_chk(const char *str, size_t max_len) {
@@ -182,6 +187,8 @@ void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"__assert", assert},
         {"__assert2", assert2},
 
+        {"android_set_abort_message", android_set_abort_message},
+
         {"__cxa_atexit", ::__cxa_atexit},
         {"__cxa_finalize", ::__cxa_finalize}
     });
@@ -229,11 +236,13 @@ void shim::add_stdlib_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"strtold", strtold},
         {"strtol", strtol},
         {"strtoul", strtoul},
+        {"strtoul_l", strtoul_l},
         {"strtoq", strtoq},
         {"strtouq", strtouq},
         {"strtoll", strtoll},
+        {"strtoll_l", strtoll_l},
         {"strtoull", strtoull},
-        {"strtoul_l", strtoul_l},
+        {"strtoull_l", strtoull_l},
         {"strtof_l", strtof_l},
         {"strtold_l", strtold_l},
 
@@ -245,7 +254,7 @@ void shim::add_stdlib_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"wctomb", wctomb},
         {"mbstowcs", mbstowcs},
         {"wcstombs", wcstombs},
-        {"wcsrtombs", wcsrtombs},
+        {"wcsrtombs", wcsrtombs}
     });
 }
 
@@ -283,6 +292,8 @@ void shim::add_ctype_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 
         {"tolower", ::tolower},
         {"toupper", ::toupper},
+
+        {"__ctype_get_mb_cur_max", __ctype_get_mb_cur_max}
     });
 }
 
@@ -422,6 +433,7 @@ void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"strtok", ::strtok},
         {"strtok_r", ::strtok_r},
         {"strerror", strerror},
+        {"strerror_r", strerror_r},
         {"strnlen", ::strnlen},
         {"strncat", ::strncat},
         {"strndup", ::strndup},
@@ -464,6 +476,18 @@ void shim::add_wchar_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"wcscoll", ::wcscoll},
         {"wcsxfrm", ::wcsxfrm},
         {"wcsftime", ::wcsftime},
+        {"mbsrtowcs", ::mbsrtowcs},
+        {"mbsnrtowcs", ::mbsnrtowcs},
+        {"wcsnrtombs", ::wcsnrtombs},
+        {"mbrlen", mbrlen},
+        {"wcstol", wcstol},
+        {"wcstoul", wcstoul},
+        {"wcstoll", wcstoll},
+        {"wcstoull", wcstoull},
+        {"wcstof", wcstof},
+        {"wcstod", wcstod},
+        {"wcstold", wcstold},
+        {"swprintf", swprintf},
 
         /* wctype.h */
         {"wctype", ::wctype},
@@ -471,6 +495,16 @@ void shim::add_wchar_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"iswctype", ::iswctype},
         {"towlower", ::towlower},
         {"towupper", ::towupper},
+
+        {"iswlower",  iswlower},
+        {"iswprint",  iswprint},
+        {"iswblank",  iswblank},
+        {"iswcntrl",  iswcntrl},
+        {"iswupper",  iswupper},
+        {"iswalpha",  iswalpha},
+        {"iswdigit",  iswdigit},
+        {"iswpunct",  iswpunct},
+        {"iswxdigit", iswxdigit}
     });
 }
 
@@ -499,6 +533,9 @@ void shim::add_prctl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 
 void shim::add_locale_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
+        {"newlocale", newlocale},
+        {"uselocale", uselocale},
+        {"freelocale", freelocale},
         {"setlocale", setlocale},
         {"localeconv", localeconv}
     });
@@ -523,6 +560,10 @@ void shim::add_misc_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"utime", utime},
 
         {"writev", writev},
+
+        {"openlog", openlog},
+        {"closelog", closelog},
+        {"syslog", syslog},
     });
 }
 

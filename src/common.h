@@ -57,6 +57,8 @@ namespace shim {
     void assert(const char* file, int line, const char* msg);
     void assert2(const char* file, int line, const char* function, const char* msg);
 
+    void android_set_abort_message(const char *msg);
+
     size_t strlen_chk(const char *str, size_t max_len);
 
 #ifndef __LP64__

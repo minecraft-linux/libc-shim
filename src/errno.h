@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+
 namespace shim {
 
     namespace bionic {
@@ -17,5 +19,7 @@ namespace shim {
     }
 
     char *strerror(int err);
+
+    int strerror_r(int err, char* buf, size_t len);
 
 }
