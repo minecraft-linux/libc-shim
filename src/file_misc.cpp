@@ -9,6 +9,24 @@
 
 using namespace shim;
 
+int bionic::to_host_file_status_flags(bionic::file_status_flags flags) {
+    using flag = file_status_flags;
+    if (((uint32_t) flags & (~(uint32_t) flag::KNOWN_FLAGS)) != 0)
+        throw std::runtime_error("Unsupported fd flag used");
+
+    int ret = 0;
+    if ((uint32_t) flags & (uint32_t) flag::RDONLY) ret |= O_RDONLY;
+    if ((uint32_t) flags & (uint32_t) flag::WRONLY) ret |= O_WRONLY;
+    if ((uint32_t) flags & (uint32_t) flag::RDWR) ret |= O_RDWR;
+    if ((uint32_t) flags & (uint32_t) flag::CREAT) ret |= O_CREAT;
+    if ((uint32_t) flags & (uint32_t) flag::EXCL) ret |= O_EXCL;
+    if ((uint32_t) flags & (uint32_t) flag::NOCTTY) ret |= O_NOCTTY;
+    if ((uint32_t) flags & (uint32_t) flag::TRUNC) ret |= O_TRUNC;
+    if ((uint32_t) flags & (uint32_t) flag::APPEND) ret |= O_APPEND;
+    if ((uint32_t) flags & (uint32_t) flag::NONBLOCK) ret |= O_NONBLOCK;
+    return ret;
+}
+
 int shim::ioctl(int fd, bionic::ioctl_index cmd, void *arg) {
     switch (cmd) {
         case bionic::ioctl_index::FILE_NBIO:
@@ -36,12 +54,26 @@ int shim::ioctl(int fd, bionic::ioctl_index cmd, void *arg) {
     }
 }
 
+int shim::open(const char *pathname, bionic::file_status_flags flags, ...) {
+    va_list ap;
+    mode_t mode = 0;
+
+    int hflags = bionic::to_host_file_status_flags(flags);
+    if (hflags & O_CREAT) {
+        va_start(ap, flags);
+        mode = (mode_t) va_arg(ap, int);
+        va_end(ap);
+    }
+
+    return ::open(pathname, hflags, mode);
+}
+
 int shim::fcntl(int fd, bionic::fcntl_index cmd, void *arg) {
     switch (cmd) {
         case bionic::fcntl_index::SETFD:
             return ::fcntl(fd, F_SETFD, (int) arg);
         case bionic::fcntl_index::SETFL:
-            return ::fcntl(fd, F_SETFL, (int) arg);
+            return ::fcntl(fd, F_SETFL, to_host_file_status_flags((bionic::file_status_flags) (size_t) arg));
         case bionic::fcntl_index::SETLK: {
             auto afl = (bionic::flock *) arg;
             flock fl {};
@@ -62,5 +94,8 @@ void shim::add_ioctl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 }
 
 void shim::add_fcntl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
-    list.push_back({"fcntl", fcntl});
+    list.insert(list.end(), {
+        {"open", open},
+        {"fcntl", fcntl},
+    });
 }

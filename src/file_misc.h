@@ -7,6 +7,22 @@ namespace shim {
 
     namespace bionic {
 
+        enum class file_status_flags : int {
+            RDONLY = 00,
+            WRONLY = 01,
+            RDWR = 02,
+            CREAT = 0100,
+            EXCL = 0200,
+            NOCTTY = 0400,
+            TRUNC = 01000,
+            APPEND = 02000,
+            NONBLOCK = 04000,
+
+            KNOWN_FLAGS = RDONLY|WRONLY|RDWR|CREAT|EXCL|NOCTTY|TRUNC|APPEND|NONBLOCK
+        };
+
+        int to_host_file_status_flags(bionic::file_status_flags flags);
+
         enum class ioctl_index : unsigned long {
             FILE_NBIO = 0x5421,
 
@@ -30,6 +46,8 @@ namespace shim {
     }
 
     int ioctl(int fd, bionic::ioctl_index cmd, void *arg);
+
+    int open(const char *pathname, bionic::file_status_flags flags, ...);
 
     int fcntl(int fd, bionic::fcntl_index cmd, void *arg);
 
