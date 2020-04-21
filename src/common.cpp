@@ -122,6 +122,33 @@ void shim::add_stdlib_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"srand48", srand48},
         {"seed48", seed48},
         {"lcong48", lcong48},
+
+        {"atof", atof},
+        {"atoi", atoi},
+        {"atol", atol},
+        {"atoll", atoll},
+        {"strtod", strtod},
+        {"strtof", strtof},
+        {"strtold", strtold},
+        {"strtol", strtol},
+        {"strtoul", strtoul},
+        {"strtoq", strtoq},
+        {"strtouq", strtouq},
+        {"strtoll", strtoll},
+        {"strtoull", strtoull},
+        {"strtoul_l", strtoul_l},
+        {"strtof_l", strtof_l},
+        {"strtold_l", strtold_l},
+
+        {"realpath", realpath},
+        {"bsearch", bsearch},
+        {"qsort", qsort},
+        {"mblen", mblen},
+        {"mbtowc", mbtowc},
+        {"wctomb", wctomb},
+        {"mbstowcs", mbstowcs},
+        {"wcstombs", wcstombs},
+        {"wcsrtombs", wcsrtombs},
     });
 }
 
