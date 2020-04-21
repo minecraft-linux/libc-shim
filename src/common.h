@@ -21,6 +21,16 @@ namespace shim {
 
         int to_host_mmap_flags(mmap_flags flags);
 
+        enum class rlimit_resource : int {
+            NOFILE = 7
+        };
+
+        int to_host_rlimit_resource(rlimit_resource r);
+
+        struct rlimit {
+            unsigned long int rlim_cur, rlim_max;
+        };
+
 
         extern uintptr_t stack_chk_guard;
 
@@ -56,6 +66,10 @@ namespace shim {
 
     void *mmap(void *addr, size_t length, int prot, bionic::mmap_flags flags, int fd, bionic::off_t offset);
 
+    int getrusage(int who, void *usage);
+
+    int getrlimit(bionic::rlimit_resource res, bionic::rlimit *info);
+
     int clock_gettime(bionic::clock_type clock, struct timespec *ts);
 
     void add_common_shimmed_symbols(std::vector<shimmed_symbol> &list);
@@ -81,5 +95,7 @@ namespace shim {
     void add_wchar_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     void add_mman_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
+    void add_resource_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
 }

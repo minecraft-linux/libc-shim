@@ -17,8 +17,11 @@
 #include <signal.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/resource.h>
 #ifndef __APPLE__
 #include <sys/auxv.h>
+#include <log.h>
+
 #endif
 
 using namespace shim;
@@ -61,6 +64,13 @@ int bionic::to_host_mmap_flags(bionic::mmap_flags flags) {
     if ((uint32_t) flags & (uint32_t) mmap_flags::NORESERVE)
         ret |= MAP_NORESERVE;
     return ret;
+}
+
+int bionic::to_host_rlimit_resource(shim::bionic::rlimit_resource r) {
+    switch (r) {
+        case rlimit_resource::NOFILE: return RLIMIT_NOFILE;
+        default: throw std::runtime_error("Unknown rlimit resource");
+    }
 }
 
 void bionic::on_stack_chk_fail() {
@@ -114,6 +124,19 @@ void* shim::memalign(size_t alignment, size_t size) {
 
 void *shim::mmap(void *addr, size_t length, int prot, bionic::mmap_flags flags, int fd, bionic::off_t offset) {
     return ::mmap(addr, length, prot, bionic::to_host_mmap_flags(flags), fd, (::off_t) offset);
+}
+
+int shim::getrusage(int who, void *usage) {
+    Log::warn("Shim/Common", "getrusage is unsupported");
+    return -1;
+}
+
+int shim::getrlimit(bionic::rlimit_resource res, bionic::rlimit *info) {
+    ::rlimit hinfo {};
+    int ret = ::getrlimit(bionic::to_host_rlimit_resource(res), &hinfo);
+    info->rlim_cur = hinfo.rlim_cur;
+    info->rlim_max = hinfo.rlim_max;
+    return ret;
 }
 
 
@@ -437,6 +460,14 @@ void shim::add_mman_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     });
 }
 
+void shim::add_resource_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+        /* sys/resource.h */
+        {"getrusage", getrusage},
+        {"getrlimit", getrlimit}
+    });
+}
+
 std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     std::vector<shimmed_symbol> ret;
     add_common_shimmed_symbols(ret);
@@ -457,5 +488,6 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_stat_shimmed_symbols(ret);
     add_cstdio_shimmed_symbols(ret);
     add_mman_shimmed_symbols(ret);
+    add_resource_shimmed_symbols(ret);
     return ret;
 }
