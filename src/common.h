@@ -86,6 +86,8 @@ namespace shim {
 
     uint32_t arc4random();
 
+    void *__memcpy_chk(void *dst, const void *src, size_t size, size_t max_len);
+
     void add_common_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     void add_stdlib_shimmed_symbols(std::vector<shimmed_symbol> &list);

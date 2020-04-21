@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include "cstdio.h"
 
 #include "wchar.h"
@@ -106,6 +107,30 @@ bionic::off_t shim::ftello(bionic::FILE *fp) {
     return (bionic::off_t) ::ftello(fp->wrapped);
 }
 
+int shim::__vsnprintf_chk(char *dst, size_t in_len, int, size_t max_len, const char *fmt, va_list va) {
+    if (in_len > max_len) {
+        fprintf(stderr, "detected write past buffer");
+        abort();
+    }
+    return ::vsnprintf(dst, in_len, fmt, va);
+}
+
+int shim::__snprintf_chk(char *dst, size_t in_len, int flags, size_t max_len, const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    int ret = ::__vsnprintf_chk(dst, in_len, flags, max_len, fmt, args);
+    va_end(args);
+    return ret;
+}
+
+char *shim::__fgets_chk(char *dst, int len, FILE *stream, size_t max_len) {
+    if (len < 0 || (size_t) len > max_len) {
+        fprintf(stderr, "detected write past buffer");
+        abort();
+    }
+    return ::fgets(dst, len, stream);
+}
+
 void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     bionic::init_standard_files();
 
@@ -131,6 +156,7 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"fflush", AutoArgRewritten(::fflush)},
         {"fgetc", AutoArgRewritten(::fgetc)},
         {"fgets", AutoArgRewritten(::fgets)},
+        {"__fgets_chk", __fgets_chk},
         {"fputc", AutoArgRewritten(::fputc)},
         {"fputs", AutoArgRewritten(::fputs)},
         {"fread", fread},
@@ -172,6 +198,8 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"snprintf", ::snprintf},
         {"vsprintf", ::vsprintf},
         {"vsnprintf", ::vsnprintf},
+        {"__vsnprintf_chk", ::__vsnprintf_chk},
+        {"__snprintf_chk", ::__snprintf_chk},
         {"scanf", ::scanf},
         {"sscanf", ::sscanf},
         {"vscanf", ::vscanf},

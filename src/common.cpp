@@ -174,6 +174,14 @@ uint32_t shim::arc4random() {
     return 0; // TODO:
 }
 
+void* shim::__memcpy_chk(void *dst, const void *src, size_t size, size_t max_len) {
+    if (size > max_len) {
+        fprintf(stderr, "detected copy past buffer size");
+        abort();
+    }
+    return ::memcpy(dst, src, size);
+}
+
 
 void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
@@ -427,6 +435,7 @@ void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"memchr", (void *(*)(void *, int, size_t)) ::memchr},
         {"memcmp", (int (*)(const void *, const void *, size_t)) ::memcmp},
         {"memcpy", ::memcpy},
+        {"__memcpy_chk", __memcpy_chk},
         {"memmove", ::memmove},
         {"memset", ::memset},
         {"memmem", ::memmem},

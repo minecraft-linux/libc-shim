@@ -73,6 +73,12 @@ namespace shim {
 
     bionic::off_t ftello(bionic::FILE* fp);
 
+    int __vsnprintf_chk(char *dst, size_t in_len, int flags, size_t max_len, const char *fmt, va_list va);
+
+    int __snprintf_chk(char *dst, size_t in_len, int flags, size_t max_len, const char* fmt, ...);
+
+    char *__fgets_chk(char *dst, int len, FILE *stream, size_t max_len);
+
     void add_cstdio_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     namespace detail {
