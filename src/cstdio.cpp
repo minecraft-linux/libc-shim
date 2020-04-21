@@ -176,6 +176,7 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"sscanf", ::sscanf},
         {"vscanf", ::vscanf},
         {"vsscanf", ::vsscanf},
+        {"perror", ::perror},
 
         /* wchar.h */
         {"getwc", AutoArgRewritten(getwc)},
