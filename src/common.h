@@ -57,4 +57,6 @@ namespace shim {
 
     void add_unistd_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
+    void add_wchar_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
 }

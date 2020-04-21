@@ -12,6 +12,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <wctype.h>
 #ifndef __APPLE__
 #include <sys/auxv.h>
 #endif
@@ -297,6 +298,31 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     });
 }
 
+void shim::add_wchar_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+        /* wchar.h */
+        {"wctob", wctob},
+        {"btowc", btowc},
+        {"wmemchr", wmemchr},
+        {"wmemcmp", wmemcmp},
+        {"wmemcpy", wmemcpy},
+        {"wmemset", wmemset},
+        {"wmemmove", wmemmove},
+        {"wcrtomb", wcrtomb},
+        {"mbrtowc", mbrtowc},
+        {"wcscoll", wcscoll},
+        {"wcsxfrm", wcsxfrm},
+        {"wcsftime", wcsftime},
+
+        /* wctype.h */
+        {"wctype", wctype},
+        {"iswspace", iswspace},
+        {"iswctype", iswctype},
+        {"towlower", towlower},
+        {"towupper", towupper},
+    });
+}
+
 std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     std::vector<shimmed_symbol> ret;
     add_common_shimmed_symbols(ret);
@@ -307,6 +333,7 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_time_shimmed_symbols(ret);
     add_sched_shimmed_symbols(ret);
     add_unistd_shimmed_symbols(ret);
+    add_wchar_shimmed_symbols(ret);
     add_pthread_shimmed_symbols(ret);
     add_sem_shimmed_symbols(ret);
     add_network_shimmed_symbols(ret);
