@@ -8,7 +8,8 @@ namespace shim {
 
         enum class clock_type : uint32_t {
             REALTIME = 0,
-            MONOTONIC = 1
+            MONOTONIC = 1,
+            BOOTTIME = 7
         };
 
         int to_host_clock_type(clock_type type);
