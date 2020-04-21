@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <stdexcept>
 #include <string.h>
+#include <sys/epoll.h>
 #include "network.h"
 
 using namespace shim;
@@ -141,5 +142,15 @@ void shim::add_poll_select_shimmed_symbols(std::vector<shim::shimmed_symbol> &li
         {"poll", ::poll},
 #endif
         {"select", ::select},
+    });
+}
+
+void shim::add_epoll_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+        /* sys/epoll.h */
+        {"epoll_create", epoll_create},
+        {"epoll_create1", epoll_create1},
+        {"epoll_ctl", epoll_ctl},
+        {"epoll_wait", epoll_wait},
     });
 }

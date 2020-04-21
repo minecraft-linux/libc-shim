@@ -60,4 +60,6 @@ namespace shim {
 
     void add_poll_select_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
+    void add_epoll_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
 }

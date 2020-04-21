@@ -553,6 +553,7 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_ioctl_shimmed_symbols(ret);
     add_fcntl_shimmed_symbols(ret);
     add_poll_select_shimmed_symbols(ret);
+    add_epoll_shimmed_symbols(ret);
     add_misc_shimmed_symbols(ret);
     add_sysconf_shimmed_symbols(ret);
     return ret;
