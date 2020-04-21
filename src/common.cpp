@@ -170,6 +170,10 @@ int shim::prctl(bionic::prctl_num opt, unsigned long a2, unsigned long a3, unsig
 #endif
 }
 
+uint32_t shim::arc4random() {
+    return 0; // TODO:
+}
+
 
 void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
@@ -373,8 +377,11 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"_exit", ::_exit},
         {"getuid", ::getuid},
         {"getpid", ::getpid},
+        {"getgid", ::getgid},
         {"getppid", ::getppid},
         {"getpgrp", ::getpgrp},
+        {"geteuid", ::geteuid},
+        {"getegid", ::getegid},
         {"fork", ::fork},
         {"vfork", ::vfork},
         {"isatty", ::isatty},
@@ -407,7 +414,9 @@ void shim::add_signal_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"killpg", ::killpg},
         {"raise", ::raise},
         {"sigaction", ::sigaction},
-        {"sigprocmask", ::sigprocmask}
+        {"sigprocmask", ::sigprocmask},
+        {"sigemptyset", ::sigemptyset},
+        {"sigaddset", ::sigaddset}
     });
 }
 
@@ -516,6 +525,8 @@ void shim::add_mman_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"mprotect", ::mprotect},
         {"madvise", ::madvise},
         {"msync", ::msync},
+        {"mlock", ::mlock},
+        {"munlock", ::munlock},
     });
 }
 
@@ -564,6 +575,8 @@ void shim::add_misc_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"openlog", openlog},
         {"closelog", closelog},
         {"syslog", syslog},
+
+        {"arc4random", arc4random},
     });
 }
 
@@ -597,5 +610,6 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_epoll_shimmed_symbols(ret);
     add_misc_shimmed_symbols(ret);
     add_sysconf_shimmed_symbols(ret);
+    add_eventfd_shimmed_symbols(ret);
     return ret;
 }

@@ -84,6 +84,8 @@ namespace shim {
 
     int prctl(bionic::prctl_num opt, unsigned long a2, unsigned long a3, unsigned long a4, unsigned long a5);
 
+    uint32_t arc4random();
+
     void add_common_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     void add_stdlib_shimmed_symbols(std::vector<shimmed_symbol> &list);

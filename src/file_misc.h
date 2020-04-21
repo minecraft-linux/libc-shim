@@ -52,7 +52,11 @@ namespace shim {
 
     int fcntl(int fd, bionic::fcntl_index cmd, void *arg);
 
-    int poll_via_select(struct pollfd *fds, nfds_t nfds, int timeout);
+    int poll_via_select(pollfd *fds, nfds_t nfds, int timeout);
+
+    int __FD_ISSET_chk(int fd, fd_set *set);
+    void __FD_CLR_chk(int fd, fd_set *set);
+    void __FD_SET_chk(int fd, fd_set *set);
 
     void add_ioctl_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
@@ -61,5 +65,7 @@ namespace shim {
     void add_poll_select_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     void add_epoll_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
+    void add_eventfd_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
 }

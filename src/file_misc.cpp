@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string.h>
 #include <sys/epoll.h>
+#include <sys/eventfd.h>
 #include "network.h"
 
 using namespace shim;
@@ -90,7 +91,7 @@ int shim::fcntl(int fd, bionic::fcntl_index cmd, void *arg) {
     }
 }
 
-int shim::poll_via_select(struct pollfd *fds, nfds_t nfds, int timeout) {
+int shim::poll_via_select(pollfd *fds, nfds_t nfds, int timeout) {
     // Mac OS has a broken poll implementation
     struct timeval t;
     t.tv_sec = timeout / 1000;
@@ -123,6 +124,18 @@ int shim::poll_via_select(struct pollfd *fds, nfds_t nfds, int timeout) {
     return ret;
 }
 
+int shim::__FD_ISSET_chk(int fd, fd_set *set) {
+    return FD_ISSET(fd, set);
+}
+
+void shim::__FD_CLR_chk(int fd, fd_set *set) {
+    FD_CLR(fd, set);
+}
+
+void shim::__FD_SET_chk(int fd, fd_set *set) {
+    FD_SET(fd, set);
+}
+
 void shim::add_ioctl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.push_back({"ioctl", ioctl});
 }
@@ -142,15 +155,24 @@ void shim::add_poll_select_shimmed_symbols(std::vector<shim::shimmed_symbol> &li
         {"poll", ::poll},
 #endif
         {"select", ::select},
+
+        {"__FD_ISSET_chk", __FD_ISSET_chk},
+        {"__FD_CLR_chk", __FD_CLR_chk},
+        {"__FD_SET_chk", __FD_SET_chk},
     });
 }
 
 void shim::add_epoll_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
-        /* sys/epoll.h */
         {"epoll_create", epoll_create},
         {"epoll_create1", epoll_create1},
         {"epoll_ctl", epoll_ctl},
         {"epoll_wait", epoll_wait},
+    });
+}
+
+void shim::add_eventfd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+        {"eventfd", eventfd},
     });
 }
