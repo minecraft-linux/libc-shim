@@ -59,8 +59,21 @@ void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"__stack_chk_fail", &bionic::on_stack_chk_fail},
         {"__stack_chk_guard", &bionic::stack_chk_guard},
 
-        {"__assert", &assert},
-        {"__assert2", &assert2},
+        {"__assert", assert},
+        {"__assert2", assert2},
+    });
+}
+
+void shim::add_malloc_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+        {"malloc", ::malloc},
+        {"free", ::free},
+        {"calloc", ::calloc},
+        {"realloc", ::realloc},
+        {"valloc", ::valloc},
+        {"posix_memalign", ::posix_memalign},
+        {"_Znwj", (void *(*)(size_t)) ::operator new},
+        {"_ZdlPv", (void (*)(void *)) ::operator delete},
     });
 }
 
@@ -90,6 +103,7 @@ void shim::add_ctype_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     std::vector<shimmed_symbol> ret;
     add_common_shimmed_symbols(ret);
+    add_malloc_shimmed_symbols(ret);
     add_ctype_shimmed_symbols(ret);
     add_pthread_shimmed_symbols(ret);
     add_sem_shimmed_symbols(ret);

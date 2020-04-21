@@ -162,6 +162,7 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 
         {"putchar", ::putchar},
         {"puts", ::puts},
+        {"printf", ::printf},
         {"vprintf", ::vprintf},
         {"sprintf", ::sprintf},
         {"asprintf", ::asprintf},
@@ -169,5 +170,9 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"snprintf", ::snprintf},
         {"vsprintf", ::vsprintf},
         {"vsnprintf", ::vsnprintf},
+        {"scanf", ::scanf},
+        {"sscanf", ::sscanf},
+        {"vscanf", ::vscanf},
+        {"vsscanf", ::vsscanf},
     });
 }
