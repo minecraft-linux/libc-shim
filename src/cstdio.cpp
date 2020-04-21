@@ -1,5 +1,7 @@
 #include "cstdio.h"
 
+#include "wchar.h"
+
 using namespace shim;
 
 bionic::FILE bionic::standard_files[3];
@@ -174,5 +176,10 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"sscanf", ::sscanf},
         {"vscanf", ::vscanf},
         {"vsscanf", ::vsscanf},
+
+        /* wchar.h */
+        {"getwc", AutoArgRewritten(getwc)},
+        {"ungetwc", AutoArgRewritten(ungetwc)},
+        {"putwc", AutoArgRewritten(putwc)},
     });
 }
