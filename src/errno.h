@@ -16,4 +16,6 @@ namespace shim {
 
     }
 
+    char *strerror(int err);
+
 }

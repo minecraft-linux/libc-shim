@@ -1,6 +1,11 @@
 #include "errno.h"
 
-#include <errno.h>
+#include <cerrno>
+#include <cstring>
+
+char *shim::strerror(int err) {
+    return ::strerror(bionic::translate_errno_to_host(err));
+}
 
 int* shim::bionic::errno_with_translation() {
     int* ret = &errno;
