@@ -15,4 +15,6 @@ namespace shim {
 
     }
 
+    void add_common_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
 }
