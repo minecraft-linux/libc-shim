@@ -491,6 +491,13 @@ void shim::add_prctl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.push_back({"prctl", prctl});
 }
 
+void shim::add_locale_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+        {"setlocale", setlocale},
+        {"localeconv", localeconv}
+    });
+}
+
 void shim::add_setjmp_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
 #ifdef USE_BIONIC_SETJMP
@@ -525,6 +532,7 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_mman_shimmed_symbols(ret);
     add_resource_shimmed_symbols(ret);
     add_prctl_shimmed_symbols(ret);
+    add_locale_shimmed_symbols(ret);
     add_setjmp_shimmed_symbols(ret);
     return ret;
 }
