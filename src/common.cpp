@@ -9,11 +9,16 @@
 #include "cstdio.h"
 #include "errno.h"
 #include "ctype_data.h"
+#include <math.h>
 #ifndef __APPLE__
 #include <sys/auxv.h>
 #endif
 
 using namespace shim;
+
+extern "C" unsigned long __umoddi3(unsigned long a, unsigned long b);
+extern "C" unsigned long __udivdi3(unsigned long a, unsigned long b);
+extern "C" long __divdi3(long a, long b);
 
 extern "C" int __cxa_atexit(void (*)(void*), void*, void*);
 extern "C" void __cxa_finalize(void * d);
@@ -66,7 +71,42 @@ void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"__assert2", assert2},
 
         {"__cxa_atexit", ::__cxa_atexit},
-        {"__cxa_finalize", ::__cxa_finalize},
+        {"__cxa_finalize", ::__cxa_finalize}
+    });
+}
+
+void shim::add_stdlib_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+        {"abort", abort},
+        {"atexit", atexit},
+        {"exit", exit},
+        {"_Exit", _Exit},
+
+        {"system", system},
+
+        {"getenv", getenv},
+        {"putenv", putenv},
+        {"setenv", setenv},
+        {"unsetenv", unsetenv},
+
+
+        {"random", random},
+        {"srandom", srandom},
+        {"initstate", initstate},
+        {"setstate", setstate},
+
+        {"rand", rand},
+        {"srand", srand},
+        {"rand_r", rand_r},
+        {"drand48", drand48},
+        {"erand48", erand48},
+        {"lrand48", lrand48},
+        {"nrand48", nrand48},
+        {"mrand48", mrand48},
+        {"jrand48", jrand48},
+        {"srand48", srand48},
+        {"seed48", seed48},
+        {"lcong48", lcong48},
     });
 }
 
@@ -106,11 +146,29 @@ void shim::add_ctype_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     });
 }
 
+void shim::add_math_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+        {"__umoddi3", __umoddi3},
+        {"__udivdi3", __udivdi3},
+        {"__divdi3", __divdi3},
+        {"ldexp", (double (*)(double, int)) ::ldexp},
+    });
+}
+
+void shim::add_sched_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+        {"sched_yield", ::sched_yield},
+    });
+}
+
 std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     std::vector<shimmed_symbol> ret;
     add_common_shimmed_symbols(ret);
+    add_stdlib_shimmed_symbols(ret);
     add_malloc_shimmed_symbols(ret);
     add_ctype_shimmed_symbols(ret);
+    add_math_shimmed_symbols(ret);
+    add_sched_shimmed_symbols(ret);
     add_pthread_shimmed_symbols(ret);
     add_sem_shimmed_symbols(ret);
     add_network_shimmed_symbols(ret);

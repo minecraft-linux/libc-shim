@@ -24,8 +24,14 @@ namespace shim {
 
     void add_common_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
+    void add_stdlib_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
     void add_malloc_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     void add_ctype_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
+    void add_math_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
+    void add_sched_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
 }
