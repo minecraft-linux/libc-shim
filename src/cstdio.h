@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <stdio.h>
 #include "argrewrite.h"
+#include "common.h"
 
 namespace shim {
 
@@ -43,12 +44,6 @@ namespace shim {
         inline void update_feof(bionic::FILE *file) {
             file->_flags = (short) (feof_unlocked(file->wrapped) ? 0x0020 : 0);
         }
-
-#if defined(__LP64__)
-        using off_t = ::off_t;
-#else
-        using off_t = int32_t;
-#endif
 
     }
 

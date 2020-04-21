@@ -10,6 +10,7 @@
 #include "errno.h"
 #include "ctype_data.h"
 #include <math.h>
+#include <unistd.h>
 #ifndef __APPLE__
 #include <sys/auxv.h>
 #endif
@@ -53,6 +54,20 @@ void shim::assert2(const char *file, int line, const char *function, const char 
     fprintf(stderr, "assert failed: %s:%i %s: %s\n", file, line, function, msg);
     abort();
 }
+
+#ifndef __LP64__
+int shim::ftruncate(int fd, bionic::off_t len) {
+    return ::ftruncate(fd, (::off_t) len);
+}
+
+ssize_t shim::pread(int fd, void *buf, size_t len, bionic::off_t off) {
+    return ::pread(fd, buf, len, (::off_t) off);
+}
+
+ssize_t shim::pwrite(int fd, const void *buf, size_t len, bionic::off_t off) {
+    return ::pwrite(fd, buf, len, (::off_t) off);
+}
+#endif
 
 void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
@@ -161,6 +176,61 @@ void shim::add_sched_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     });
 }
 
+void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+        {"access", ::access},
+        {"lseek", ::lseek},
+        {"close", ::close},
+        {"read", ::read},
+        {"write", ::write},
+        {"pipe", ::pipe},
+        {"alarm", ::alarm},
+        {"sleep", ::sleep},
+        {"usleep", ::usleep},
+        {"pause", ::pause},
+        {"chown", ::chown},
+        {"fchown", ::fchown},
+        {"lchown", ::lchown},
+        {"chdir", ::chdir},
+        {"fchdir", ::fchdir},
+        {"getcwd", ::getcwd},
+        {"dup", ::dup},
+        {"dup2", ::dup2},
+        {"execv", ::execv},
+        {"execle", ::execle},
+        {"execl", ::execl},
+        {"execvp", ::execvp},
+        {"execlp", ::execlp},
+        {"nice", ::nice},
+        {"_exit", ::_exit},
+        {"getuid", ::getuid},
+        {"getpid", ::getpid},
+        {"getppid", ::getppid},
+        {"getpgrp", ::getpgrp},
+        {"fork", ::fork},
+        {"vfork", ::vfork},
+        {"isatty", ::isatty},
+        {"link", ::link},
+        {"symlink", ::symlink},
+        {"readlink", ::readlink},
+        {"unlink", ::unlink},
+        {"rmdir", ::rmdir},
+        {"gethostname", ::gethostname},
+        {"fsync", ::fsync},
+        {"sync", ::sync},
+        {"getpagesize", ::getpagesize},
+        {"getdtablesize", ::getdtablesize},
+        {"syscall", ::syscall},
+        {"lockf", ::lockf},
+        {"swab", ::swab},
+
+        /* Use our impl or fallback to system */
+        {"ftruncate", ftruncate},
+        {"pread", pread},
+        {"pwrite", pwrite},
+    });
+}
+
 std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     std::vector<shimmed_symbol> ret;
     add_common_shimmed_symbols(ret);
@@ -169,6 +239,7 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_ctype_shimmed_symbols(ret);
     add_math_shimmed_symbols(ret);
     add_sched_shimmed_symbols(ret);
+    add_unistd_shimmed_symbols(ret);
     add_pthread_shimmed_symbols(ret);
     add_sem_shimmed_symbols(ret);
     add_network_shimmed_symbols(ret);
