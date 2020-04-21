@@ -10,6 +10,7 @@
 #include "errno.h"
 #include "ctype_data.h"
 #include "stat.h"
+#include "file_misc.h"
 #include <math.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -535,5 +536,6 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_prctl_shimmed_symbols(ret);
     add_locale_shimmed_symbols(ret);
     add_setjmp_shimmed_symbols(ret);
+    add_ioctl_shimmed_symbols(ret);
     return ret;
 }

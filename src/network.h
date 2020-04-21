@@ -117,6 +117,26 @@ namespace shim {
         int to_host_sockopt_level(int level);
         int to_host_sockopt(int level, int opt);
 
+        /* ioctl */
+
+        struct ifreq {
+            char name[16];
+            sockaddr_in addr;
+#ifdef __LP64__
+            char padding[8];
+#endif
+        };
+        struct ifconf {
+            int len;
+            ifreq *req;
+        };
+
+#ifdef __LP64__
+        static_assert(sizeof(ifreq) == 40, "ifreq must be 40 bytes big");
+#else
+        static_assert(sizeof(ifreq) == 32, "ifreq must be 32 bytes big");
+#endif
+
     }
 
     int socket(bionic::af_family domain, bionic::socktype type, bionic::ipproto proto);
