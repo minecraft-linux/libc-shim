@@ -13,6 +13,15 @@ namespace shim {
 
         int to_host_clock_type(clock_type type);
 
+        enum class mmap_flags : int {
+            FIXED = 0x10,
+            ANON = 0x20,
+            NORESERVE = 0x4000
+        };
+
+        int to_host_mmap_flags(mmap_flags flags);
+
+
         extern uintptr_t stack_chk_guard;
 
         void on_stack_chk_fail();
@@ -43,6 +52,8 @@ namespace shim {
     ssize_t pwrite(int fd, const void *buf, size_t len, bionic::off_t off);
 #endif
 
+    void *mmap(void *addr, size_t length, int prot, bionic::mmap_flags flags, int fd, bionic::off_t offset);
+
     int clock_gettime(bionic::clock_type clock, struct timespec *ts);
 
     void add_common_shimmed_symbols(std::vector<shimmed_symbol> &list);
@@ -66,5 +77,7 @@ namespace shim {
     void add_string_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     void add_wchar_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
+    void add_mman_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
 }

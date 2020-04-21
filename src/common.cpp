@@ -16,6 +16,7 @@
 #include <wctype.h>
 #include <signal.h>
 #include <string.h>
+#include <sys/mman.h>
 #ifndef __APPLE__
 #include <sys/auxv.h>
 #endif
@@ -45,6 +46,21 @@ int bionic::to_host_clock_type(bionic::clock_type type) {
         case clock_type::MONOTONIC: return CLOCK_MONOTONIC;
         default: throw std::runtime_error("Unexpected clock type");
     }
+}
+
+int bionic::to_host_mmap_flags(bionic::mmap_flags flags) {
+    if (((uint32_t) flags & ~((uint32_t) mmap_flags::FIXED | (uint32_t) mmap_flags::ANON |
+        (uint32_t) mmap_flags::NORESERVE)) != 0)
+        throw std::runtime_error("Used unsupported mmap flags");
+
+    int ret = 0;
+    if ((uint32_t) flags & (uint32_t) mmap_flags::FIXED)
+        ret |= MAP_FILE;
+    if ((uint32_t) flags & (uint32_t) mmap_flags::ANON)
+        ret |= MAP_ANONYMOUS;
+    if ((uint32_t) flags & (uint32_t) mmap_flags::NORESERVE)
+        ret |= MAP_NORESERVE;
+    return ret;
 }
 
 void bionic::on_stack_chk_fail() {
@@ -88,6 +104,11 @@ ssize_t shim::pwrite(int fd, const void *buf, size_t len, bionic::off_t off) {
 int shim::clock_gettime(bionic::clock_type clock, struct timespec *ts) {
     return ::clock_gettime(bionic::to_host_clock_type(clock), ts);
 }
+
+void *shim::mmap(void *addr, size_t length, int prot, bionic::mmap_flags flags, int fd, bionic::off_t offset) {
+    return ::mmap(addr, length, prot, bionic::to_host_mmap_flags(flags), fd, (::off_t) offset);
+}
+
 
 void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
@@ -397,6 +418,17 @@ void shim::add_wchar_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     });
 }
 
+void shim::add_mman_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+        /* sys/mman.h */
+        {"mmap", mmap},
+        {"munmap", ::munmap},
+        {"mprotect", ::mprotect},
+        {"madvise", ::madvise},
+        {"msync", ::msync},
+    });
+}
+
 std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     std::vector<shimmed_symbol> ret;
     add_common_shimmed_symbols(ret);
@@ -416,5 +448,6 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_dirent_shimmed_symbols(ret);
     add_stat_shimmed_symbols(ret);
     add_cstdio_shimmed_symbols(ret);
+    add_mman_shimmed_symbols(ret);
     return ret;
 }
