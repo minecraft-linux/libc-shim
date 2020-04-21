@@ -311,13 +311,13 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 
 void shim::add_signal_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
-        {"signal", signal},
-        {"bsd_signal", signal},
-        {"kill", kill},
-        {"killpg", killpg},
-        {"raise", raise},
-        {"sigaction", sigaction},
-        {"sigprocmask", sigprocmask}
+        {"signal", ::signal},
+        {"bsd_signal", ::signal},
+        {"kill", ::kill},
+        {"killpg", ::killpg},
+        {"raise", ::raise},
+        {"sigaction", ::sigaction},
+        {"sigprocmask", ::sigprocmask}
     });
 }
 
@@ -362,25 +362,26 @@ void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 void shim::add_wchar_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         /* wchar.h */
-        {"wctob", wctob},
-        {"btowc", btowc},
-        {"wmemchr", wmemchr},
-        {"wmemcmp", wmemcmp},
-        {"wmemcpy", wmemcpy},
-        {"wmemset", wmemset},
-        {"wmemmove", wmemmove},
-        {"wcrtomb", wcrtomb},
-        {"mbrtowc", mbrtowc},
-        {"wcscoll", wcscoll},
-        {"wcsxfrm", wcsxfrm},
-        {"wcsftime", wcsftime},
+        {"wcslen", ::wcslen},
+        {"wctob", ::wctob},
+        {"btowc", ::btowc},
+        {"wmemchr", ::wmemchr},
+        {"wmemcmp", ::wmemcmp},
+        {"wmemcpy", ::wmemcpy},
+        {"wmemset", ::wmemset},
+        {"wmemmove", ::wmemmove},
+        {"wcrtomb", ::wcrtomb},
+        {"mbrtowc", ::mbrtowc},
+        {"wcscoll", ::wcscoll},
+        {"wcsxfrm", ::wcsxfrm},
+        {"wcsftime", ::wcsftime},
 
         /* wctype.h */
-        {"wctype", wctype},
-        {"iswspace", iswspace},
-        {"iswctype", iswctype},
-        {"towlower", towlower},
-        {"towupper", towupper},
+        {"wctype", ::wctype},
+        {"iswspace", ::iswspace},
+        {"iswctype", ::iswctype},
+        {"towlower", ::towlower},
+        {"towupper", ::towupper},
     });
 }
 
