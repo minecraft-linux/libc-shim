@@ -18,9 +18,11 @@
 
 using namespace shim;
 
+#ifdef __i386__
 extern "C" unsigned long __umoddi3(unsigned long a, unsigned long b);
 extern "C" unsigned long __udivdi3(unsigned long a, unsigned long b);
 extern "C" long __divdi3(long a, long b);
+#endif
 
 extern "C" int __cxa_atexit(void (*)(void*), void*, void*);
 extern "C" void __cxa_finalize(void * d);
@@ -195,9 +197,11 @@ void shim::add_ctype_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 
 void shim::add_math_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
+#ifdef __i386__
         {"__umoddi3", __umoddi3},
         {"__udivdi3", __udivdi3},
         {"__divdi3", __divdi3},
+#endif
         {"ldexp", (double (*)(double, int)) ::ldexp},
     });
 }
