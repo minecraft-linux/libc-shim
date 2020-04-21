@@ -1,5 +1,6 @@
 #include <libc_shim.h>
 
+#include <log.h>
 #include <stdexcept>
 #include "common.h"
 #include "pthreads.h"
@@ -11,6 +12,7 @@
 #include "ctype_data.h"
 #include "stat.h"
 #include "file_misc.h"
+#include "sysconf.h"
 #include <math.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -20,10 +22,12 @@
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <setjmp.h>
-#include <log.h>
+#include <utime.h>
+#include <sys/uio.h>
 #ifndef __APPLE__
 #include <sys/prctl.h>
 #include <sys/auxv.h>
+#include <sys/utsname.h>
 #endif
 
 using namespace shim;
@@ -512,6 +516,16 @@ void shim::add_setjmp_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     });
 }
 
+void shim::add_misc_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+        {"uname", uname}, // TODO: This may be wrong?
+
+        {"utime", utime},
+
+        {"writev", writev},
+    });
+}
+
 std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     std::vector<shimmed_symbol> ret;
     add_common_shimmed_symbols(ret);
@@ -539,5 +553,7 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_ioctl_shimmed_symbols(ret);
     add_fcntl_shimmed_symbols(ret);
     add_poll_select_shimmed_symbols(ret);
+    add_misc_shimmed_symbols(ret);
+    add_sysconf_shimmed_symbols(ret);
     return ret;
 }

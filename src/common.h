@@ -114,4 +114,6 @@ namespace shim {
 
     void add_setjmp_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
+    void add_misc_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
 }
