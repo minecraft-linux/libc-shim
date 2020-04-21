@@ -6,7 +6,9 @@ using namespace shim;
 
 void bionic::from_host(struct ::stat64 const &info, stat &result) {
     result.st_dev = info.st_dev;
+#ifndef __LP64__
     result.__st_ino = info.__st_ino;
+#endif
     result.st_mode = info.st_mode;
     result.st_nlink = info.st_nlink;
     result.st_uid = info.st_uid;
