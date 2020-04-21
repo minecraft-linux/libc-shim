@@ -11,6 +11,7 @@
 #include "ctype_data.h"
 #include <math.h>
 #include <unistd.h>
+#include <sys/time.h>
 #ifndef __APPLE__
 #include <sys/auxv.h>
 #endif
@@ -68,6 +69,10 @@ ssize_t shim::pwrite(int fd, const void *buf, size_t len, bionic::off_t off) {
     return ::pwrite(fd, buf, len, (::off_t) off);
 }
 #endif
+
+int shim::clock_gettime(bionic::clock_type clock, struct timespec *ts) {
+    return ::clock_gettime(bionic::to_host_clock_type(clock), ts);
+}
 
 void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
@@ -197,6 +202,36 @@ void shim::add_math_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     });
 }
 
+void shim::add_time_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+        /* sys/time.h */
+        {"gettimeofday", ::gettimeofday},
+
+        /* time.h */
+        {"clock", ::clock},
+        {"time", ::time},
+        {"difftime", ::difftime},
+        {"mktime", ::mktime},
+        {"strftime", ::strftime},
+        {"strptime", ::strptime},
+        {"strftime_l", ::strftime_l},
+        {"strptime_l", ::strptime_l},
+        {"gmtime", ::gmtime},
+        {"gmtime_r", ::gmtime_r},
+        {"localtime", ::localtime},
+        {"localtime_r", ::localtime_r},
+        {"asctime", ::asctime},
+        {"ctime", ::ctime},
+        {"asctime_r", ::asctime_r},
+        {"ctime_r", ::ctime_r},
+        {"tzname", ::tzname},
+        {"tzset", ::tzset},
+        {"daylight", &::daylight},
+        {"timezone", &::timezone},
+        {"nanosleep", ::nanosleep},
+        {"clock_gettime", clock_gettime},
+    });
+}
 void shim::add_sched_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"sched_yield", ::sched_yield},
@@ -265,6 +300,7 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_malloc_shimmed_symbols(ret);
     add_ctype_shimmed_symbols(ret);
     add_math_shimmed_symbols(ret);
+    add_time_shimmed_symbols(ret);
     add_sched_shimmed_symbols(ret);
     add_unistd_shimmed_symbols(ret);
     add_pthread_shimmed_symbols(ret);

@@ -39,6 +39,8 @@ namespace shim {
     ssize_t pwrite(int fd, const void *buf, size_t len, bionic::off_t off);
 #endif
 
+    int clock_gettime(bionic::clock_type clock, struct timespec *ts);
+
     void add_common_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     void add_stdlib_shimmed_symbols(std::vector<shimmed_symbol> &list);
@@ -48,6 +50,8 @@ namespace shim {
     void add_ctype_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     void add_math_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
+    void add_time_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     void add_sched_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
