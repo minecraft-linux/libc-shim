@@ -33,14 +33,19 @@ int shim::ioctl(int fd, bionic::ioctl_index cmd, void *arg) {
     switch (cmd) {
         case bionic::ioctl_index::FILE_NBIO:
             return ::ioctl(fd, FIONBIO, arg);
-        case bionic::ioctl_index::SOCKET_CGIFCONF: {
+        case bionic::ioctl_index::SOCKET_CGIFCONF:
+        case bionic::ioctl_index::SOCKET_CGIFNETMASK: {
+            int host_ioctl = SIOCGIFCONF;
+            if (cmd == bionic::ioctl_index::SOCKET_CGIFNETMASK)
+                host_ioctl = SIOCGIFNETMASK;
+
             auto buf = (bionic::ifconf *) arg;
             size_t cnt = buf->len / sizeof(bionic::ifreq);
             auto hibuf = new ifreq[cnt];
             ifconf hbuf {};
             hbuf.ifc_len = cnt * sizeof(ifreq);
             hbuf.ifc_ifcu.ifcu_req = hibuf;
-            int ret = ::ioctl(fd, SIOCGIFCONF, &hbuf);
+            int ret = ::ioctl(fd, host_ioctl, &hbuf);
             if (ret < 0)
                 return ret;
             cnt = hbuf.ifc_len / sizeof(::ifreq);

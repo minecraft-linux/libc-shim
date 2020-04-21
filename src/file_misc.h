@@ -27,7 +27,8 @@ namespace shim {
         enum class ioctl_index : unsigned long {
             FILE_NBIO = 0x5421,
 
-            SOCKET_CGIFCONF = 0x8912
+            SOCKET_CGIFCONF = 0x8912,
+            SOCKET_CGIFNETMASK = 0x891b
         };
 
         enum class fcntl_index : int {
