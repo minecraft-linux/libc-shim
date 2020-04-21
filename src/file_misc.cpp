@@ -72,7 +72,7 @@ int shim::open(const char *pathname, bionic::file_status_flags flags, ...) {
 int shim::fcntl(int fd, bionic::fcntl_index cmd, void *arg) {
     switch (cmd) {
         case bionic::fcntl_index::SETFD:
-            return ::fcntl(fd, F_SETFD, (int) arg);
+            return ::fcntl(fd, F_SETFD, (int)(intptr_t) arg);
         case bionic::fcntl_index::SETFL:
             return ::fcntl(fd, F_SETFL, to_host_file_status_flags((bionic::file_status_flags) (size_t) arg));
         case bionic::fcntl_index::SETLK: {
