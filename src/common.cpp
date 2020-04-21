@@ -15,6 +15,9 @@
 
 using namespace shim;
 
+extern "C" int __cxa_atexit(void (*)(void*), void*, void*);
+extern "C" void __cxa_finalize(void * d);
+
 uintptr_t bionic::stack_chk_guard = []() {
 #ifndef __APPLE__
     return *((uintptr_t*) getauxval(AT_RANDOM));
@@ -61,6 +64,9 @@ void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 
         {"__assert", assert},
         {"__assert2", assert2},
+
+        {"__cxa_atexit", ::__cxa_atexit},
+        {"__cxa_finalize", ::__cxa_finalize},
     });
 }
 
