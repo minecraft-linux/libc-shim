@@ -19,9 +19,9 @@
 #include <sys/mman.h>
 #include <sys/resource.h>
 #ifndef __APPLE__
+#include <sys/prctl.h>
 #include <sys/auxv.h>
 #include <log.h>
-
 #endif
 
 using namespace shim;
@@ -137,6 +137,20 @@ int shim::getrlimit(bionic::rlimit_resource res, bionic::rlimit *info) {
     info->rlim_cur = hinfo.rlim_cur;
     info->rlim_max = hinfo.rlim_max;
     return ret;
+}
+
+int shim::prctl(bionic::prctl_num opt, unsigned long a2, unsigned long a3, unsigned long a4, unsigned long a5) {
+#ifdef __linux__
+    return ::prctl((int) opt, a2, a3, a4, a5);
+#else
+    switch (opt) {
+        case bionic::prctl_num::SET_NAME:
+            return pthread_setname_np(pthread_self(), (const char *) a2);
+        default:
+            Log::error("Shim/Common", "Unexpected prctl: %i", opt);
+            return EINVAL;
+    }
+#endif
 }
 
 
@@ -468,6 +482,10 @@ void shim::add_resource_shimmed_symbols(std::vector<shim::shimmed_symbol> &list)
     });
 }
 
+void shim::add_prctl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.push_back({"prctl", prctl});
+}
+
 std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     std::vector<shimmed_symbol> ret;
     add_common_shimmed_symbols(ret);
@@ -489,5 +507,6 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_cstdio_shimmed_symbols(ret);
     add_mman_shimmed_symbols(ret);
     add_resource_shimmed_symbols(ret);
+    add_prctl_shimmed_symbols(ret);
     return ret;
 }

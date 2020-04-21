@@ -31,6 +31,10 @@ namespace shim {
             unsigned long int rlim_cur, rlim_max;
         };
 
+        enum class prctl_num {
+            SET_NAME = 15
+        };
+
 
         extern uintptr_t stack_chk_guard;
 
@@ -72,6 +76,8 @@ namespace shim {
 
     int clock_gettime(bionic::clock_type clock, struct timespec *ts);
 
+    int prctl(bionic::prctl_num opt, unsigned long a2, unsigned long a3, unsigned long a4, unsigned long a5);
+
     void add_common_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     void add_stdlib_shimmed_symbols(std::vector<shimmed_symbol> &list);
@@ -97,5 +103,7 @@ namespace shim {
     void add_mman_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     void add_resource_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
+    void add_prctl_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
 }
