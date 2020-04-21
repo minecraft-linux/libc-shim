@@ -1,6 +1,8 @@
 #include "network.h"
 
 #include <netinet/in.h>
+#include <net/if.h>
+#include <arpa/inet.h>
 #include <cstring>
 
 using namespace shim;
@@ -425,6 +427,7 @@ detail::sock_send_flags::~sock_send_flags() {
 
 void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
+        /* socket.h */
         {"socket", socket},
         {"bind", &detail::arg_rewrite_helper<int (int, const ::sockaddr *, socklen_t)>::rewrite<::bind>},
         {"connect", &detail::arg_rewrite_helper<int (int, const ::sockaddr *, socklen_t)>::rewrite<::connect>},
@@ -442,6 +445,7 @@ void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) 
         {"listen", ::listen},
         {"shutdown", shutdown},
 
+        /* netdb.h */
         {"getaddrinfo", getaddrinfo},
         {"freeaddrinfo", freeaddrinfo},
         {"getnameinfo", AutoArgRewritten(getnameinfo)},
@@ -450,6 +454,22 @@ void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) 
         {"gethostbyaddr", gethostbyaddr},
         {"gethostbyname", gethostbyname},
         {"gethostbyname2", gethostbyname2},
-        {"gethostent", gethostent}
+        {"gethostent", gethostent},
+
+        /* arpa/inet.h */
+        {"inet_addr", inet_addr},
+        {"inet_lnaof", inet_lnaof},
+        {"inet_makeaddr", inet_makeaddr},
+        {"inet_netof", inet_netof},
+        {"inet_network", inet_network},
+        {"inet_ntoa", inet_ntoa},
+        {"inet_pton", inet_pton},
+        {"inet_ntop", inet_ntop},
+
+        /* net/if.h */
+        {"if_nametoindex", if_nametoindex},
+        {"if_indextoname", if_indextoname},
+        {"if_nameindex", if_nameindex},
+        {"if_freenameindex", if_freenameindex},
     });
 }
