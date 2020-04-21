@@ -21,14 +21,14 @@ namespace shim {
             ::FILE *wrapped;
 
 #if defined(__LP64__)
-            // ?
+            char filler[152 - 0x24];
 #else
             char filler[0x54 - 0x14];
 #endif
         };
 
 #if defined(__LP64__)
-        static_assert(sizeof(FILE) == 0, "FILE must be ? bytes big");
+        static_assert(sizeof(FILE) == 152, "FILE must be ? bytes big");
 #else
         static_assert(sizeof(FILE) == 0x54, "FILE must be 0x54 bytes big");
 #endif
