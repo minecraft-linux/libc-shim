@@ -323,6 +323,7 @@ void shim::add_signal_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 
 void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
+        /* string.h */
         {"memccpy", ::memccpy},
         {"memchr", (void *(*)(void *, int, size_t)) ::memchr},
         {"memcmp", (int (*)(const void *, const void *, size_t)) ::memcmp},
@@ -356,6 +357,16 @@ void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"strsignal", ::strsignal},
         {"strcoll", ::strcoll},
         {"strxfrm", ::strxfrm},
+
+        /* strings.h */
+        {"bcmp", ::bcmp},
+        {"bcopy", ::bcopy},
+        {"bzero", ::bzero},
+        {"ffs", ::ffs},
+        {"index", ::index},
+        {"rindex", ::rindex},
+        {"strcasecmp", ::strcasecmp},
+        {"strncasecmp", ::strncasecmp},
     });
 }
 
