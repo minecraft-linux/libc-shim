@@ -9,6 +9,7 @@
 #include "cstdio.h"
 #include "errno.h"
 #include "ctype_data.h"
+#include "stat.h"
 #include <math.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -413,6 +414,7 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_sem_shimmed_symbols(ret);
     add_network_shimmed_symbols(ret);
     add_dirent_shimmed_symbols(ret);
+    add_stat_shimmed_symbols(ret);
     add_cstdio_shimmed_symbols(ret);
     return ret;
 }
