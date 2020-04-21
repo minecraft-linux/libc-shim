@@ -348,7 +348,7 @@ void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"strndup", ::strndup},
         {"strncmp", ::strncmp},
         {"strncpy", ::strncpy},
-        // TODO: {"strlcpy", strlcpy},
+        {"strlcpy", bionic::strlcpy},
         {"strcspn", ::strcspn},
         {"strpbrk", (char *(*)(char *, const char *)) ::strpbrk},
         {"strsep", ::strsep},

@@ -23,6 +23,8 @@ namespace shim {
         using off_t = int32_t;
 #endif
 
+        size_t strlcpy(char *dst, const char *src, size_t siz);
+
     }
 
     void assert(const char* file, int line, const char* msg);
