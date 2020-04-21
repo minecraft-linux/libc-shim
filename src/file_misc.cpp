@@ -2,6 +2,7 @@
 
 #include <sys/ioctl.h>
 #include <net/if.h>
+#include <fcntl.h>
 #include <stdexcept>
 #include <string.h>
 #include "network.h"
@@ -35,6 +36,31 @@ int shim::ioctl(int fd, bionic::ioctl_index cmd, void *arg) {
     }
 }
 
+int shim::fcntl(int fd, bionic::fcntl_index cmd, void *arg) {
+    switch (cmd) {
+        case bionic::fcntl_index::SETFD:
+            return ::fcntl(fd, F_SETFD, (int) arg);
+        case bionic::fcntl_index::SETFL:
+            return ::fcntl(fd, F_SETFL, (int) arg);
+        case bionic::fcntl_index::SETLK: {
+            auto afl = (bionic::flock *) arg;
+            flock fl {};
+            fl.l_type = afl->l_type;
+            fl.l_whence = afl->l_whence;
+            fl.l_start = afl->l_start;
+            fl.l_len = afl->l_len;
+            fl.l_pid = afl->l_pid;
+            return ::fcntl(fd, F_SETLK, &fl);
+        }
+        default:
+            throw std::runtime_error("Unsupported fcntl");
+    }
+}
+
 void shim::add_ioctl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.push_back({"ioctl", ioctl});
+}
+
+void shim::add_fcntl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.push_back({"fcntl", fcntl});
 }

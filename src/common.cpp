@@ -537,5 +537,6 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_locale_shimmed_symbols(ret);
     add_setjmp_shimmed_symbols(ret);
     add_ioctl_shimmed_symbols(ret);
+    add_fcntl_shimmed_symbols(ret);
     return ret;
 }
