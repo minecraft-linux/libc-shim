@@ -52,6 +52,8 @@ namespace shim {
     ssize_t pwrite(int fd, const void *buf, size_t len, bionic::off_t off);
 #endif
 
+    void *memalign(size_t alignment, size_t size);
+
     void *mmap(void *addr, size_t length, int prot, bionic::mmap_flags flags, int fd, bionic::off_t offset);
 
     int clock_gettime(bionic::clock_type clock, struct timespec *ts);

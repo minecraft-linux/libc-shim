@@ -105,6 +105,13 @@ int shim::clock_gettime(bionic::clock_type clock, struct timespec *ts) {
     return ::clock_gettime(bionic::to_host_clock_type(clock), ts);
 }
 
+void* shim::memalign(size_t alignment, size_t size) {
+    void* ret;
+    if (posix_memalign(&ret, alignment, size) != 0)
+        return nullptr;
+    return ret;
+}
+
 void *shim::mmap(void *addr, size_t length, int prot, bionic::mmap_flags flags, int fd, bionic::off_t offset) {
     return ::mmap(addr, length, prot, bionic::to_host_mmap_flags(flags), fd, (::off_t) offset);
 }
@@ -200,6 +207,7 @@ void shim::add_malloc_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"calloc", ::calloc},
         {"realloc", ::realloc},
         {"valloc", ::valloc},
+        {"memalign", memalign},
         {"posix_memalign", ::posix_memalign},
         {"_Znwj", (void *(*)(size_t)) ::operator new},
         {"_ZdlPv", (void (*)(void *)) ::operator delete},
