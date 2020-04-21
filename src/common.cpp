@@ -8,6 +8,7 @@
 #include "dirent.h"
 #include "cstdio.h"
 #include "errno.h"
+#include "ctype_data.h"
 #ifndef __APPLE__
 #include <sys/auxv.h>
 #endif
@@ -63,9 +64,33 @@ void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     });
 }
 
+void shim::add_ctype_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+        {"_tolower_tab_", &_tolower_tab_},
+        {"_toupper_tab_", &_toupper_tab_},
+        {"_ctype_", &_ctype_},
+        {"isalnum", isalnum},
+        {"isalpha", isalpha},
+        {"isblank", isblank},
+        {"iscntrl", iscntrl},
+        {"isdigit", isdigit},
+        {"isgraph", isgraph},
+        {"islower", islower},
+        {"isprint", isprint},
+        {"ispunct", ispunct},
+        {"isspace", isspace},
+        {"isupper", isupper},
+        {"isxdigit", isxdigit},
+
+        {"tolower", ::tolower},
+        {"toupper", ::toupper},
+    });
+}
+
 std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     std::vector<shimmed_symbol> ret;
     add_common_shimmed_symbols(ret);
+    add_ctype_shimmed_symbols(ret);
     add_pthread_shimmed_symbols(ret);
     add_sem_shimmed_symbols(ret);
     add_network_shimmed_symbols(ret);
