@@ -12,7 +12,7 @@ namespace shim {
         struct stat {
             unsigned long st_dev;
             unsigned long st_ino;
-            unsigned int st_nlink;
+            unsigned long st_nlink;
             unsigned int st_mode;
             unsigned int st_uid;
             unsigned int st_gid;
