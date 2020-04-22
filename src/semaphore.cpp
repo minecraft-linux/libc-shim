@@ -2,6 +2,10 @@
 
 #include <stdexcept>
 #include "meta.h"
+#ifdef __APPLE__
+#include <errno.h>
+#include <mach/mach.h>
+#endif
 
 using namespace shim;
 
@@ -24,7 +28,7 @@ int shim::sem_init(sem_t *sem, int pshared, unsigned int value) {
     auto sem_create_wrapper = +[](semaphore_t *sem, int policy, int value) {
         return semaphore_create(mach_task_self(), sem, policy, value);
     };
-    int ret = detail::make_c_wrapped<sem_t_resolver, int, int>(sem, sem_create_wrapper, pshared, value);
+    int ret = detail::make_c_wrapped_via_resolver<sem_t_resolver, int, int>(sem, sem_create_wrapper, pshared, (int) value);
     if (ret) {
         if (ret == KERN_INVALID_ARGUMENT)
             errno = EINVAL;
@@ -36,18 +40,18 @@ int shim::sem_init(sem_t *sem, int pshared, unsigned int value) {
 }
 
 int shim::sem_destroy(host_sem_t *sem) {
-    auto sem_destroy_wrapper = +[](semaphore_t sem) {
-        return semaphore_destroy(mach_task_self(), sem);
+    auto sem_destroy_wrapper = +[](semaphore_t *sem) {
+        return semaphore_destroy(mach_task_self(), *sem);
     };
-    return detail::destroy_c_wrapped<sem_t_resolver>(sem, sem_destroy_wrapper);
+    return detail::destroy_c_wrapped_via_resolver<sem_t_resolver>(sem, sem_destroy_wrapper);
 }
 
 int shim::sem_wait(host_sem_t *sem) {
-    return semaphore_wait(sem);
+    return semaphore_wait(*sem);
 }
 
 int shim::sem_post(host_sem_t *sem) {
-    return semaphore_signal(sem);
+    return semaphore_signal(*sem);
 }
 
 int shim::sem_timedwait(host_sem_t *sem, const struct timespec *abs_timeout) {
@@ -62,7 +66,7 @@ int shim::sem_timedwait(host_sem_t *sem, const struct timespec *abs_timeout) {
         ts.tv_sec = 0;
         ts.tv_nsec = 0;
     }
-    auto ret = semaphore_timedwait(sem, ts);
+    auto ret = semaphore_timedwait(*sem, ts);
     if (ret) {
         if (ret == KERN_OPERATION_TIMED_OUT)
             errno = ETIMEDOUT;

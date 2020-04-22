@@ -209,7 +209,7 @@ namespace shim {
             int src_flags;
             int flags;
 #ifdef __APPLE__
-            int saved_nosigpipe;
+            int saved_nosigpipe = 0;
 #endif
 
             sock_send_flags(int fd, int flags);

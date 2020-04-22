@@ -41,7 +41,9 @@ int shim::fstat(int fd, shim::bionic::stat *s) {
 
 void bionic::from_host(struct ::stat const &info, stat &result) {
     result.st_dev = info.st_dev;
+#ifndef __LP64__
     result.__st_ino = info.st_ino;
+#endif
     result.st_mode = info.st_mode;
     result.st_nlink = info.st_nlink;
     result.st_uid = info.st_uid;

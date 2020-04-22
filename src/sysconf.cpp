@@ -96,7 +96,9 @@ int shim::bionic::to_host_sysconf_id(int arg) {
         case 0x0060: return _SC_NPROCESSORS_CONF;
         case 0x0061: return _SC_NPROCESSORS_ONLN;
         case 0x0062: return _SC_PHYS_PAGES;
+#ifdef __linux__
         case 0x0063: return _SC_AVPHYS_PAGES;
+#endif
         case 0x0064: return _SC_MONOTONIC_CLOCK;
         default: throw std::runtime_error("Uknown sysconf id");
     }

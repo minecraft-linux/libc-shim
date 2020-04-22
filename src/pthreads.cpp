@@ -109,8 +109,10 @@ host_mutexattr::~host_mutexattr() {
 
 host_condattr::host_condattr(pthread_condattr_t const *bionic_attr) {
     ::pthread_condattr_init(&attr);
+#ifndef __APPLE__
     if (bionic_attr)
         ::pthread_condattr_setclock(&attr, bionic::to_host_clock_type(bionic_attr->clock));
+#endif
 }
 
 host_condattr::~host_condattr() {

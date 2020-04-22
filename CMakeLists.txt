@@ -7,6 +7,10 @@ target_include_directories(libc-shim PUBLIC include/)
 target_link_libraries(libc-shim logger)
 
 if(APPLE)
+    target_link_libraries(libc-shim epoll-shim)
+endif()
+
+if(APPLE AND NOT IS_64BIT)
     target_sources(libc-shim PUBLIC src/bionic/arch-x86/setjmp.S src/bionic/setjmp_cookie.c)
     target_compile_definitions(libc-shim PRIVATE USE_BIONIC_SETJMP)
 endif()

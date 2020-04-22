@@ -75,6 +75,7 @@ int shim::bionic::translate_errno_from_host(int err) {
         case ELOOP: return 40;
         case ENOMSG: return 42;
         case EIDRM: return 43;
+#ifdef __linux__
         case ECHRNG: return 44;
         case EL2NSYNC: return 45;
         case EL3HLT: return 46;
@@ -90,22 +91,30 @@ int shim::bionic::translate_errno_from_host(int err) {
         case EBADRQC: return 56;
         case EBADSLT: return 57;
         case EBFONT: return 59;
+#endif
         case ENOSTR: return 60;
         case ENODATA: return 61;
         case ETIME: return 62;
         case ENOSR: return 63;
+#ifdef __linux__
         case ENONET: return 64;
         case ENOPKG: return 65;
+#endif
         case EREMOTE: return 66;
         case ENOLINK: return 67;
+#ifdef __linux__
         case EADV: return 68;
         case ESRMNT: return 69;
         case ECOMM: return 70;
+#endif
         case EPROTO: return 71;
         case EMULTIHOP: return 72;
+#ifdef __linux__
         case EDOTDOT: return 73;
+#endif
         case EBADMSG: return 74;
         case EOVERFLOW: return 75;
+#ifdef __linux__
         case ENOTUNIQ: return 76;
         case EBADFD: return 77;
         case EREMCHG: return 78;
@@ -114,9 +123,12 @@ int shim::bionic::translate_errno_from_host(int err) {
         case ELIBSCN: return 81;
         case ELIBMAX: return 82;
         case ELIBEXEC: return 83;
+#endif
         case EILSEQ: return 84;
+#ifdef __linux__
         case ERESTART: return 85;
         case ESTRPIPE: return 86;
+#endif
         case EUSERS: return 87;
         case ENOTSOCK: return 88;
         case EDESTADDRREQ: return 89;
@@ -147,19 +159,25 @@ int shim::bionic::translate_errno_from_host(int err) {
         case EALREADY: return 114;
         case EINPROGRESS: return 115;
         case ESTALE: return 116;
+#ifdef __linux__
         case EUCLEAN: return 117;
         case ENOTNAM: return 118;
         case ENAVAIL: return 119;
         case EISNAM: return 120;
         case EREMOTEIO: return 121;
+#endif
         case EDQUOT: return 122;
+#ifdef __linux__
         case ENOMEDIUM: return 123;
         case EMEDIUMTYPE: return 124;
+#endif
         case ECANCELED: return 125;
+#ifdef __linux__
         case ENOKEY: return 126;
         case EKEYEXPIRED: return 127;
         case EKEYREVOKED: return 128;
         case EKEYREJECTED: return 129;
+#endif
         case EOWNERDEAD: return 130;
         case ENOTRECOVERABLE: return 131;
         default: return err;
@@ -210,6 +228,7 @@ int shim::bionic::translate_errno_to_host(int err) {
         case 40: return ELOOP;
         case 42: return ENOMSG;
         case 43: return EIDRM;
+#ifdef __linux__
         case 44: return ECHRNG;
         case 45: return EL2NSYNC;
         case 46: return EL3HLT;
@@ -225,22 +244,30 @@ int shim::bionic::translate_errno_to_host(int err) {
         case 56: return EBADRQC;
         case 57: return EBADSLT;
         case 59: return EBFONT;
+#endif
         case 60: return ENOSTR;
         case 61: return ENODATA;
         case 62: return ETIME;
         case 63: return ENOSR;
+#ifdef __linux__
         case 64: return ENONET;
         case 65: return ENOPKG;
+#endif
         case 66: return EREMOTE;
         case 67: return ENOLINK;
+#ifdef __linux__
         case 68: return EADV;
         case 69: return ESRMNT;
         case 70: return ECOMM;
+#endif
         case 71: return EPROTO;
         case 72: return EMULTIHOP;
+#ifdef __linux__
         case 73: return EDOTDOT;
+#endif
         case 74: return EBADMSG;
         case 75: return EOVERFLOW;
+#ifdef __linux__
         case 76: return ENOTUNIQ;
         case 77: return EBADFD;
         case 78: return EREMCHG;
@@ -249,9 +276,12 @@ int shim::bionic::translate_errno_to_host(int err) {
         case 81: return ELIBSCN;
         case 82: return ELIBMAX;
         case 83: return ELIBEXEC;
+#endif
         case 84: return EILSEQ;
+#ifdef __linux__
         case 85: return ERESTART;
         case 86: return ESTRPIPE;
+#endif
         case 87: return EUSERS;
         case 88: return ENOTSOCK;
         case 89: return EDESTADDRREQ;
@@ -282,19 +312,25 @@ int shim::bionic::translate_errno_to_host(int err) {
         case 114: return EALREADY;
         case 115: return EINPROGRESS;
         case 116: return ESTALE;
+#ifdef __linux__
         case 117: return EUCLEAN;
         case 118: return ENOTNAM;
         case 119: return ENAVAIL;
         case 120: return EISNAM;
         case 121: return EREMOTEIO;
+#endif
         case 122: return EDQUOT;
+#ifdef __linux__
         case 123: return ENOMEDIUM;
         case 124: return EMEDIUMTYPE;
+#endif
         case 125: return ECANCELED;
+#ifdef __linux__
         case 126: return ENOKEY;
         case 127: return EKEYEXPIRED;
         case 128: return EKEYREVOKED;
         case 129: return EKEYREJECTED;
+#endif
         case 130: return EOWNERDEAD;
         case 131: return ENOTRECOVERABLE;
         default: return err;

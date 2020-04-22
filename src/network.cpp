@@ -407,8 +407,9 @@ detail::sock_send_flags::sock_send_flags(int fd, int flags) : fd(fd), src_flags(
     if (flags & 0x4000) {
 #ifdef __APPLE__
         int value = 1;
-        getsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &saved_nosigpipe, sizeof(saved_nosigpipe));
-        setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &value, sizeof(value));
+        socklen_t siz = sizeof(saved_nosigpipe);
+        ::getsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &saved_nosigpipe, &siz);
+        ::setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &value, sizeof(value));
 #else
         this->flags |= MSG_NOSIGNAL;
 #endif

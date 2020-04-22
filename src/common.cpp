@@ -13,15 +13,18 @@
 #include "stat.h"
 #include "file_misc.h"
 #include "sysconf.h"
-#include <math.h>
+#include <cmath>
 #include <unistd.h>
 #include <sys/time.h>
-#include <wctype.h>
-#include <signal.h>
-#include <string.h>
+#include <cwctype>
+#include <csignal>
+#include <cstring>
 #include <sys/mman.h>
 #include <sys/resource.h>
-#include <setjmp.h>
+#include <sys/utsname.h>
+#include <csetjmp>
+#include <clocale>
+#include <cerrno>
 #include <utime.h>
 #include <sys/uio.h>
 #include <syslog.h>
@@ -29,6 +32,9 @@
 #include <sys/prctl.h>
 #include <sys/auxv.h>
 #include <sys/utsname.h>
+#endif
+#ifdef __APPLE__
+#include <xlocale.h>
 #endif
 
 using namespace shim;
@@ -55,11 +61,15 @@ uintptr_t bionic::stack_chk_guard = []() {
 #endif
 }();
 
-int bionic::to_host_clock_type(bionic::clock_type type) {
+clockid_t bionic::to_host_clock_type(bionic::clock_type type) {
     switch (type) {
         case clock_type::REALTIME: return CLOCK_REALTIME;
         case clock_type::MONOTONIC: return CLOCK_MONOTONIC;
+#ifdef __APPLE__
+        case clock_type::BOOTTIME: return CLOCK_MONOTONIC;
+#else
         case clock_type::BOOTTIME: return CLOCK_BOOTTIME;
+#endif
         default: throw std::runtime_error("Unexpected clock type");
     }
 }
@@ -91,12 +101,12 @@ void bionic::on_stack_chk_fail() {
     abort();
 }
 
-void shim::assert(const char *file, int line, const char *msg) {
+void shim::assert_impl(const char *file, int line, const char *msg) {
     fprintf(stderr, "assert failed: %s:%i: %s\n", file, line, msg);
     abort();
 }
 
-void shim::assert2(const char *file, int line, const char *function, const char *msg) {
+void shim::assert2_impl(const char *file, int line, const char *function, const char *msg) {
     fprintf(stderr, "assert failed: %s:%i %s: %s\n", file, line, function, msg);
     abort();
 }
@@ -162,7 +172,7 @@ int shim::prctl(bionic::prctl_num opt, unsigned long a2, unsigned long a3, unsig
 #else
     switch (opt) {
         case bionic::prctl_num::SET_NAME:
-            return pthread_setname_np(pthread_self(), (const char *) a2);
+            return pthread_setname_np((const char *) a2);
         default:
             Log::error("Shim/Common", "Unexpected prctl: %i", opt);
             return EINVAL;
@@ -182,6 +192,10 @@ void* shim::__memcpy_chk(void *dst, const void *src, size_t size, size_t max_len
     return ::memcpy(dst, src, size);
 }
 
+size_t shim::ctype_get_mb_cur_max() {
+    return MB_CUR_MAX;
+}
+
 
 void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
@@ -196,8 +210,8 @@ void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"__stack_chk_fail", &bionic::on_stack_chk_fail},
         {"__stack_chk_guard", &bionic::stack_chk_guard},
 
-        {"__assert", assert},
-        {"__assert2", assert2},
+        {"__assert", assert_impl},
+        {"__assert2", assert2_impl},
 
         {"android_set_abort_message", android_set_abort_message},
 
@@ -305,7 +319,7 @@ void shim::add_ctype_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"tolower", ::tolower},
         {"toupper", ::toupper},
 
-        {"__ctype_get_mb_cur_max", __ctype_get_mb_cur_max}
+        {"__ctype_get_mb_cur_max", ctype_get_mb_cur_max}
     });
 }
 
@@ -484,7 +498,7 @@ void shim::add_wchar_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"wcslen", ::wcslen},
         {"wctob", ::wctob},
         {"btowc", ::btowc},
-        {"wmemchr", ::wmemchr},
+        {"wmemchr", (wchar_t *(*)(wchar_t *, wchar_t, size_t)) ::wmemchr},
         {"wmemcmp", ::wmemcmp},
         {"wmemcpy", ::wmemcpy},
         {"wmemset", ::wmemset},

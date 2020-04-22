@@ -15,7 +15,7 @@ namespace shim {
             BOOTTIME = 7
         };
 
-        int to_host_clock_type(clock_type type);
+        clockid_t to_host_clock_type(clock_type type);
 
         enum class mmap_flags : int {
             FIXED = 0x10,
@@ -54,8 +54,8 @@ namespace shim {
 
     }
 
-    void assert(const char* file, int line, const char* msg);
-    void assert2(const char* file, int line, const char* function, const char* msg);
+    void assert_impl(const char* file, int line, const char* msg);
+    void assert2_impl(const char* file, int line, const char* function, const char* msg);
 
     void android_set_abort_message(const char *msg);
 
@@ -87,6 +87,8 @@ namespace shim {
     uint32_t arc4random();
 
     void *__memcpy_chk(void *dst, const void *src, size_t size, size_t max_len);
+
+    size_t ctype_get_mb_cur_max();
 
     void add_common_shimmed_symbols(std::vector<shimmed_symbol> &list);
 

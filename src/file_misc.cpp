@@ -87,7 +87,7 @@ int shim::fcntl(int fd, bionic::fcntl_index cmd, void *arg) {
             return ::fcntl(fd, F_SETFL, to_host_file_status_flags((bionic::file_status_flags) (size_t) arg));
         case bionic::fcntl_index::SETLK: {
             auto afl = (bionic::flock *) arg;
-            flock fl {};
+            struct flock fl {};
             fl.l_type = afl->l_type;
             fl.l_whence = afl->l_whence;
             fl.l_start = afl->l_start;
