@@ -145,8 +145,12 @@ namespace shim {
 
     void freeaddrinfo(bionic::addrinfo *ai);
 
-    int getnameinfo(const ::sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen,
+    int getnameinfo(const bionic::sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen,
             char *serv, socklen_t servlen, bionic::nameinfo_flags flags);
+
+    int bind(int sockfd, const bionic::sockaddr *addr, socklen_t addrlen);
+
+    int connect(int sockfd, const bionic::sockaddr *addr, socklen_t addrlen);
 
     ssize_t send(int sockfd, const void *buf, size_t len, int flags);
 
@@ -156,7 +160,7 @@ namespace shim {
 
     ssize_t recvmsg(int sockfd, struct msghdr *data, int flags);
 
-    ssize_t sendto(int sockfd, const void *buf, size_t len, int flags, const ::sockaddr *addr, socklen_t addrlen);
+    ssize_t sendto(int sockfd, const void *buf, size_t len, int flags, const bionic::sockaddr *addr, socklen_t addrlen);
 
     ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags, bionic::sockaddr *addr, socklen_t *addrlen);
 
@@ -176,18 +180,16 @@ namespace shim {
 
     namespace detail {
 
-        template <>
-        struct arg_rewrite<const ::sockaddr *> {
-            using source = bionic::sockaddr *;
+        struct sockaddr_in {
+            sockaddr_storage haddr = {};
+            socklen_t len = sizeof(sockaddr_storage);
 
-            sockaddr_storage stor;
+            sockaddr_in(const bionic::sockaddr *addr, socklen_t) {
+                bionic::to_host(addr, ptr());
+                len = bionic::get_host_len(addr);
+            }
 
-            ::sockaddr *before(source src) {
-                bionic::to_host(src, (::sockaddr *) &stor);
-                return (::sockaddr *) &stor;
-            }
-            void after(source src) {
-            }
+            ::sockaddr *ptr() { return (::sockaddr *) &haddr; }
         };
 
         struct sockaddr_out {

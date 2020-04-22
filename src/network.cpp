@@ -315,10 +315,21 @@ void shim::freeaddrinfo(bionic::addrinfo *ai) {
     bionic::free_bionic_list(ai);
 }
 
-int shim::getnameinfo(const ::sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen,
+int shim::getnameinfo(const bionic::sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen,
         char *serv, socklen_t servlen, bionic::nameinfo_flags flags) {
-    return ::getnameinfo(addr, addrlen, host, hostlen, serv, servlen,
+    detail::sockaddr_in haddr (addr, addrlen);
+    return ::getnameinfo(haddr.ptr(), haddr.len, host, hostlen, serv, servlen,
             bionic::to_host_nameinfo_flags(flags));
+}
+
+int shim::bind(int sockfd, const bionic::sockaddr *addr, socklen_t addrlen) {
+    detail::sockaddr_in haddr (addr, addrlen);
+    return ::bind(sockfd, haddr.ptr(), haddr.len);
+}
+
+int shim::connect(int sockfd, const bionic::sockaddr *addr, socklen_t addrlen) {
+    detail::sockaddr_in haddr (addr, addrlen);
+    return ::connect(sockfd, haddr.ptr(), haddr.len);
 }
 
 ssize_t shim::send(int sockfd, const void *buf, size_t len, int flags) {
@@ -343,9 +354,10 @@ ssize_t shim::recvmsg(int sockfd, struct msghdr *data, int flags) {
     return ::recvmsg(sockfd, data, flags);
 }
 
-ssize_t shim::sendto(int sockfd, const void *buf, size_t len, int flags, const ::sockaddr *addr, socklen_t addrlen) {
+ssize_t shim::sendto(int sockfd, const void *buf, size_t len, int flags, const bionic::sockaddr *addr, socklen_t addrlen) {
+    detail::sockaddr_in haddr (addr, addrlen);
     detail::sock_send_flags hflags (sockfd, flags);
-    return ::sendto(sockfd, buf, len, hflags.flags, addr, addrlen);
+    return ::sendto(sockfd, buf, len, hflags.flags, haddr.ptr(), haddr.len);
 }
 
 ssize_t shim::recvfrom(int sockfd, void *buf, size_t len, int flags, bionic::sockaddr *addr, socklen_t *addrlen) {
@@ -430,11 +442,11 @@ void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) 
     list.insert(list.end(), {
         /* socket.h */
         {"socket", socket},
-        {"bind", &detail::arg_rewrite_helper<int (int, const ::sockaddr *, socklen_t)>::rewrite<::bind>},
-        {"connect", &detail::arg_rewrite_helper<int (int, const ::sockaddr *, socklen_t)>::rewrite<::connect>},
+        {"bind", bind},
+        {"connect", connect},
         {"send", send},
         {"sendmsg", sendmsg},
-        {"sendto", AutoArgRewritten(sendto)},
+        {"sendto", sendto},
         {"recv", recv},
         {"recvmsg", recvmsg},
         {"recvfrom", recvfrom},
@@ -449,7 +461,7 @@ void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) 
         /* netdb.h */
         {"getaddrinfo", getaddrinfo},
         {"freeaddrinfo", freeaddrinfo},
-        {"getnameinfo", AutoArgRewritten(getnameinfo)},
+        {"getnameinfo", getnameinfo},
         {"gai_strerror", gai_strerror},
 
         {"gethostbyaddr", gethostbyaddr},
