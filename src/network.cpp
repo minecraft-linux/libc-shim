@@ -434,7 +434,7 @@ detail::sock_send_flags::sock_send_flags(int fd, int flags) : fd(fd), src_flags(
 detail::sock_send_flags::~sock_send_flags() {
 #ifdef __APPLE__
     if (src_flags & 0x4000)
-        setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &saved_nosigpipe, sizeof(saved_nosigpipe));
+        ::setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &saved_nosigpipe, sizeof(saved_nosigpipe));
 #endif
 }
 
