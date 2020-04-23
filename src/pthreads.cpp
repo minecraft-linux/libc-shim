@@ -4,6 +4,7 @@
 #include <mutex>
 #include <signal.h>
 #include "pthreads.h"
+#include "errno.h"
 
 using namespace shim;
 
@@ -123,7 +124,8 @@ static_assert(sizeof(pthread_t) <= sizeof(long), "pthread_t larger than bionic's
 
 int shim::pthread_create(pthread_t *thread, const shim::pthread_attr_t *attr, void *(*fn)(void *), void *arg) {
     host_pthread_attr hattr (attr);
-    return pthread_create(thread, &hattr.attr, fn, arg);
+    int ret = pthread_create(thread, &hattr.attr, fn, arg);
+    return bionic::translate_errno_from_host(ret);
 }
 
 int shim::pthread_setschedparam(pthread_t thread, bionic::sched_policy policy, const shim::bionic::sched_param *param) {
@@ -131,11 +133,12 @@ int shim::pthread_setschedparam(pthread_t thread, bionic::sched_policy policy, c
     sched_param hparam;
     int ret = ::pthread_getschedparam(thread, &hpolicy, &hparam);
     if (ret != 0)
-        return ret;
+        return bionic::translate_errno_from_host(ret);
     if (policy != (bionic::sched_policy) -1)
         hpolicy = bionic::to_host_sched_policy(policy);
     hparam.sched_priority = param->sched_priority;
-    return ::pthread_setschedparam(thread, hpolicy, &hparam);
+    ret = ::pthread_setschedparam(thread, hpolicy, &hparam);
+    return bionic::translate_errno_from_host(ret);
 }
 
 int shim::pthread_getschedparam(pthread_t thread, shim::bionic::sched_policy *policy, shim::bionic::sched_param *param) {
@@ -143,7 +146,7 @@ int shim::pthread_getschedparam(pthread_t thread, shim::bionic::sched_policy *po
     sched_param hparam;
     int ret = ::pthread_getschedparam(thread, &hpolicy, &hparam);
     if (ret != 0)
-        return ret;
+        return bionic::translate_errno_from_host(ret);
     *policy = bionic::from_host_sched_policy(hpolicy);
     param->sched_priority = hparam.sched_priority;
     return 0;
@@ -194,13 +197,30 @@ int shim::pthread_attr_getstacksize(shim::pthread_attr_t *attr, size_t *value) {
 
 int shim::pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr) {
     host_mutexattr hattr (attr);
-    return detail::make_c_wrapped<pthread_mutex_t, const ::pthread_mutexattr_t *>(mutex, &::pthread_mutex_init, &hattr.attr);
+    int ret = detail::make_c_wrapped<pthread_mutex_t, const ::pthread_mutexattr_t *>(mutex, &::pthread_mutex_init, &hattr.attr);
+    return bionic::translate_errno_from_host(ret);
 }
 
 int shim::pthread_mutex_destroy(pthread_mutex_t *mutex) {
     if (!bionic::is_mutex_initialized(mutex))
         return 0;
-    return detail::destroy_c_wrapped<pthread_mutex_t>(mutex, &::pthread_mutex_destroy);
+    int ret = detail::destroy_c_wrapped<pthread_mutex_t>(mutex, &::pthread_mutex_destroy);
+    return bionic::translate_errno_from_host(ret);
+}
+
+int shim::pthread_mutex_lock(pthread_mutex_t *mutex) {
+    int ret = ::pthread_mutex_lock(bionic::to_host(mutex));
+    return bionic::translate_errno_from_host(ret);
+}
+
+int shim::pthread_mutex_unlock(pthread_mutex_t *mutex) {
+    int ret = ::pthread_mutex_unlock(bionic::to_host(mutex));
+    return bionic::translate_errno_from_host(ret);
+}
+
+int shim::pthread_mutex_trylock(pthread_mutex_t *mutex) {
+    int ret = ::pthread_mutex_trylock(bionic::to_host(mutex));
+    return bionic::translate_errno_from_host(ret);
 }
 
 int shim::pthread_mutexattr_init(pthread_mutexattr_t *attr) {
@@ -226,13 +246,34 @@ int shim::pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type) 
 
 int shim::pthread_cond_init(pthread_cond_t *cond, const shim::pthread_condattr_t *attr) {
     host_condattr hattr (attr);
-    return detail::make_c_wrapped<pthread_cond_t, const ::pthread_condattr_t *>(cond, &::pthread_cond_init, &hattr.attr);
+    int ret = detail::make_c_wrapped<pthread_cond_t, const ::pthread_condattr_t *>(cond, &::pthread_cond_init, &hattr.attr);
+    return bionic::translate_errno_from_host(ret);
 }
 
 int shim::pthread_cond_destroy(pthread_cond_t *cond) {
     if (!bionic::is_cond_initialized(cond))
         return 0;
-    return detail::destroy_c_wrapped<pthread_cond_t>(cond, &::pthread_cond_destroy);
+    return bionic::translate_errno_from_host(detail::destroy_c_wrapped<pthread_cond_t>(cond, &::pthread_cond_destroy));
+}
+
+int shim::pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex) {
+    int ret = ::pthread_cond_wait(bionic::to_host(cond), bionic::to_host(mutex));
+    return bionic::translate_errno_from_host(ret);
+}
+
+int shim::pthread_cond_broadcast(pthread_cond_t *cond) {
+    int ret = ::pthread_cond_broadcast(bionic::to_host(cond));
+    return bionic::translate_errno_from_host(ret);
+}
+
+int shim::pthread_cond_signal(pthread_cond_t *cond) {
+    int ret = ::pthread_cond_signal(bionic::to_host(cond));
+    return bionic::translate_errno_from_host(ret);
+}
+
+int shim::pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, const struct timespec *ts) {
+    int ret = ::pthread_cond_timedwait(bionic::to_host(cond), bionic::to_host(mutex), ts);
+    return bionic::translate_errno_from_host(ret);
 }
 
 int shim::pthread_condattr_init(pthread_condattr_t *attr) {
@@ -247,7 +288,7 @@ int shim::pthread_condattr_destroy(pthread_condattr_t *attr) {
 int shim::pthread_condattr_setclock(pthread_condattr_t *attr, int clock) {
     if (clock != (int) bionic::clock_type::MONOTONIC &&
         clock != (int) bionic::clock_type::REALTIME)
-        return EINVAL;
+        return bionic::translate_errno_from_host(EINVAL);
     attr->clock = (bionic::clock_type) clock;
     return 0;
 }
@@ -260,13 +301,15 @@ int shim::pthread_condattr_getclock(const pthread_condattr_t *attr, int *clock) 
 int shim::pthread_rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr) {
     if (attr != nullptr)
         throw std::runtime_error("non-NULL rwlock attr is currently not supported");
-    return detail::make_c_wrapped<pthread_rwlock_t, const ::pthread_rwlockattr_t *>(rwlock, &::pthread_rwlock_init, nullptr);
+    int ret = detail::make_c_wrapped<pthread_rwlock_t, const ::pthread_rwlockattr_t *>(rwlock, &::pthread_rwlock_init, nullptr);
+    return bionic::translate_errno_from_host(ret);
 }
 
 int shim::pthread_rwlock_destroy(pthread_rwlock_t *rwlock) {
     if (!bionic::is_rwlock_initialized(rwlock))
         return 0;
-    return detail::destroy_c_wrapped<pthread_rwlock_t>(rwlock, &::pthread_rwlock_destroy);
+    int ret = detail::destroy_c_wrapped<pthread_rwlock_t>(rwlock, &::pthread_rwlock_destroy);
+    return bionic::translate_errno_from_host(ret);
 }
 
 int shim::pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
@@ -275,15 +318,17 @@ int shim::pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
     if (host_key > INT_MAX)
         throw std::runtime_error("Unsupported host pthread key implementation");
     *key = host_key;
-    return ret;
+    return bionic::translate_errno_from_host(ret);
 }
 
 int shim::pthread_key_delete(pthread_key_t key) {
-    return ::pthread_key_delete((::pthread_key_t) key);
+    int ret = ::pthread_key_delete((::pthread_key_t) key);
+    return bionic::translate_errno_from_host(ret);
 }
 
 int shim::pthread_setspecific(pthread_key_t key, const void *value) {
-    return ::pthread_setspecific((::pthread_key_t) key, value);
+    int ret = ::pthread_setspecific((::pthread_key_t) key, value);
+    return bionic::translate_errno_from_host(ret);
 }
 
 void* shim::pthread_getspecific(pthread_key_t key) {
@@ -335,9 +380,9 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
 
         {"pthread_mutex_init", pthread_mutex_init},
         {"pthread_mutex_destroy", pthread_mutex_destroy},
-        {"pthread_mutex_lock", &detail::arg_rewrite_helper<int (::pthread_mutex_t *)>::rewrite<pthread_mutex_lock>},
-        {"pthread_mutex_unlock", &detail::arg_rewrite_helper<int (::pthread_mutex_t *)>::rewrite<pthread_mutex_unlock>},
-        {"pthread_mutex_trylock", &detail::arg_rewrite_helper<int (::pthread_mutex_t *)>::rewrite<pthread_mutex_trylock>},
+        {"pthread_mutex_lock", pthread_mutex_lock},
+        {"pthread_mutex_unlock", pthread_mutex_unlock},
+        {"pthread_mutex_trylock", pthread_mutex_trylock},
         {"pthread_mutexattr_init", pthread_mutexattr_init},
         {"pthread_mutexattr_destroy", pthread_mutexattr_destroy},
         {"pthread_mutexattr_settype", pthread_mutexattr_settype},
@@ -345,10 +390,10 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
 
         {"pthread_cond_init", pthread_cond_init},
         {"pthread_cond_destroy", pthread_cond_destroy},
-        {"pthread_cond_wait", &detail::arg_rewrite_helper<int (::pthread_cond_t*, ::pthread_mutex_t*)>::rewrite<pthread_cond_wait>},
-        {"pthread_cond_broadcast", &detail::arg_rewrite_helper<int (::pthread_cond_t *)>::rewrite<pthread_cond_broadcast>},
-        {"pthread_cond_signal", &detail::arg_rewrite_helper<int (::pthread_cond_t *)>::rewrite<pthread_cond_signal>},
-        {"pthread_cond_timedwait", &detail::arg_rewrite_helper<int (::pthread_cond_t *, ::pthread_mutex_t*, const struct timespec *)>::rewrite<pthread_cond_timedwait>},
+        {"pthread_cond_wait", pthread_cond_wait},
+        {"pthread_cond_broadcast", pthread_cond_broadcast},
+        {"pthread_cond_signal", pthread_cond_signal},
+        {"pthread_cond_timedwait", pthread_cond_timedwait},
         {"pthread_condattr_init", pthread_condattr_init},
         {"pthread_condattr_destroy", pthread_condattr_destroy},
         {"pthread_condattr_setclock", pthread_condattr_setclock},
