@@ -196,6 +196,14 @@ size_t shim::ctype_get_mb_cur_max() {
     return MB_CUR_MAX;
 }
 
+int shim::gettimeofday(bionic::timeval *tv, void *p) {
+    timeval htv {};
+    int ret = ::gettimeofday(&htv, p);
+    tv->tv_sec = htv.tv_sec;
+    tv->tv_usec = htv.tv_usec;
+    return ret;
+}
+
 
 void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
@@ -337,7 +345,7 @@ void shim::add_math_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 void shim::add_time_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         /* sys/time.h */
-        {"gettimeofday", ::gettimeofday},
+        {"gettimeofday", gettimeofday},
 
         /* time.h */
         {"clock", ::clock},

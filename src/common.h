@@ -44,6 +44,10 @@ namespace shim {
 
         void on_stack_chk_fail();
 
+        struct timeval {
+            long tv_sec, tv_usec;
+        };
+
 #if defined(__LP64__)
         using off_t = ::off_t;
 #else
@@ -89,6 +93,8 @@ namespace shim {
     void *__memcpy_chk(void *dst, const void *src, size_t size, size_t max_len);
 
     size_t ctype_get_mb_cur_max();
+
+    int gettimeofday(bionic::timeval *tv, void *p);
 
     void add_common_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
