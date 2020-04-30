@@ -197,8 +197,10 @@ size_t shim::ctype_get_mb_cur_max() {
 }
 
 int shim::gettimeofday(bionic::timeval *tv, void *p) {
+    if (p)
+        throw std::runtime_error("gettimeofday adtimezone is not supported");
     timeval htv {};
-    int ret = ::gettimeofday(&htv, p);
+    int ret = ::gettimeofday(&htv, nullptr);
     tv->tv_sec = htv.tv_sec;
     tv->tv_usec = htv.tv_usec;
     return ret;
