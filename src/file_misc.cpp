@@ -8,6 +8,7 @@
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include "network.h"
+#include "errno.h"
 
 using namespace shim;
 
@@ -76,7 +77,9 @@ int shim::open(const char *pathname, bionic::file_status_flags flags, ...) {
         va_end(ap);
     }
 
-    return ::open(pathname, hflags, mode);
+    int ret = ::open(pathname, hflags, mode);
+    bionic::update_errno();
+    return ret;
 }
 
 int shim::fcntl(int fd, bionic::fcntl_index cmd, void *arg) {
@@ -152,7 +155,7 @@ void shim::add_ioctl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 void shim::add_fcntl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"open", open},
-        {"fcntl", fcntl},
+        {"fcntl", WithErrnoUpdate(fcntl)},
     });
 }
 
@@ -161,9 +164,9 @@ void shim::add_poll_select_shimmed_symbols(std::vector<shim::shimmed_symbol> &li
 #ifdef __APPLE__
         {"poll", poll_via_select},
 #else
-        {"poll", ::poll},
+        {"poll", WithErrnoUpdate(::poll)},
 #endif
-        {"select", ::select},
+        {"select", WithErrnoUpdate(::select)},
 
         {"__FD_ISSET_chk", __FD_ISSET_chk},
         {"__FD_CLR_chk", __FD_CLR_chk},
@@ -173,15 +176,15 @@ void shim::add_poll_select_shimmed_symbols(std::vector<shim::shimmed_symbol> &li
 
 void shim::add_epoll_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
-        {"epoll_create", epoll_create},
-        {"epoll_create1", epoll_create1},
-        {"epoll_ctl", epoll_ctl},
-        {"epoll_wait", epoll_wait},
+        {"epoll_create", WithErrnoUpdate(epoll_create)},
+        {"epoll_create1", WithErrnoUpdate(epoll_create1)},
+        {"epoll_ctl", WithErrnoUpdate(epoll_ctl)},
+        {"epoll_wait", WithErrnoUpdate(epoll_wait)},
     });
 }
 
 void shim::add_eventfd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
-        {"eventfd", eventfd},
+        {"eventfd", WithErrnoUpdate(eventfd)},
     });
 }

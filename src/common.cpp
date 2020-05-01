@@ -209,13 +209,8 @@ int shim::gettimeofday(bionic::timeval *tv, void *p) {
 
 void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
-#ifdef __APPLE__
-        {"__errno", bionic::errno_with_translation},
-        {"__set_errno", bionic::set_errno_with_translation},
-#else
-        {"__errno", __errno_location},
-        {"__set_errno", bionic::set_errno_without_translation},
-#endif
+        {"__errno", bionic::get_errno},
+        {"__set_errno", bionic::set_errno},
 
         {"__stack_chk_fail", &bionic::on_stack_chk_fail},
         {"__stack_chk_guard", &bionic::stack_chk_guard},

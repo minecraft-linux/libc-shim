@@ -1,4 +1,5 @@
 #include "network.h"
+#include "errno.h"
 
 #include <netinet/in.h>
 #include <net/if.h>
@@ -441,22 +442,22 @@ detail::sock_send_flags::~sock_send_flags() {
 void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         /* socket.h */
-        {"socket", socket},
-        {"bind", bind},
-        {"connect", connect},
-        {"send", send},
-        {"sendmsg", sendmsg},
-        {"sendto", sendto},
-        {"recv", recv},
-        {"recvmsg", recvmsg},
-        {"recvfrom", recvfrom},
-        {"getsockname", getsockname},
-        {"getpeername", getpeername},
-        {"accept", accept},
-        {"getsockopt", getsockopt},
-        {"setsockopt", setsockopt},
-        {"listen", ::listen},
-        {"shutdown", shutdown},
+        {"socket", WithErrnoUpdate(socket)},
+        {"bind", WithErrnoUpdate(bind)},
+        {"connect", WithErrnoUpdate(connect)},
+        {"send", WithErrnoUpdate(send)},
+        {"sendmsg", WithErrnoUpdate(sendmsg)},
+        {"sendto", WithErrnoUpdate(sendto)},
+        {"recv", WithErrnoUpdate(recv)},
+        {"recvmsg", WithErrnoUpdate(recvmsg)},
+        {"recvfrom", WithErrnoUpdate(recvfrom)},
+        {"getsockname", WithErrnoUpdate(getsockname)},
+        {"getpeername", WithErrnoUpdate(getpeername)},
+        {"accept", WithErrnoUpdate(accept)},
+        {"getsockopt", WithErrnoUpdate(getsockopt)},
+        {"setsockopt", WithErrnoUpdate(setsockopt)},
+        {"listen", WithErrnoUpdate(::listen)},
+        {"shutdown", WithErrnoUpdate(shutdown)},
 
         /* netdb.h */
         {"getaddrinfo", getaddrinfo},

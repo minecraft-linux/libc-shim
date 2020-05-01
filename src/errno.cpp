@@ -17,19 +17,31 @@ int shim::strerror_r(int err, char* buf, size_t len) {
 #endif
 }
 
-int* shim::bionic::errno_with_translation() {
-    int* ret = &errno;
-    *ret = translate_errno_from_host(*ret);
-    return ret;
+#ifdef ERRNO_TRANSLATION
+
+int shim::bionic::errno_value;
+
+int *shim::bionic::get_errno() {
+    errno_value = translate_errno_from_host(errno);
+    return &errno_value;
 }
 
-void shim::bionic::set_errno_with_translation(int err) {
+void shim::bionic::set_errno(int err) {
+    errno_value = err;
     errno = translate_errno_to_host(err);
 }
 
-void shim::bionic::set_errno_without_translation(int err) {
+#else
+
+int *shim::bionic::get_errno() {
+    return &errno;
+}
+
+void shim::bionic::set_errno(int err) {
     errno = err;
 }
+
+#endif
 
 int shim::bionic::translate_errno_from_host(int err) {
     switch (err) {
