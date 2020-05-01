@@ -149,7 +149,7 @@ void shim::__FD_SET_chk(int fd, fd_set *set) {
 }
 
 void shim::add_ioctl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
-    list.push_back({"ioctl", ioctl});
+    list.push_back({"ioctl", WithErrnoUpdate(ioctl)});
 }
 
 void shim::add_fcntl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {

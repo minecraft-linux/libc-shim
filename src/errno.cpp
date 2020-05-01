@@ -21,8 +21,11 @@ int shim::strerror_r(int err, char* buf, size_t len) {
 
 int shim::bionic::errno_value;
 
-int *shim::bionic::get_errno() {
+void shim::bionic::update_errno() {
     errno_value = translate_errno_from_host(errno);
+}
+
+int *shim::bionic::get_errno() {
     return &errno_value;
 }
 

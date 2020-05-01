@@ -23,7 +23,7 @@ namespace shim {
 
         void set_errno(int err);
 
-        inline void update_errno() { get_errno(); }
+        void update_errno();
 
     }
 
