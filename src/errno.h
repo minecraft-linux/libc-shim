@@ -5,7 +5,6 @@
 #ifdef __APPLE__
 #define ERRNO_TRANSLATION
 #endif
-#define ERRNO_TRANSLATION
 
 namespace shim {
 
@@ -23,7 +22,11 @@ namespace shim {
 
         void set_errno(int err);
 
+#ifdef ERRNO_TRANSLATION
         void update_errno();
+#else
+        inline void update_errno() {}
+#endif
 
     }
 
@@ -51,4 +54,9 @@ namespace shim {
     }
 
 }
+
+#ifdef ERRNO_TRANSLATION
 #define WithErrnoUpdate(ptr) (&shim::detail::errno_update_helper<typeof(ptr)>::wrapper<ptr>)
+#else
+#define WithErrnoUpdate(ptr) ptr
+#endif
