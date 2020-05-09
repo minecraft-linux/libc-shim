@@ -5,6 +5,8 @@
 #include <signal.h>
 #include "pthreads.h"
 #include "errno.h"
+#include <sys/time.h>
+#include <sys/resource.h>
 
 using namespace shim;
 
@@ -413,6 +415,10 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
         {"__pthread_cleanup_push", pthread_cleanup_push_impl},
         {"__pthread_cleanup_pop", pthread_cleanup_pop_impl},
 
-        {"pthread_once", pthread_once}
+        {"pthread_once", pthread_once},
+
+        {"pthread_setname_np", ::pthread_setname_np},
+
+        {"setpriority", ::setpriority}
     });
 }

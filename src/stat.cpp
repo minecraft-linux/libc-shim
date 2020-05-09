@@ -84,5 +84,6 @@ void shim::add_stat_shimmed_symbols(std::vector<shimmed_symbol> &list) {
         {"fchmod", ::fchmod},
         {"umask", ::umask},
         {"mkdir", ::mkdir},
+        {"fdatasync", (void*)+[]() { }}
     });
 }
