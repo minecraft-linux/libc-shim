@@ -82,6 +82,13 @@ int shim::open(const char *pathname, bionic::file_status_flags flags, ...) {
     return ret;
 }
 
+int shim::open_2(const char *pathname, bionic::file_status_flags flags) {
+    int hflags = bionic::to_host_file_status_flags(flags);
+    int ret = ::open(pathname, hflags, 0);
+    bionic::update_errno();
+    return ret;
+}
+
 int shim::fcntl(int fd, bionic::fcntl_index cmd, void *arg) {
     switch (cmd) {
         case bionic::fcntl_index::SETFD:
@@ -155,6 +162,7 @@ void shim::add_ioctl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 void shim::add_fcntl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"open", open},
+        {"__open_2", open_2},
         {"fcntl", WithErrnoUpdate(fcntl)},
     });
 }

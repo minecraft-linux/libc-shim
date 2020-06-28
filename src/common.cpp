@@ -36,6 +36,7 @@
 #ifdef __APPLE__
 #include <xlocale.h>
 #endif
+#include <inttypes.h>
 
 using namespace shim;
 
@@ -196,6 +197,14 @@ void* shim::__memcpy_chk(void *dst, const void *src, size_t size, size_t max_len
     return ::memcpy(dst, src, size);
 }
 
+void* shim::__memmove_chk(void *dst, const void *src, size_t size, size_t max_len) {
+    if (size > max_len) {
+        fprintf(stderr, "detected copy past buffer size");
+        abort();
+    }
+    return ::memmove(dst, src, size);
+}
+
 size_t shim::ctype_get_mb_cur_max() {
     return MB_CUR_MAX;
 }
@@ -208,6 +217,10 @@ int shim::gettimeofday(bionic::timeval *tv, void *p) {
     tv->tv_sec = htv.tv_sec;
     tv->tv_usec = htv.tv_usec;
     return ret;
+}
+
+ssize_t shim::__read_chk(int fd, void *buf, size_t count, size_t buf_size) {
+    return read(fd, buf, count);
 }
 
 
@@ -280,6 +293,8 @@ void shim::add_stdlib_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"strtoull_l", WithErrnoUpdate(strtoull_l)},
         {"strtof_l", WithErrnoUpdate(strtof_l)},
         {"strtold_l", WithErrnoUpdate(strtold_l)},
+        {"strtoumax", WithErrnoUpdate(strtoumax)},
+        {"strtoimax", WithErrnoUpdate(strtoimax)},
 
         {"realpath", realpath},
         {"bsearch", bsearch},
@@ -385,6 +400,7 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"lseek", WithErrnoUpdate(::lseek)},
         {"close", WithErrnoUpdate(::close)},
         {"read", WithErrnoUpdate(::read)},
+        {"__read_chk", __read_chk},
         {"write", WithErrnoUpdate(::write)},
         {"pipe", WithErrnoUpdate(::pipe)},
         {"alarm", WithErrnoUpdate(::alarm)},
@@ -460,6 +476,7 @@ void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"memcpy", ::memcpy},
         {"__memcpy_chk", __memcpy_chk},
         {"memmove", ::memmove},
+        {"__memmove_chk", __memmove_chk},
         {"memset", ::memset},
         {"memmem", ::memmem},
         {"strchr", (char *(*)(char *, int)) ::strchr},
