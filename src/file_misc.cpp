@@ -35,26 +35,35 @@ int shim::ioctl(int fd, bionic::ioctl_index cmd, void *arg) {
     switch (cmd) {
         case bionic::ioctl_index::FILE_NBIO:
             return ::ioctl(fd, FIONBIO, arg);
-        case bionic::ioctl_index::SOCKET_CGIFCONF:
         case bionic::ioctl_index::SOCKET_CGIFNETMASK: {
-            int host_ioctl = SIOCGIFCONF;
-            if (cmd == bionic::ioctl_index::SOCKET_CGIFNETMASK)
-                host_ioctl = SIOCGIFNETMASK;
-
+            auto buf = (bionic::ifreq *) arg;
+            ifreq r {};
+            bionic::to_host(&buf->addr, &r.ifr_addr);
+            strncpy(r.ifr_name, buf->name, 16);
+            r.ifr_name[15] = 0;
+            int ret = ::ioctl(fd, SIOCGIFNETMASK, &r);
+            if (ret < 0)
+                return ret;
+            bionic::from_host(&r.ifr_addr, &buf->addr);
+            strncpy(buf->name, r.ifr_name, 16);
+            buf->name[15] = 0;
+            return ret;
+        }
+        case bionic::ioctl_index::SOCKET_CGIFCONF: {
             auto buf = (bionic::ifconf *) arg;
             size_t cnt = buf->len / sizeof(bionic::ifreq);
             auto hibuf = new ifreq[cnt];
             ifconf hbuf {};
             hbuf.ifc_len = cnt * sizeof(ifreq);
             hbuf.ifc_ifcu.ifcu_req = hibuf;
-            int ret = ::ioctl(fd, host_ioctl, &hbuf);
+            int ret = ::ioctl(fd, SIOCGIFCONF, &hbuf);
             if (ret < 0)
                 return ret;
             cnt = hbuf.ifc_len / sizeof(::ifreq);
             buf->len = cnt * sizeof(bionic::ifreq);
             for (size_t i = 0; i < cnt; i++) {
                 strncpy(buf->req->name, hbuf.ifc_req[i].ifr_name, 16);
-                hbuf.ifc_req[i].ifr_name[15] = 0;
+                buf->req->name[15] = 0;
 
                 bionic::from_host(&hbuf.ifc_req[i].ifr_addr, &buf->req->addr);
             }
