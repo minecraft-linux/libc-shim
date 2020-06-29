@@ -77,10 +77,12 @@ clockid_t bionic::to_host_clock_type(bionic::clock_type type) {
 
 int bionic::to_host_mmap_flags(bionic::mmap_flags flags) {
     if (((uint32_t) flags & ~((uint32_t) mmap_flags::FIXED | (uint32_t) mmap_flags::ANON |
-        (uint32_t) mmap_flags::NORESERVE)) != 0)
+        (uint32_t) mmap_flags::NORESERVE | (uint32_t) mmap_flags::PRIVATE)) != 0)
         throw std::runtime_error("Used unsupported mmap flags");
 
     int ret = 0;
+    if ((uint32_t) flags & (uint32_t) mmap_flags::PRIVATE)
+        ret |= MAP_PRIVATE;
     if ((uint32_t) flags & (uint32_t) mmap_flags::FIXED)
         ret |= MAP_FILE;
     if ((uint32_t) flags & (uint32_t) mmap_flags::ANON)

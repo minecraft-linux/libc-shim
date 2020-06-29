@@ -18,6 +18,7 @@ namespace shim {
         clockid_t to_host_clock_type(clock_type type);
 
         enum class mmap_flags : int {
+            PRIVATE = 2,
             FIXED = 0x10,
             ANON = 0x20,
             NORESERVE = 0x4000
