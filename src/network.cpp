@@ -6,6 +6,8 @@
 #include <arpa/inet.h>
 #include <cstring>
 
+#include <log.h>
+
 using namespace shim;
 
 bionic::ai_flags bionic::from_host_ai_flags(int flags) {
@@ -103,7 +105,10 @@ void bionic::from_host(const ::sockaddr *in, bionic::sockaddr *out) {
             memcpy(((bionic::sockaddr_in6 *) out)->addr, ((::sockaddr_in6*) in)->sin6_addr.s6_addr, 16);
             ((bionic::sockaddr_in6 *) out)->scope = ((::sockaddr_in6*) in)->sin6_scope_id;
             break;
-        default: throw std::runtime_error("Unknown socket family when converting sockaddr from host");
+        default: 
+            Log::warn("Shim/Network", "Unknown socket family %d ignored in from_host", (int)in->sa_family);
+            out->family = (uint16_t) af_family::UNSPEC;
+            break;
     }
 }
 
