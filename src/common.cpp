@@ -46,6 +46,8 @@ extern "C" unsigned long __udivdi3(unsigned long a, unsigned long b);
 extern "C" long __divdi3(long a, long b);
 #endif
 
+extern "C" void __sincosf(float x, float *sin, float *cos);
+
 extern "C" int __cxa_atexit(void (*)(void*), void*, void*);
 extern "C" void __cxa_finalize(void * d);
 
@@ -225,7 +227,6 @@ ssize_t shim::__read_chk(int fd, void *buf, size_t count, size_t buf_size) {
     return read(fd, buf, count);
 }
 
-
 void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"__errno", bionic::get_errno},
@@ -357,6 +358,7 @@ void shim::add_math_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"__divdi3", __divdi3},
 #endif
         {"ldexp", (double (*)(double, int)) ::ldexp},
+        {"sincosf", __sincosf},
     });
 }
 
