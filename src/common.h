@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <sys/types.h>
 #include "argrewrite.h"
+#include <stdarg.h>
 
 namespace shim {
 
@@ -95,6 +96,16 @@ namespace shim {
     void *__memcpy_chk(void *dst, const void *src, size_t size, size_t max_len);
 
     void *__memmove_chk(void *dst, const void *src, size_t size, size_t max_len);
+
+    void *__memset_chk(void *dst, int c, size_t size, size_t max_len);
+
+    int __vsprintf_chk(char* dst, int flags, size_t dst_len_from_compiler, const char* format, va_list va);
+
+    char* __strcpy_chk(char* dst, const char* src, size_t dst_len);
+
+    char* __strncpy_chk(char* dst, const char* src, size_t len, size_t dst_len);
+
+    char* __strncpy_chk2(char* dst, const char* src, size_t n, size_t dst_len, size_t src_len);
 
     size_t ctype_get_mb_cur_max();
 

@@ -207,6 +207,30 @@ void* shim::__memmove_chk(void *dst, const void *src, size_t size, size_t max_le
     return ::memmove(dst, src, size);
 }
 
+void* shim::__memset_chk(void *dst, int c, size_t size, size_t max_len) {
+    if (size > max_len) {
+        fprintf(stderr, "detected set past buffer size");
+        abort();
+    }
+    return ::memset(dst, c, size);
+}
+
+int shim::__vsprintf_chk(char* dst, int flags, size_t dst_len_from_compiler, const char* format, va_list va) {
+    return vsprintf(dst, format, va);
+}
+
+char* shim::__strcpy_chk(char* dst, const char* src, size_t dst_len) {
+  return strcpy(dst, src);
+}
+
+char* shim::__strncpy_chk(char* dst, const char* src, size_t len, size_t dst_len) {
+  return strncpy(dst, src, len);
+}
+
+char* shim::__strncpy_chk2(char* dst, const char* src, size_t n, size_t dst_len, size_t src_len) {
+    return strncpy(dst, src, n);
+}
+
 size_t shim::ctype_get_mb_cur_max() {
     return MB_CUR_MAX;
 }
@@ -480,7 +504,9 @@ void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"memmove", ::memmove},
         {"__memmove_chk", __memmove_chk},
         {"memset", ::memset},
+        {"__memset_chk", ::__memset_chk},
         {"memmem", ::memmem},
+        {"__vsprintf_chk", __vsprintf_chk},
         {"strchr", (char *(*)(char *, int)) ::strchr},
         {"strrchr", (char *(*)(char *, int)) ::strrchr},
         {"strlen", ::strlen},
@@ -488,6 +514,7 @@ void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"__strchr_chk", strchr_chk},
         {"strcmp", ::strcmp},
         {"strcpy", ::strcpy},
+        {"__strcpy_chk", __strcpy_chk},
         {"strcat", ::strcat},
         {"strdup", ::strdup},
         {"strstr", (char *(*)(char *, const char *)) ::strstr},
@@ -500,6 +527,8 @@ void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"strndup", ::strndup},
         {"strncmp", ::strncmp},
         {"strncpy", ::strncpy},
+        {"__strncpy_chk", __strncpy_chk},
+        {"__strncpy_chk2", __strncpy_chk2},
         {"strlcpy", bionic::strlcpy},
         {"strcspn", ::strcspn},
         {"strpbrk", (char *(*)(char *, const char *)) ::strpbrk},
