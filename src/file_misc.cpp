@@ -31,6 +31,19 @@ int bionic::to_host_file_status_flags(bionic::file_status_flags flags) {
     return ret;
 }
 
+#if defined(_SIZEOF_ADDR_IFREQ)
+#define NEXT_INTERFACE(ifr) ((struct ifreq *) \
+	((char *) ifr + _SIZEOF_ADDR_IFREQ(*ifr)))
+#define IFREQ_SIZE(ifr) _SIZEOF_ADDR_IFREQ(*ifr)
+#elif defined(HAS_SA_LEN)
+#define NEXT_INTERFACE(ifr) ((struct ifreq *) \
+	((char *) ifr + sizeof(ifr->ifr_name) + ifr->ifr_addr.sa_len))
+#define IFREQ_SIZE(ifr) (sizeof(ifr->ifr_name) + ifr->ifr_addr.sa_len)
+#else
+#define NEXT_INTERFACE(ifr) (ifr + 1)
+#define IFREQ_SIZE(ifr) sizeof(ifr[0])
+#endif
+
 int shim::ioctl(int fd, bionic::ioctl_index cmd, void *arg) {
     switch (cmd) {
         case bionic::ioctl_index::FILE_NBIO:
@@ -59,14 +72,15 @@ int shim::ioctl(int fd, bionic::ioctl_index cmd, void *arg) {
             int ret = ::ioctl(fd, SIOCGIFCONF, &hbuf);
             if (ret < 0)
                 return ret;
-            cnt = hbuf.ifc_len / sizeof(::ifreq);
-            buf->len = cnt * sizeof(bionic::ifreq);
-            for (size_t i = 0; i < cnt; i++) {
-                strncpy(buf->req->name, hbuf.ifc_req[i].ifr_name, 16);
-                buf->req->name[15] = 0;
-
-                bionic::from_host(&hbuf.ifc_req[i].ifr_addr, &buf->req->addr);
+            cnt = 0;
+            for (auto cur = hbuf.ifc_req, end = (struct ifreq *)(hbuf.ifc_buf + hbuf.ifc_len); cur < end; cur = NEXT_INTERFACE(cur)) {
+                strncpy(buf->req[cnt].name, cur->ifr_name, 16);
+                buf->req[cnt].name[15] = 0;
+                
+                bionic::from_host(&cur->ifr_addr, &buf->req[cnt].addr);
+                cnt++;
             }
+            buf->len = cnt * sizeof(bionic::ifreq);
             delete[] hibuf;
             return ret;
         }
