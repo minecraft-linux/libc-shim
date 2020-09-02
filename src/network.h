@@ -185,11 +185,15 @@ namespace shim {
             socklen_t len = sizeof(sockaddr_storage);
 
             sockaddr_in(const bionic::sockaddr *addr, socklen_t) {
-                bionic::to_host(addr, ptr());
-                len = bionic::get_host_len(addr);
+                if (addr) {
+                    bionic::to_host(addr, ptr());
+                    len = bionic::get_host_len(addr);
+                } else {
+                    len = 0;
+                }
             }
 
-            ::sockaddr *ptr() { return (::sockaddr *) &haddr; }
+            ::sockaddr *ptr() { return len ? (::sockaddr *) &haddr : nullptr; }
         };
 
         struct sockaddr_out {
