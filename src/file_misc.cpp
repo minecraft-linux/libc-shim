@@ -72,13 +72,18 @@ int shim::ioctl(int fd, bionic::ioctl_index cmd, void *arg) {
             int ret = ::ioctl(fd, SIOCGIFCONF, &hbuf);
             if (ret < 0)
                 return ret;
+            size_t maxcnt = cnt;
             cnt = 0;
-            for (auto cur = hbuf.ifc_req, end = (struct ifreq *)(hbuf.ifc_buf + hbuf.ifc_len); cur < end; cur = NEXT_INTERFACE(cur)) {
+            for (auto cur = hbuf.ifc_req, end = (struct ifreq *)(hbuf.ifc_buf + hbuf.ifc_len); cur < end && cnt < maxcnt; cur = NEXT_INTERFACE(cur)) {
                 strncpy(buf->req[cnt].name, cur->ifr_name, 16);
                 buf->req[cnt].name[15] = 0;
-                
+                // macOS and (bsd) also return AF_LINK and AF_INET6,
+                // for linux is only AF_INET is allowed
+                if (cur->ifr_addr.sa_family == AF_INET) {
                 bionic::from_host(&cur->ifr_addr, &buf->req[cnt].addr);
+                    bionic::to_host(&buf->req[cnt].addr, &cur->ifr_addr);
                 cnt++;
+                }
             }
             buf->len = cnt * sizeof(bionic::ifreq);
             delete[] hibuf;
