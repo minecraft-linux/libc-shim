@@ -153,20 +153,27 @@ bionic::addrinfo* bionic::from_host_alloc(const ::addrinfo *in) {
         return nullptr;
 
     auto out = new addrinfo;
-    out->ai_flags = from_host_ai_flags(in->ai_flags);
-    out->ai_family = from_host_af_family(in->ai_family);
-    out->ai_socktype = from_host_socktype(in->ai_socktype);
-    out->ai_protocol = from_host_ipproto(in->ai_protocol);
-    out->ai_addrlen = get_bionic_len(in->ai_addr);
-    out->ai_addr = nullptr;
-    if (out->ai_addrlen) {
-        out->ai_addr = (bionic::sockaddr *) malloc(out->ai_addrlen);
-        from_host(in->ai_addr, out->ai_addr);
-    }
-    out->ai_canonname = in->ai_canonname ? strdup(in->ai_canonname) : nullptr;
+    try {
+        out->ai_flags = from_host_ai_flags(in->ai_flags);
+        out->ai_family = from_host_af_family(in->ai_family);
+        out->ai_socktype = from_host_socktype(in->ai_socktype);
+        out->ai_protocol = from_host_ipproto(in->ai_protocol);
+        out->ai_addrlen = get_bionic_len(in->ai_addr);
+        out->ai_addr = nullptr;
+        if (out->ai_addrlen) {
+            out->ai_addr = (bionic::sockaddr *) malloc(out->ai_addrlen);
+            from_host(in->ai_addr, out->ai_addr);
+        }
+        out->ai_canonname = in->ai_canonname ? strdup(in->ai_canonname) : nullptr;
 
-    out->ai_next = from_host_alloc(in->ai_next);
-    return out;
+        out->ai_next = from_host_alloc(in->ai_next);
+        return out;
+    }
+    catch (...) {
+        delete out;
+        //TODO Log errors
+        return from_host_alloc(in->ai_next);
+    }
 }
 
 void bionic::free_bionic_list(bionic::addrinfo *list) {
