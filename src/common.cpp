@@ -419,6 +419,52 @@ void shim::add_sched_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"sched_yield", ::sched_yield},
     });
 }
+#include <errno.h>
+#include <sys/random.h>
+#include <sys/syscall.h>
+long fakesyscall(long sysno, ...) {
+    if (sysno ==
+#if defined(__i386__) || defined(__arm__)
+224
+#elif defined(__x86_64__)
+186
+#elif defined(__aarch64__)
+178
+#endif
+) {
+        #ifdef __APPLE__
+            // Since OSX 10.6
+            return syscall(SYS_thread_selfid);
+        #else
+            return syscall(SYS_gettid);
+        #endif
+    } else if (sysno ==
+#if defined(__i386__)
+355
+#elif defined(__arm__)
+384
+#elif defined(__x86_64__)
+318
+#elif defined(__aarch64__)
+278
+#endif
+) {
+        va_list l;
+        va_start(l, sysno);
+        auto buf = va_arg(l, char*);
+        auto len = va_arg(l, size_t);
+        auto flags = va_arg(l, unsigned int);
+#ifdef __APPLE__
+        auto res = len;
+        // TODO Implement this later
+#else
+        auto res = getrandom(buf, len, flags);
+#endif
+        va_end(l);
+        return res;
+    }
+    return ENOSYS;
+}
 
 void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
@@ -468,7 +514,7 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"sync", WithErrnoUpdate(::sync)},
         {"getpagesize", ::getpagesize},
         {"getdtablesize", ::getdtablesize},
-        {"syscall", ::syscall},
+        {"syscall", fakesyscall},
         {"lockf", WithErrnoUpdate(::lockf)},
         {"swab", ::swab},
 
