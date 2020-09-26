@@ -35,6 +35,11 @@
 #endif
 #ifdef __APPLE__
 #include <xlocale.h>
+#if __MAC_OS_X_VERSION_MIN_REQUIRED < 101200
+// for macOS 10.10 - 10.11
+#include <mach/clock.h>
+#include <mach/mach.h>
+#endif
 #endif
 #include <inttypes.h>
 
@@ -146,7 +151,28 @@ ssize_t shim::pwrite(int fd, const void *buf, size_t len, bionic::off_t off) {
 #endif
 
 int shim::clock_gettime(bionic::clock_type clock, struct timespec *ts) {
+#if defined(__APPLE__) && __MAC_OS_X_VERSION_MIN_REQUIRED < 101200
+    if(::clock_gettime != NULL) {
+#endif
     return ::clock_gettime(bionic::to_host_clock_type(clock), ts);
+#if defined(__APPLE__) && __MAC_OS_X_VERSION_MIN_REQUIRED < 101200
+    } else {
+        // fallback if weak symbol is nullptr < macOS 10.12
+        clock_serv_t cclock;
+        mach_timespec_t mts;
+        if (host_get_clock_service(mach_host_self(), clock == bionic::clock_type::MONOTONIC ? SYSTEM_CLOCK : CALENDAR_CLOCK, &cclock) != KERN_SUCCESS) {
+            return -1;
+        }
+        kern_return_t r = clock_get_time(cclock, &mts);
+        mach_port_deallocate(mach_task_self(), cclock);
+        if (r != KERN_SUCCESS) {
+            return -1;
+        }
+        ts->tv_sec = mts.tv_sec;
+        ts->tv_nsec = mts.tv_nsec;
+        return 0;
+    }
+#endif
 }
 
 void* shim::memalign(size_t alignment, size_t size) {

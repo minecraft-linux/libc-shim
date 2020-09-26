@@ -5,6 +5,10 @@
 #ifdef __APPLE__
 #include <errno.h>
 #include <mach/mach.h>
+#if __MAC_OS_X_VERSION_MIN_REQUIRED < 101200
+// for shim::clock_gettime 10.10 - 10.12
+#include "common.h"
+#endif
 #endif
 
 using namespace shim;
@@ -56,7 +60,11 @@ int shim::sem_post(host_sem_t *sem) {
 
 int shim::sem_timedwait(host_sem_t *sem, const struct timespec *abs_timeout) {
     struct timespec now;
+#if __MAC_OS_X_VERSION_MIN_REQUIRED < 101200
+    shim::clock_gettime(shim::bionic::clock_type::REALTIME, &now);
+#else
     clock_gettime(CLOCK_REALTIME, &now);
+#endif
     mach_timespec_t ts;
     if  (abs_timeout->tv_sec > now.tv_sec ||
          (abs_timeout->tv_sec == now.tv_sec && abs_timeout->tv_nsec > now.tv_nsec)) {
