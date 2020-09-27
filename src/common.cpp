@@ -448,7 +448,6 @@ void shim::add_sched_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     });
 }
 #include <errno.h>
-#include <sys/random.h>
 #include <sys/syscall.h>
 long fakesyscall(long sysno, ...) {
     if (sysno ==
@@ -486,7 +485,7 @@ long fakesyscall(long sysno, ...) {
         auto res = len;
         // TODO Implement this later
 #else
-        auto res = getrandom(buf, len, flags);
+        auto res = syscall(SYS_getrandom, buf, len, flags);
 #endif
         va_end(l);
         return res;
