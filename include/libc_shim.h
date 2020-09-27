@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 namespace shim {
 
@@ -19,6 +20,8 @@ namespace shim {
         shimmed_symbol(const char *name, Ret (*ptr)(Args..., ...))
                 : name(name), value((void*) ptr) {}
     };
+    
+    extern std::string android_data_dir;
 
     std::vector<shimmed_symbol> get_shimmed_symbols();
 

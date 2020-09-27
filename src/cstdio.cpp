@@ -34,7 +34,13 @@ static bionic::FILE *wrap_file(::FILE *file) {
     return ret;
 }
 
+#include <cstring>
+
 bionic::FILE *shim::fopen(const char *filename, const char *mode) {
+    //TODO retarget
+    if(filename && !memcmp(filename, "/data/data/", 11)) {
+        return fopen((shim::android_data_dir + std::string(filename + 10)).data(), mode);
+    }
     return wrap_file(::fopen(filename, mode));
 }
 
@@ -43,6 +49,10 @@ bionic::FILE* shim::fdopen(int fd, const char *mode) {
 }
 
 bionic::FILE* shim::freopen(const char *filename, const char *mode, bionic::FILE *stream) {
+    //TODO retarget
+    if(filename && !memcmp(filename, "/data/data/", 11)) {
+        return freopen((shim::android_data_dir + std::string(filename + 10)).data(), mode, stream);
+    }
     return wrap_file(::freopen(filename, mode, stream->wrapped));
 }
 
@@ -131,6 +141,26 @@ char *shim::__fgets_chk(char *dst, int len, FILE *stream, size_t max_len) {
     return ::fgets(dst, len, stream);
 }
 
+namespace shim {
+    int remove(const char *path) {
+        //TODO retarget
+        if(path && !memcmp(path, "/data/data/", 11)) {
+            return remove((shim::android_data_dir + std::string(path + 10)).data());
+        }
+        return ::remove(path);
+    }
+    int rename(const char *path1, const char *path2) {
+        //TODO retarget
+        if(path1 && !memcmp(path1, "/data/data/", 11)) {
+            return rename((shim::android_data_dir + std::string(path1 + 10)).data(), path2);
+        }
+        if(path2 && !memcmp(path2, "/data/data/", 11)) {
+            return rename(path1, (shim::android_data_dir + std::string(path2 + 10)).data());
+        }
+        return ::rename(path1, path2);
+    }
+}
+
 void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     bionic::init_standard_files();
 
@@ -185,8 +215,8 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"getw", AutoArgRewritten(::getw)},
         {"putw", AutoArgRewritten(::putw)},
 
-        {"remove", ::remove},
-        {"rename", ::rename},
+        {"remove", remove},
+        {"rename", rename},
 
         {"putchar", ::putchar},
         {"puts", ::puts},

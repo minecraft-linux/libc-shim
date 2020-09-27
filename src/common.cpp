@@ -45,6 +45,8 @@
 
 using namespace shim;
 
+std::string shim::android_data_dir;
+
 #ifdef __i386__
 extern "C" unsigned long __umoddi3(unsigned long a, unsigned long b);
 extern "C" unsigned long __udivdi3(unsigned long a, unsigned long b);
@@ -492,9 +494,75 @@ long fakesyscall(long sysno, ...) {
     return ENOSYS;
 }
 
+namespace shim {
+    int unlink(const char *path) {
+        //TODO retarget
+        if(path && !memcmp(path, "/data/data/", 11)) {
+            return unlink((shim::android_data_dir + std::string(path + 10)).data());
+        }
+        return ::unlink(path);
+    }
+    int rmdir(const char *path) {
+        //TODO retarget
+        if(path && !memcmp(path, "/data/data/", 11)) {
+            return rmdir((shim::android_data_dir + std::string(path + 10)).data());
+        }
+        return ::rmdir(path);
+    }
+
+    int link(const char *path1, const char *path2) {
+        //TODO retarget
+        if(path1 && !memcmp(path1, "/data/data/", 11)) {
+            return link((shim::android_data_dir + std::string(path1 + 10)).data(), path2);
+        }
+        if(path2 && !memcmp(path2, "/data/data/", 11)) {
+            return link(path1, (shim::android_data_dir + std::string(path2 + 10)).data());
+        }
+        return ::link(path1, path2);
+    }
+
+    int symlink(const char *path1, const char *path2) {
+        //TODO retarget
+        if(path1 && !memcmp(path1, "/data/data/", 11)) {
+            return symlink((shim::android_data_dir + std::string(path1 + 10)).data(), path2);
+        }
+        if(path2 && !memcmp(path2, "/data/data/", 11)) {
+            return symlink(path1, (shim::android_data_dir + std::string(path2 + 10)).data());
+        }
+        return ::symlink(path1, path2);
+    }
+
+    int access(const char *path, int type) {
+        //TODO retarget
+        if(path && !memcmp(path, "/data/data/", 11)) {
+            return access((shim::android_data_dir + std::string(path + 10)).data(), type);
+        }
+        return ::access(path, type);
+    }
+
+    int chown(const char *path, uid_t __owner, gid_t __group) {
+        //TODO retarget
+        if(path && !memcmp(path, "/data/data/", 11)) {
+            return chown((shim::android_data_dir + std::string(path + 10)).data(), __owner, __group);
+        }
+        return ::chown(path, __owner, __group);
+    }
+
+    int chdir(const char *path) {
+        //TODO retarget
+        if(path && !memcmp(path, "/data/data/", 11)) {
+            return chdir((shim::android_data_dir + std::string(path + 10)).data());
+        }
+        return ::chdir(path);
+    }
+
+}
+
+
+
 void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
-        {"access", WithErrnoUpdate(::access)},
+        {"access", WithErrnoUpdate(access)},
         {"lseek", WithErrnoUpdate(::lseek)},
         {"close", WithErrnoUpdate(::close)},
         {"read", WithErrnoUpdate(::read)},
@@ -505,10 +573,10 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"sleep", WithErrnoUpdate(::sleep)},
         {"usleep", WithErrnoUpdate(::usleep)},
         {"pause", WithErrnoUpdate(::pause)},
-        {"chown", WithErrnoUpdate(::chown)},
+        {"chown", WithErrnoUpdate(chown)},
         {"fchown", WithErrnoUpdate(::fchown)},
         {"lchown", WithErrnoUpdate(::lchown)},
-        {"chdir", WithErrnoUpdate(::chdir)},
+        {"chdir", WithErrnoUpdate(chdir)},
         {"fchdir", WithErrnoUpdate(::fchdir)},
         {"getcwd", WithErrnoUpdate(::getcwd)},
         {"dup", WithErrnoUpdate(::dup)},
@@ -530,11 +598,11 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"fork", WithErrnoUpdate(::fork)},
         {"vfork", WithErrnoUpdate(::vfork)},
         {"isatty", WithErrnoUpdate(::isatty)},
-        {"link", WithErrnoUpdate(::link)},
-        {"symlink", WithErrnoUpdate(::symlink)},
-        {"readlink", WithErrnoUpdate(::readlink)},
-        {"unlink", WithErrnoUpdate(::unlink)},
-        {"rmdir", WithErrnoUpdate(::rmdir)},
+        {"link", WithErrnoUpdate(link)},
+        {"symlink", WithErrnoUpdate(symlink)},
+        {"readlink", WithErrnoUpdate(readlink)},
+        {"unlink", WithErrnoUpdate(unlink)},
+        {"rmdir", WithErrnoUpdate(rmdir)},
         {"gethostname", WithErrnoUpdate(::gethostname)},
         {"fsync", WithErrnoUpdate(::fsync)},
         {"sync", WithErrnoUpdate(::sync)},

@@ -11,6 +11,10 @@ static bionic::DIR *wrap_dir(::DIR *dir) {
 }
 
 bionic::DIR *shim::opendir(const char *name) {
+    //TODO retarget
+    if(name && !memcmp(name, "/data/data/", 11)) {
+        return opendir((shim::android_data_dir + std::string(name + 10)).data());
+    }
     return wrap_dir(::opendir(name));
 }
 

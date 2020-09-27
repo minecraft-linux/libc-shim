@@ -22,12 +22,18 @@ void bionic::from_host(struct ::stat64 const &info, stat &result) {
     result.st_ctim = info.st_ctim;
     result.st_ino = info.st_ino;
 }
-
+#include <cstring>
+#include <string>
 int shim::stat(const char *path, bionic::stat *s) {
-    struct ::stat64 tmp = {};
-    int ret = ::stat64(path, &tmp);
-    bionic::from_host(tmp, *s);
-    return ret;
+    //TODO retarget
+    if(path && !memcmp(path, "/data/data/", 11)) {
+        return stat((shim::android_data_dir + std::string(path + 10)).data(), s);
+    } else {
+        struct ::stat64 tmp = {};
+        int ret = ::stat64(path, &tmp);
+        bionic::from_host(tmp, *s);
+        return ret;
+    }
 }
 
 int shim::fstat(int fd, shim::bionic::stat *s) {
@@ -59,6 +65,10 @@ void bionic::from_host(struct ::stat const &info, stat &result) {
 }
 
 int shim::stat(const char *path, bionic::stat *s) {
+    //TODO retarget
+    if(path && !memcmp(path, "/data/data/", 11)) {
+        return stat((shim::android_data_dir + std::string(path + 10)).data(), s);
+    }
     struct ::stat tmp = {};
     int ret = ::stat(path, &tmp);
     bionic::from_host(tmp, *s);
@@ -73,6 +83,22 @@ int shim::fstat(int fd, shim::bionic::stat *s) {
 }
 
 #endif
+namespace shim {
+    int chmod(const char *path, mode_t __mode) {
+        //TODO retarget
+        if(path && !memcmp(path, "/data/data/", 11)) {
+            return chmod((shim::android_data_dir + std::string(path + 10)).data(), __mode);
+        }
+        return ::chmod(path, __mode);
+    }
+    int mkdir(const char *path, mode_t __mode) {
+        //TODO retarget
+        if(path && !memcmp(path, "/data/data/", 11)) {
+            return mkdir((shim::android_data_dir + std::string(path + 10)).data(), __mode);
+        }
+        return ::mkdir(path, __mode);
+    }
+}
 
 void shim::add_stat_shimmed_symbols(std::vector<shimmed_symbol> &list) {
     list.insert(list.end(), {
@@ -80,9 +106,9 @@ void shim::add_stat_shimmed_symbols(std::vector<shimmed_symbol> &list) {
         {"fstat", fstat},
         {"stat64", stat},
         {"fstat64", fstat},
-        {"chmod", ::chmod},
+        {"chmod", chmod},
         {"fchmod", ::fchmod},
         {"umask", ::umask},
-        {"mkdir", ::mkdir},
+        {"mkdir", mkdir},
     });
 }

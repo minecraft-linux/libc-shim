@@ -105,12 +105,21 @@ int shim::open(const char *pathname, bionic::file_status_flags flags, ...) {
         va_end(ap);
     }
 
+    //TODO retarget
+    if(pathname && !memcmp(pathname, "/data/data/", 11)) {
+        return open((shim::android_data_dir + std::string(pathname + 10)).data(), flags, mode);
+    }
+
     int ret = ::open(pathname, hflags, mode);
     bionic::update_errno();
     return ret;
 }
 
 int shim::open_2(const char *pathname, bionic::file_status_flags flags) {
+    //TODO retarget
+    if(pathname && !memcmp(pathname, "/data/data/", 11)) {
+        return open_2((shim::android_data_dir + std::string(pathname + 10)).data(), flags);
+    }
     int hflags = bionic::to_host_file_status_flags(flags);
     int ret = ::open(pathname, hflags, 0);
     bionic::update_errno();
