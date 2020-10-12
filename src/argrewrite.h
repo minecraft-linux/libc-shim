@@ -42,7 +42,10 @@ namespace shim {
         template <typename Arg, typename ...Args>
         struct arg_rewriter_impl<Arg, Args...> {
             template <typename Invoke, typename ...RArgs>
-            static auto rewrite(Invoke const &invoke, RArgs... rargs, typename arg_rewrite<Arg>::source arg, typename arg_rewrite<Args>::source... args) {
+#ifdef __COMMON
+            __attribute__((pcs("aapcs")))
+#endif
+		static auto rewrite(Invoke const &invoke, RArgs... rargs, typename arg_rewrite<Arg>::source arg, typename arg_rewrite<Args>::source... args) {
                 arg_rewrite<Arg> rewritten;
                 auto value = rewritten.before(arg);
                 auto i = make_destroy_invoker ([&rewritten, &arg] { rewritten.after(arg); });
@@ -52,7 +55,10 @@ namespace shim {
         template <>
         struct arg_rewriter_impl<> {
             template <typename Invoke, typename ...RArgs>
-            static auto rewrite(Invoke const &invoke, RArgs... args) {
+#ifdef __COMMON
+            __attribute__((pcs("aapcs")))
+#endif
+		static auto rewrite(Invoke const &invoke, RArgs... args) {
                 return invoke(args...);
             }
         };
@@ -62,7 +68,10 @@ namespace shim {
         template <typename Ret, typename ...Args>
         struct arg_rewrite_helper<Ret (Args...)> {
             template <Ret (*Ptr)(Args...)>
-            static Ret rewrite(typename arg_rewrite<Args>::source... args) {
+#ifdef __COMMON
+            __attribute__((pcs("aapcs")))
+#endif
+                static Ret rewrite(typename arg_rewrite<Args>::source... args) {
                 return arg_rewriter_impl<Args...>::rewrite(Ptr, args...);
             }
         };

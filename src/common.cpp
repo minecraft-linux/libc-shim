@@ -1,3 +1,4 @@
+#define __COMMON
 #include <libc_shim.h>
 
 #include <log.h>
@@ -47,7 +48,7 @@ using namespace shim;
 
 std::string shim::android_data_dir;
 
-#ifdef __i386__
+#if defined(__i386__) || defined(__arm__)
 extern "C" unsigned long __umoddi3(unsigned long a, unsigned long b);
 extern "C" unsigned long __udivdi3(unsigned long a, unsigned long b);
 extern "C" long __divdi3(long a, long b);
@@ -280,6 +281,7 @@ ssize_t shim::__read_chk(int fd, void *buf, size_t count, size_t buf_size) {
 
 void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
+        {"setpriority", setpriority},
         {"__errno", bionic::get_errno},
         {"__set_errno", bionic::set_errno},
 
@@ -294,6 +296,11 @@ void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"__cxa_atexit", ::__cxa_atexit},
         {"__cxa_finalize", ::__cxa_finalize}
     });
+}
+#define WithARMABI(ptr) ((void*)AutoArgRewritten(ptr))
+
+int __isnan(double d) {
+	return __builtin_isnan(d);
 }
 
 void shim::add_stdlib_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
@@ -329,7 +336,10 @@ void shim::add_stdlib_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"seed48", seed48},
         {"lcong48", lcong48},
 
-        {"atof", atof},
+        { "isnanf", WithARMABI(isnanf) },
+        { "isnan", WithARMABI(__isnan) },
+
+        {"atof", WithARMABI(atof)},
         {"atoi", atoi},
         {"atol", atol},
         {"atoll", atoll},
@@ -403,12 +413,12 @@ void shim::add_ctype_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 
 void shim::add_math_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
-#ifdef __i386__
+#if defined(__i386__) || defined(__arm__)
         {"__umoddi3", __umoddi3},
         {"__udivdi3", __udivdi3},
         {"__divdi3", __divdi3},
 #endif
-        {"ldexp", (double (*)(double, int)) ::ldexp},
+        {"ldexp", WithARMABI(((double (&)(double, int)) ::ldexp))},
     });
 }
 
@@ -780,6 +790,8 @@ void shim::add_setjmp_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 #else
         {"setjmp", _setjmp},
         {"longjmp", longjmp},
+        {"sigsetjmp", __sigsetjmp},
+        {"siglongjmp", siglongjmp},
 #endif
     });
 }

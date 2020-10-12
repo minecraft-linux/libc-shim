@@ -57,6 +57,8 @@ namespace shim {
 
 #ifdef ERRNO_TRANSLATION
 #define WithErrnoUpdate(ptr) (&shim::detail::errno_update_helper<typeof(ptr)>::wrapper<ptr>)
+#elif defined(__COMMON)
+#define WithErrnoUpdate(ptr) ((void*)AutoArgRewritten(ptr))
 #else
 #define WithErrnoUpdate(ptr) ptr
 #endif
