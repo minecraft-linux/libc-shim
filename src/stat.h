@@ -26,6 +26,26 @@ namespace shim {
             timespec st_ctim;
             long __pad3[3];
         };
+#elif defined(__aarch64__)
+        struct stat {
+            unsigned long st_dev;
+            unsigned long st_ino;
+            unsigned int st_mode;
+            unsigned int st_nlink;
+            unsigned int st_uid;
+            unsigned int st_gid;
+            unsigned long st_rdev;
+            unsigned long __pad0;
+            long st_size;
+            int st_blksize;
+            int __pad1;
+            long st_blocks;
+            timespec st_atim;
+            timespec st_mtim;
+            timespec st_ctim;
+            unsigned int __pad2;
+	    unsigned int __pad3;
+        };
 #else
         struct stat {
             unsigned long long st_dev;
