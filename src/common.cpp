@@ -290,7 +290,9 @@ void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"android_set_abort_message", android_set_abort_message},
 
         {"__cxa_atexit", ::__cxa_atexit},
-        {"__cxa_finalize", ::__cxa_finalize}
+        {"__cxa_finalize", ::__cxa_finalize},
+
+        {"setpriority", setpriority}
     });
 }
 
