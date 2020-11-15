@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 namespace shim {
 
@@ -22,4 +23,7 @@ namespace shim {
 
     std::vector<shimmed_symbol> get_shimmed_symbols();
 
+    // Rewrite access from from_android_data_dir ( "/data/data" ) to to_android_data_dir folder
+    extern std::string from_android_data_dir;
+    extern std::string to_android_data_dir;
 }

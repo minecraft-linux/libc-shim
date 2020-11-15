@@ -9,6 +9,7 @@
 #include <sys/eventfd.h>
 #include "network.h"
 #include "errno.h"
+#include "iorewrite.h"
 
 using namespace shim;
 
@@ -105,7 +106,7 @@ int shim::open(const char *pathname, bionic::file_status_flags flags, ...) {
         va_end(ap);
     }
 
-    int ret = ::open(pathname, hflags, mode);
+    int ret = ::open(iorewrite0(pathname).data(), hflags, mode);
     bionic::update_errno();
     return ret;
 }
@@ -190,7 +191,7 @@ void shim::add_ioctl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 void shim::add_fcntl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"open", open},
-        {"__open_2", open_2},
+        {"__open_2", IOREWRITE1(open_2)},
         {"fcntl", WithErrnoUpdate(fcntl)},
     });
 }

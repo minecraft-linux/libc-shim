@@ -48,6 +48,7 @@
 #include <sys/syscall.h>
 #endif
 #include "fakesyscall.h"
+#include "iorewrite.h"
 
 using namespace shim;
 
@@ -490,7 +491,7 @@ void shim::add_sched_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 
 void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
-        {"access", WithErrnoUpdate(::access)},
+        {"access", WithErrnoUpdate(IOREWRITE1(::access))},
         {"lseek", WithErrnoUpdate(::lseek)},
         {"close", WithErrnoUpdate(::close)},
         {"read", WithErrnoUpdate(::read)},
@@ -501,10 +502,10 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"sleep", WithErrnoUpdate(::sleep)},
         {"usleep", WithErrnoUpdate(::usleep)},
         {"pause", WithErrnoUpdate(::pause)},
-        {"chown", WithErrnoUpdate(::chown)},
+        {"chown", WithErrnoUpdate(IOREWRITE1(::chown))},
         {"fchown", WithErrnoUpdate(::fchown)},
-        {"lchown", WithErrnoUpdate(::lchown)},
-        {"chdir", WithErrnoUpdate(::chdir)},
+        {"lchown", WithErrnoUpdate(IOREWRITE1(::lchown))},
+        {"chdir", WithErrnoUpdate(IOREWRITE1(::chdir))},
         {"fchdir", WithErrnoUpdate(::fchdir)},
         {"getcwd", WithErrnoUpdate(::getcwd)},
         {"dup", WithErrnoUpdate(::dup)},
@@ -526,11 +527,11 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"fork", WithErrnoUpdate(::fork)},
         {"vfork", WithErrnoUpdate(::vfork)},
         {"isatty", WithErrnoUpdate(::isatty)},
-        {"link", WithErrnoUpdate(::link)},
-        {"symlink", WithErrnoUpdate(::symlink)},
+        {"link", WithErrnoUpdate(IOREWRITE2(::link))},
+        {"symlink", WithErrnoUpdate(IOREWRITE2(::symlink))},
         {"readlink", WithErrnoUpdate(::readlink)},
-        {"unlink", WithErrnoUpdate(::unlink)},
-        {"rmdir", WithErrnoUpdate(::rmdir)},
+        {"unlink", WithErrnoUpdate(IOREWRITE1(::unlink))},
+        {"rmdir", WithErrnoUpdate(IOREWRITE1(::rmdir))},
         {"gethostname", WithErrnoUpdate(::gethostname)},
         {"fsync", WithErrnoUpdate(::fsync)},
         {"sync", WithErrnoUpdate(::sync)},

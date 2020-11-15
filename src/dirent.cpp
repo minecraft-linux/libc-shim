@@ -1,4 +1,5 @@
 #include "dirent.h"
+#include "iorewrite.h"
 
 #include <cstring>
 
@@ -63,7 +64,7 @@ int shim::dirfd(bionic::DIR *dir) {
 
 void shim::add_dirent_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
-        {"opendir", opendir},
+        {"opendir", IOREWRITE1(opendir)},
         {"fdopendir", fdopendir},
         {"closedir", closedir},
         {"readdir", readdir},

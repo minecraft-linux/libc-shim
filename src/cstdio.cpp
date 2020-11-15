@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include "cstdio.h"
+#include "iorewrite.h"
 
 #include "wchar.h"
 
@@ -138,9 +139,9 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"__sF", (void*) &bionic::standard_files},
         {"__isthreaded", (void*) &bionic::io_isthreaded},
 
-        {"fopen", fopen},
+        {"fopen", IOREWRITE1(fopen)},
         {"fdopen", fdopen},
-        {"freopen", freopen},
+        {"freopen", IOREWRITE1(freopen)},
         {"tmpfile", tmpfile},
         {"popen", popen},
         {"fclose", fclose},
@@ -185,8 +186,8 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"getw", AutoArgRewritten(::getw)},
         {"putw", AutoArgRewritten(::putw)},
 
-        {"remove", ::remove},
-        {"rename", ::rename},
+        {"remove", IOREWRITE1(::remove)},
+        {"rename", IOREWRITE2(::rename)},
 
         {"putchar", ::putchar},
         {"puts", ::puts},

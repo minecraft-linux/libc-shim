@@ -1,4 +1,5 @@
 #include "stat.h"
+#include "iorewrite.h"
 
 using namespace shim;
 
@@ -76,13 +77,13 @@ int shim::fstat(int fd, shim::bionic::stat *s) {
 
 void shim::add_stat_shimmed_symbols(std::vector<shimmed_symbol> &list) {
     list.insert(list.end(), {
-        {"stat", stat},
+        {"stat", IOREWRITE1(stat)},
         {"fstat", fstat},
-        {"stat64", stat},
+        {"stat64", IOREWRITE1(stat)},
         {"fstat64", fstat},
-        {"chmod", ::chmod},
+        {"chmod", IOREWRITE1(::chmod)},
         {"fchmod", ::fchmod},
         {"umask", ::umask},
-        {"mkdir", ::mkdir},
+        {"mkdir", IOREWRITE1(::mkdir)},
     });
 }
