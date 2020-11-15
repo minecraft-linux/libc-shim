@@ -49,10 +49,11 @@
 #endif
 #include "fakesyscall.h"
 #include "iorewrite.h"
+#include "armhfrewrite.h"
 
 using namespace shim;
 
-#ifdef __i386__
+#if __i386__ || defined(__arm__)
 extern "C" unsigned long __umoddi3(unsigned long a, unsigned long b);
 extern "C" unsigned long __udivdi3(unsigned long a, unsigned long b);
 extern "C" long __divdi3(long a, long b);
@@ -317,6 +318,10 @@ long shim::fakesyscall(long sysno, ...) {
     return ENOSYS;
 }
 
+int shim::isnan(double d) {
+	return std::isnan(d);
+}
+
 void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"__errno", bionic::get_errno},
@@ -370,13 +375,16 @@ void shim::add_stdlib_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"seed48", seed48},
         {"lcong48", lcong48},
 
-        {"atof", atof},
+        { "isnanf", ARMHFREWRITE(isnanf) },
+        { "isnan", ARMHFREWRITE(isnan) },
+
+        {"atof", ARMHFREWRITE(atof)},
         {"atoi", atoi},
         {"atol", atol},
         {"atoll", atoll},
-        {"strtod", WithErrnoUpdate(strtod)},
-        {"strtof", WithErrnoUpdate(strtof)},
-        {"strtold", WithErrnoUpdate(strtold)},
+        {"strtod", ARMHFREWRITE(WithErrnoUpdate(strtod))},
+        {"strtof", ARMHFREWRITE(WithErrnoUpdate(strtof))},
+        {"strtold", ARMHFREWRITE(WithErrnoUpdate(strtold))},
         {"strtol", WithErrnoUpdate(strtol)},
         {"strtoul", WithErrnoUpdate(strtoul)},
         {"strtoul_l", WithErrnoUpdate(strtoul_l)},
@@ -386,8 +394,8 @@ void shim::add_stdlib_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"strtoll_l", WithErrnoUpdate(strtoll_l)},
         {"strtoull", WithErrnoUpdate(strtoull)},
         {"strtoull_l", WithErrnoUpdate(strtoull_l)},
-        {"strtof_l", WithErrnoUpdate(strtof_l)},
-        {"strtold_l", WithErrnoUpdate(strtold_l)},
+        {"strtof_l", ARMHFREWRITE(WithErrnoUpdate(strtof_l))},
+        {"strtold_l", ARMHFREWRITE(WithErrnoUpdate(strtold_l))},
         {"strtoumax", WithErrnoUpdate(strtoumax)},
         {"strtoimax", WithErrnoUpdate(strtoimax)},
 
@@ -444,12 +452,12 @@ void shim::add_ctype_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 
 void shim::add_math_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
-#ifdef __i386__
+#if defined(__i386__) || defined(__arm__)
         {"__umoddi3", __umoddi3},
         {"__udivdi3", __udivdi3},
         {"__divdi3", __divdi3},
 #endif
-        {"ldexp", (double (*)(double, int)) ::ldexp},
+        {"ldexp", ARMHFREWRITE(((double(&)(double, int)) ::ldexp))},
     });
 }
 
@@ -710,6 +718,11 @@ void shim::add_setjmp_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 #else
         {"setjmp", _setjmp},
         {"longjmp", longjmp},
+#endif
+#ifndef __arm__
+// Needed for Minecraft armv7
+        {"sigsetjmp", __sigsetjmp},
+        {"siglongjmp", siglongjmp},
 #endif
     });
 }

@@ -115,6 +115,8 @@ namespace shim {
 
     long fakesyscall(long sysno, ...);
 
+    int isnan(double d);
+
     void add_common_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     void add_stdlib_shimmed_symbols(std::vector<shimmed_symbol> &list);
