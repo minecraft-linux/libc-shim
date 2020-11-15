@@ -42,6 +42,12 @@
 #endif
 #endif
 #include <inttypes.h>
+#ifdef _WIN32
+#include <Processthreadsapi.h>
+#elif defined(__APPLE__) || defined(__linux__)
+#include <sys/syscall.h>
+#endif
+#include "fakesyscall.h"
 
 using namespace shim;
 
@@ -275,6 +281,40 @@ ssize_t shim::__read_chk(int fd, void *buf, size_t count, size_t buf_size) {
     return read(fd, buf, count);
 }
 
+long shim::fakesyscall(long sysno, ...) {
+    if (sysno == FAKE_SYS_gettid) {
+        #ifdef __APPLE__
+            // Since OSX 10.6
+            return syscall(SYS_thread_selfid);
+        #elif defined(SYS_gettid)
+            return syscall(SYS_gettid);
+        #else
+            // Fallback for freebsd
+            return pthread_getthreadid_np();
+        #endif
+    } else if (sysno == FAKE_SYS_getrandom) {
+        va_list l;
+        va_start(l, sysno);
+        auto buf = va_arg(l, char*);
+        auto len = va_arg(l, size_t);
+        auto flags = va_arg(l, unsigned int);
+#ifdef __linux__
+        auto res = syscall(SYS_getrandom, buf, len, flags);
+#elif defined(_WIN32)
+        // TODO Implement if needed
+        // this insecure stub works for Minecraft
+        auto res = len;
+#else
+        // TODO do we need look at flags?
+        // Should work for bsd and macOS
+        arc4random_buf(buf, len);
+        auto res = len;
+#endif
+        va_end(l);
+        return res;
+    }
+    return ENOSYS;
+}
 
 void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
@@ -496,7 +536,7 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"sync", WithErrnoUpdate(::sync)},
         {"getpagesize", ::getpagesize},
         {"getdtablesize", ::getdtablesize},
-        {"syscall", ::syscall},
+        {"syscall", fakesyscall},
         {"lockf", WithErrnoUpdate(::lockf)},
         {"swab", ::swab},
 
