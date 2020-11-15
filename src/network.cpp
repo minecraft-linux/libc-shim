@@ -325,9 +325,15 @@ void shim::freeaddrinfo(bionic::addrinfo *ai) {
 
 int shim::getnameinfo(const bionic::sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen,
         char *serv, socklen_t servlen, bionic::nameinfo_flags flags) {
-    detail::sockaddr_in haddr (addr, addrlen);
-    return ::getnameinfo(haddr.ptr(), haddr.len, host, hostlen, serv, servlen,
-            bionic::to_host_nameinfo_flags(flags));
+    try {
+        detail::sockaddr_in haddr (addr, addrlen);
+        return ::getnameinfo(haddr.ptr(), haddr.len, host, hostlen, serv, servlen,
+                bionic::to_host_nameinfo_flags(flags));
+    } catch  (std::exception& ex) {
+        // TODO: A random sockaddr is passed to this function,
+        // while connecting to Minecraft win10
+        return 5 /* EAI_FAMILY */;
+    }
 }
 
 int shim::bind(int sockfd, const bionic::sockaddr *addr, socklen_t addrlen) {
@@ -377,8 +383,8 @@ ssize_t shim::recvfrom(int sockfd, void *buf, size_t len, int flags, bionic::soc
     int ret = ::recvfrom(sockfd, buf, len, flags, haddr.ptr(), &haddr.len);
     if (ret >= 0)
         haddr.apply(addr, addrlen);
-    return ret;
-}
+        return ret;
+    }
 
 int shim::getsockname(int sockfd, shim::bionic::sockaddr *addr, socklen_t *addrlen) {
     detail::sockaddr_out haddr;
