@@ -719,7 +719,7 @@ void shim::add_setjmp_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"setjmp", _setjmp},
         {"longjmp", longjmp},
 #endif
-#ifndef __arm__
+#ifdef __arm__
 // Needed for Minecraft armv7
         {"sigsetjmp", __sigsetjmp},
         {"siglongjmp", siglongjmp},
