@@ -11,5 +11,5 @@ template<class R, class ... arg > struct armhfrewrite<R (*)(arg...) noexcept> : 
 
 #define ARMHFREWRITE(func) (void*)&armhfrewrite<decltype(&func)>::rewrite<&func>
 #else
-#define ARMHFREWRITE(func) &func
+#define ARMHFREWRITE(func) func
 #endif

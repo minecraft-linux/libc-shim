@@ -375,7 +375,9 @@ void shim::add_stdlib_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"seed48", seed48},
         {"lcong48", lcong48},
 
+#if defined(__arm__) && defined(__linux__)
         { "isnanf", ARMHFREWRITE(isnanf) },
+#endif
         { "isnan", ARMHFREWRITE(isnan) },
 
         {"atof", ARMHFREWRITE(atof)},

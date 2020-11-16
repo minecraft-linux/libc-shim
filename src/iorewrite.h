@@ -20,6 +20,8 @@ template<class R, class ... arg > struct iorewrite1<R (*) (const char * ,arg...)
 };
 
 template<class R, class ... arg > struct iorewrite1<R (*)(const char *,arg...) noexcept> : iorewrite1<R (*)(const char *,arg...)> {};
+template<class R, class ... arg > struct iorewrite1<R(const char *,arg...)> : iorewrite1<R (*)(const char *,arg...)> {};
+template<class R, class ... arg > struct iorewrite1<R(const char *,arg...) noexcept> : iorewrite1<R (*)(const char *,arg...)> {};
 
 template<class T> struct iorewrite2;
 template<class R, class ... arg > struct iorewrite2<R (*)(const char *,const char *,arg...)> {
@@ -35,6 +37,8 @@ template<class R, class ... arg > struct iorewrite2<R (*)(const char *,const cha
 };
 
 template<class R, class ... arg > struct iorewrite2<R (*)(const char *,const char *,arg...) noexcept> : iorewrite2<R (*)(const char *,const char *,arg...)> {};
+template<class R, class ... arg > struct iorewrite2<R(const char *,const char *,arg...)> : iorewrite2<R (*)(const char *,const char *,arg...)> {};
+template<class R, class ... arg > struct iorewrite2<R(const char *,const char *,arg...) noexcept> : iorewrite2<R (*)(const char *,const char *,arg...)> {};
 
-#define IOREWRITE1(func) &iorewrite1<decltype(&func)>::rewrite<&func>
-#define IOREWRITE2(func) &iorewrite2<decltype(&func)>::rewrite<&func>
+#define IOREWRITE1(func) (iorewrite1<decltype(func)>::rewrite<func>)
+#define IOREWRITE2(func) (iorewrite2<decltype(func)>::rewrite<func>)
