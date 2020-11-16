@@ -9,7 +9,7 @@ template<class R, class ... arg > struct armhfrewrite<R (*)(arg...)> {
 
 template<class R, class ... arg > struct armhfrewrite<R (*)(arg...) noexcept> : armhfrewrite<R (*)(arg...)> {};
 
-#define ARMHFREWRITE(func) &armhfrewrite<decltype(&func)>::rewrite<&func>
+#define ARMHFREWRITE(func) (void*)&armhfrewrite<decltype(&func)>::rewrite<&func>
 #else
 #define ARMHFREWRITE(func) &func
 #endif
