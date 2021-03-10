@@ -26,6 +26,7 @@
 #include <clocale>
 #include <cerrno>
 #include <utime.h>
+#include <malloc.h>
 #include <sys/uio.h>
 #include <syslog.h>
 #ifndef __APPLE__
@@ -416,6 +417,7 @@ void shim::add_stdlib_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 void shim::add_malloc_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"malloc", ::malloc},
+        {"malloc_usable_size", ::malloc_usable_size},
         {"free", ::free},
         {"calloc", ::calloc},
         {"realloc", ::realloc},
