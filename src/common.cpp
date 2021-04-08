@@ -74,7 +74,10 @@ extern "C" void bionic_longjmp();
 
 uintptr_t bionic::stack_chk_guard = []() {
 #ifndef __APPLE__
-    return *((uintptr_t*) getauxval(AT_RANDOM));
+    char* buf = reinterpret_cast<char*>(getauxval(AT_RANDOM));
+    uintptr_t res = 0;
+    memcpy(&res, buf, sizeof(res));
+    return res;
 #else
     return 0;
 #endif
