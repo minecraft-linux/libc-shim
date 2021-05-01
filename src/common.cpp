@@ -573,15 +573,40 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 
 void shim::add_signal_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
-        {"signal", ::signal},
-        {"bsd_signal", ::signal},
-        {"kill", ::kill},
-        {"killpg", ::killpg},
+        // Stub this binding until https://github.com/minecraft-linux/libc-shim/issues/9 is resolved, the current implementation currupts the stack
+        // {"signal", ::signal},
+        // {"bsd_signal", ::signal},
+        // {"kill", ::kill},
+        // {"killpg", ::killpg},
+        {"signal", +[](int __sig, void* __handler) -> void* {
+            return nullptr;
+        }},
+        {"bsd_signal", +[](int __sig, void* __handler) -> void* {
+            return nullptr;
+        }},
+        {"kill", +[](int __pid, int __sig) -> int {
+            return 0;
+        }},
+        {"killpg", +[](int __pid, int __sig) -> int {
+            return 0;
+        }},
         {"raise", ::raise},
-        {"sigaction", ::sigaction},
-        {"sigprocmask", ::sigprocmask},
-        {"sigemptyset", ::sigemptyset},
-        {"sigaddset", ::sigaddset}
+        // {"sigaction", ::sigaction},
+        // {"sigprocmask", ::sigprocmask},
+        // {"sigemptyset", ::sigemptyset},
+        // {"sigaddset", ::sigaddset}
+        {"sigaction", +[](int __sig, const void * __act, void * __oact) -> int {
+            return 0;
+        }},
+        {"sigprocmask", +[](int __how, const void * __set, void * __oset) -> int {
+            return 0;
+        }},
+        {"sigemptyset", +[](void*) -> int {
+            return 0;
+        }},
+        {"sigaddset", +[](void *__set, int __signo) -> int {
+            return 0;
+        }}
     });
 }
 
