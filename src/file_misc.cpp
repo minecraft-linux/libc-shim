@@ -15,6 +15,25 @@ using namespace shim;
 
 int bionic::to_host_file_status_flags(bionic::file_status_flags flags) {
     using flag = file_status_flags;
+
+    int ret = 0;
+    // flag::([^)]+)\).*\|= ([^;]+);
+    // $2) ret |= (int)flag::$1;
+    if ((uint32_t) flags & (uint32_t) O_RDONLY) ret |= (int)flag::RDONLY;
+    if ((uint32_t) flags & (uint32_t) O_WRONLY) ret |= (int)flag::WRONLY;
+    if ((uint32_t) flags & (uint32_t) O_RDWR) ret |= (int)flag::RDWR;
+    if ((uint32_t) flags & (uint32_t) O_CREAT) ret |= (int)flag::CREAT;
+    if ((uint32_t) flags & (uint32_t) O_EXCL) ret |= (int)flag::EXCL;
+    if ((uint32_t) flags & (uint32_t) O_NOCTTY) ret |= (int)flag::NOCTTY;
+    if ((uint32_t) flags & (uint32_t) O_TRUNC) ret |= (int)flag::TRUNC;
+    if ((uint32_t) flags & (uint32_t) O_APPEND) ret |= (int)flag::APPEND;
+    if ((uint32_t) flags & (uint32_t) O_NONBLOCK) ret |= (int)flag::NONBLOCK;
+    if ((uint32_t) flags & (uint32_t) O_CLOEXEC) ret |= (int)flag::CLOEXEC;
+    return ret;
+}
+
+bionic::file_status_flags bionic::from_host_file_status_flags(int flags) {
+    using flag = file_status_flags;
     if (((uint32_t) flags & (~(uint32_t) flag::KNOWN_FLAGS)) != 0)
         throw std::runtime_error("Unsupported fd flag used");
 
@@ -29,7 +48,7 @@ int bionic::to_host_file_status_flags(bionic::file_status_flags flags) {
     if ((uint32_t) flags & (uint32_t) flag::APPEND) ret |= O_APPEND;
     if ((uint32_t) flags & (uint32_t) flag::NONBLOCK) ret |= O_NONBLOCK;
     if ((uint32_t) flags & (uint32_t) flag::CLOEXEC) ret |= O_CLOEXEC;
-    return ret;
+    return (bionic::file_status_flags)ret;
 }
 
 #if defined(_SIZEOF_ADDR_IFREQ)
@@ -122,6 +141,8 @@ int shim::fcntl(int fd, bionic::fcntl_index cmd, void *arg) {
     switch (cmd) {
         case bionic::fcntl_index::SETFD:
             return ::fcntl(fd, F_SETFD, (int)(intptr_t) arg);
+        case bionic::fcntl_index::GETFL:
+            return (int)bionic::from_host_file_status_flags(::fcntl(fd, F_GETFL));
         case bionic::fcntl_index::SETFL:
             return ::fcntl(fd, F_SETFL, to_host_file_status_flags((bionic::file_status_flags) (size_t) arg));
         case bionic::fcntl_index::SETLK: {
@@ -135,7 +156,7 @@ int shim::fcntl(int fd, bionic::fcntl_index cmd, void *arg) {
             return ::fcntl(fd, F_SETLK, &fl);
         }
         default:
-            throw std::runtime_error("Unsupported fcntl");
+            throw std::runtime_error("Unsupported fcntl " + std::to_string((int)cmd));
     }
 }
 

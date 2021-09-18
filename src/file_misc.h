@@ -24,6 +24,7 @@ namespace shim {
         };
 
         int to_host_file_status_flags(bionic::file_status_flags flags);
+        bionic::file_status_flags from_host_file_status_flags(int flags);
 
         enum class ioctl_index : unsigned long {
             FILE_NBIO = 0x5421,
@@ -33,7 +34,9 @@ namespace shim {
         };
 
         enum class fcntl_index : int {
+            GETFD = 1,
             SETFD = 2,
+            GETFL = 3,
             SETFL = 4,
             SETLK = 6
         };
