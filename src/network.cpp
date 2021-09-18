@@ -405,7 +405,15 @@ int shim::getpeername(int sockfd, shim::bionic::sockaddr *addr, socklen_t *addrl
 int shim::accept(int sockfd, shim::bionic::sockaddr *addr, socklen_t *addrlen) {
     detail::sockaddr_out haddr;
     int ret = ::accept(sockfd, haddr.ptr(), &haddr.len);
-    if (ret >= 0)
+    if (ret >= 0 && addrlen)
+        haddr.apply(addr, addrlen);
+    return ret;
+}
+
+int shim::accept4(int sockfd, shim::bionic::sockaddr *addr, socklen_t *addrlen, int flag) {
+    detail::sockaddr_out haddr;
+    int ret = ::accept(sockfd, haddr.ptr(), &haddr.len);
+    if (ret >= 0 && addrlen)
         haddr.apply(addr, addrlen);
     return ret;
 }
@@ -467,6 +475,7 @@ void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) 
         {"getsockname", WithErrnoUpdate(getsockname)},
         {"getpeername", WithErrnoUpdate(getpeername)},
         {"accept", WithErrnoUpdate(accept)},
+        {"accept4", WithErrnoUpdate(accept4)},
         {"getsockopt", WithErrnoUpdate(getsockopt)},
         {"setsockopt", WithErrnoUpdate(setsockopt)},
         {"listen", WithErrnoUpdate(::listen)},

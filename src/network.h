@@ -169,6 +169,7 @@ namespace shim {
     int getpeername(int sockfd, bionic::sockaddr *addr, socklen_t *addrlen);
 
     int accept(int sockfd, bionic::sockaddr *addr, socklen_t *addrlen);
+    int accept4(int sockfd, bionic::sockaddr *addr, socklen_t *addrlen, int flag);
 
     int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen);
 
