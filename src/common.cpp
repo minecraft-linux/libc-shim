@@ -604,7 +604,13 @@ void shim::add_signal_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"sigemptyset", +[](void*) -> int {
             return 0;
         }},
+        {"sigfillset", +[](void*) -> int {
+            return 0;
+        }},
         {"sigaddset", +[](void *__set, int __signo) -> int {
+            return 0;
+        }},
+        {"sigdelset", +[](void *__set, int __signo) -> int {
             return 0;
         }}
     });
