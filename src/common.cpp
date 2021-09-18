@@ -457,6 +457,7 @@ void shim::add_ctype_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"isspace", isspace},
         {"isupper", isupper},
         {"isxdigit", isxdigit},
+        {"isascii", isascii},
 
         {"tolower", ::tolower},
         {"toupper", ::toupper},
