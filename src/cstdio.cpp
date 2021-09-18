@@ -3,6 +3,7 @@
 #include "iorewrite.h"
 
 #include "wchar.h"
+#include <libgen.h>
 
 using namespace shim;
 
@@ -207,6 +208,25 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"vsscanf", ::vsscanf},
         {"perror", ::perror},
 
+        {"stdin", &bionic::standard_files[0]},
+        {"stdout", &bionic::standard_files[1]},
+        {"stderr", &bionic::standard_files[2]},
+        {"__register_atfork", (void*)+[]() {
+
+        }},
+        { "getauxval", (void*)+[](unsigned long) -> unsigned long {
+            return 0;
+        }},
+        { "tcgetattr", (void*)+[](int, void*) -> int {
+            return 0;
+        }},
+        { "tcsetattr", (void*)+[](int, int, void*) -> int {
+            return 0;
+        }},
+        {"getpwuid_r", (void*)+[](int) -> void* {
+            return nullptr;
+        }},
+        { "basename", (void*)basename},
         /* wchar.h */
         {"getwc", AutoArgRewritten(getwc)},
         {"ungetwc", AutoArgRewritten(ungetwc)},
