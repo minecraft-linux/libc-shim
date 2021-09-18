@@ -402,7 +402,9 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
         {"pthread_rwlock_init", pthread_rwlock_init},
         {"pthread_rwlock_destroy", pthread_rwlock_destroy},
         {"pthread_rwlock_rdlock", &detail::arg_rewrite_helper<int (::pthread_rwlock_t *)>::rewrite<pthread_rwlock_rdlock>},
+        {"pthread_rwlock_tryrdlock", &detail::arg_rewrite_helper<int (::pthread_rwlock_t *)>::rewrite<pthread_rwlock_tryrdlock>},
         {"pthread_rwlock_wrlock", &detail::arg_rewrite_helper<int (::pthread_rwlock_t *)>::rewrite<pthread_rwlock_wrlock>},
+        {"pthread_rwlock_trywrlock", &detail::arg_rewrite_helper<int (::pthread_rwlock_t *)>::rewrite<pthread_rwlock_trywrlock>},
         {"pthread_rwlock_unlock", &detail::arg_rewrite_helper<int (::pthread_rwlock_t *)>::rewrite<pthread_rwlock_unlock>},
 
         {"pthread_key_create", pthread_key_create},
