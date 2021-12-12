@@ -737,6 +737,7 @@ void shim::add_mman_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"msync", WithErrnoUpdate(::msync)},
         {"mlock", WithErrnoUpdate(::mlock)},
         {"munlock", WithErrnoUpdate(::munlock)},
+        {"mremap", WithErrnoUpdate(mremap)},
     });
 }
 

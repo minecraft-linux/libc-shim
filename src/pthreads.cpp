@@ -413,6 +413,7 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
         {"pthread_atfork", ::pthread_atfork},
         {"pthread_setschedparam", pthread_setschedparam},
         {"pthread_getschedparam", pthread_getschedparam},
+        {"pthread_getattr_np", pthread_getattr_np},
         {"pthread_attr_init", pthread_attr_init},
         {"pthread_attr_destroy", pthread_attr_destroy},
         {"pthread_attr_setdetachstate", pthread_attr_setdetachstate},
@@ -420,6 +421,7 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
         {"pthread_attr_setschedparam", pthread_attr_setschedparam},
         {"pthread_attr_getschedparam", pthread_attr_getschedparam},
         {"pthread_attr_setstacksize", pthread_attr_setstacksize},
+        {"pthread_attr_getstack", pthread_attr_getstack},
         {"pthread_attr_getstacksize", pthread_attr_getstacksize},
 
         {"pthread_mutex_init", pthread_mutex_init},
