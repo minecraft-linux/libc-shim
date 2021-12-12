@@ -202,6 +202,11 @@ void *shim::mmap(void *addr, size_t length, int prot, bionic::mmap_flags flags, 
     return ::mmap(addr, length, prot, bionic::to_host_mmap_flags(flags), fd, (::off_t) offset);
 }
 
+void *shim::mremap(void *old_addr, size_t old_length, size_t new_length, int flags, ...) {
+// TODO: Implement this someday, at least on linux
+    return MAP_FAILED;
+}
+
 int shim::getrusage(int who, void *usage) {
     Log::warn("Shim/Common", "getrusage is unsupported");
     return -1;

@@ -190,6 +190,7 @@ namespace shim {
     int pthread_create(pthread_t *thread, pthread_attr_t const *attr, void* (*fn)(void *), void *arg);
     int pthread_setschedparam(pthread_t thread, bionic::sched_policy policy, const bionic::sched_param *param);
     int pthread_getschedparam(pthread_t thread, bionic::sched_policy *policy, bionic::sched_param *param);
+    int pthread_getattr_np(pthread_t th, pthread_attr_t* attr);
 
     int pthread_attr_init(pthread_attr_t *attr);
     int pthread_attr_destroy(pthread_attr_t *attr);
@@ -198,6 +199,7 @@ namespace shim {
     int pthread_attr_setschedparam(pthread_attr_t *attr, const bionic::sched_param *value);
     int pthread_attr_getschedparam(pthread_attr_t *attr, bionic::sched_param *value);
     int pthread_attr_setstacksize(pthread_attr_t *attr, size_t value);
+    int pthread_attr_getstack(pthread_attr_t *attr, void **stackaddr, size_t *stacksize);
     int pthread_attr_getstacksize(pthread_attr_t *attr, size_t *value);
 
     int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr);

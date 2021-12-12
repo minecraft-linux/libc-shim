@@ -83,6 +83,8 @@ namespace shim {
 
     void *mmap(void *addr, size_t length, int prot, bionic::mmap_flags flags, int fd, bionic::off_t offset);
 
+    void *mremap(void *old_addr, size_t old_length, size_t new_length, int flags, ...);
+
     int getrusage(int who, void *usage);
 
     int getrlimit(bionic::rlimit_resource res, bionic::rlimit *info);

@@ -152,6 +152,42 @@ int shim::pthread_getschedparam(pthread_t thread, shim::bionic::sched_policy *po
     return 0;
 }
 
+int shim::pthread_getattr_np(pthread_t th, pthread_attr_t* attr) {
+#ifdef __APPLE__
+    pthread_attr_init(attr);
+    int hpolicy;
+    sched_param hparam;
+    int ret = ::pthread_getschedparam(thread, &hpolicy, &hparam);
+    if (ret != 0)
+        return bionic::translate_errno_from_host(ret);
+    attr->sched_priority = hparam.sched_priority;
+    void* stackaddr = pthread_get_stackaddr_np(th);
+    size_t stacksize = pthread_get_stacksize_np(th);
+    attr->stack_base = stackaddr;
+    attr->stack_size = stacksize;
+#else
+    ::pthread_attr_t hostattr;
+    int ret = ::pthread_getattr_np(thread, &hostattr);
+    if (ret != 0)
+        return bionic::translate_errno_from_host(ret);
+    pthread_attr_init(attr);
+    int detached = 0;
+    ::pthread_attr_getdetachstate(&hostattr, &detached);
+    pthread_attr_setdetachstate(attr, detached);
+    sched_param hparam;
+    ::pthread_attr_getschedparam(&hostattr, &hparam);
+    bionic::sched_param param;
+    param.sched_priority = hparam.sched_priority;
+    pthread_attr_setschedparam(attr, &param);
+    void* stackaddr = nullptr;
+    size_t stacksize = 0;
+    ::pthread_attr_getstack(&hostattr, &stackaddr, &stacksize);
+    attr->stack_base = stackaddr;
+    attr->stack_size = stacksize;
+#endif
+    return 0;
+}
+
 int shim::pthread_attr_init(pthread_attr_t *attr) {
     *attr = pthread_attr_t{false, false, 0, nullptr, 0, 0, bionic::sched_policy::OTHER, 0};
     return 0;
@@ -187,6 +223,16 @@ int shim::pthread_attr_setstacksize(shim::pthread_attr_t *attr, size_t value) {
     if (value < PTHREAD_STACK_MIN)
         return 0;
     attr->stack_size = value;
+    return 0;
+}
+
+int shim::pthread_attr_getstack(shim::pthread_attr_t *attr, void **stackaddr, size_t *stacksize) {
+    if (stackaddr) {
+        *stackaddr = attr->stack_base;
+    }
+    if (stacksize) {
+        *stacksize = attr->stack_size;
+    }
     return 0;
 }
 
