@@ -157,7 +157,7 @@ int shim::pthread_getattr_np(pthread_t th, pthread_attr_t* attr) {
     pthread_attr_init(attr);
     int hpolicy;
     sched_param hparam;
-    int ret = ::pthread_getschedparam(thread, &hpolicy, &hparam);
+    int ret = ::pthread_getschedparam(th, &hpolicy, &hparam);
     if (ret != 0)
         return bionic::translate_errno_from_host(ret);
     attr->sched_priority = hparam.sched_priority;
@@ -167,7 +167,7 @@ int shim::pthread_getattr_np(pthread_t th, pthread_attr_t* attr) {
     attr->stack_size = stacksize;
 #else
     ::pthread_attr_t hostattr;
-    int ret = ::pthread_getattr_np(thread, &hostattr);
+    int ret = ::pthread_getattr_np(th, &hostattr);
     if (ret != 0)
         return bionic::translate_errno_from_host(ret);
     pthread_attr_init(attr);
@@ -176,9 +176,7 @@ int shim::pthread_getattr_np(pthread_t th, pthread_attr_t* attr) {
     pthread_attr_setdetachstate(attr, detached);
     sched_param hparam;
     ::pthread_attr_getschedparam(&hostattr, &hparam);
-    bionic::sched_param param;
-    param.sched_priority = hparam.sched_priority;
-    pthread_attr_setschedparam(attr, &param);
+    attr->sched_priority = hparam.sched_priority;
     void* stackaddr = nullptr;
     size_t stacksize = 0;
     ::pthread_attr_getstack(&hostattr, &stackaddr, &stacksize);
