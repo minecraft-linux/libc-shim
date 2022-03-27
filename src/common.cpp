@@ -27,6 +27,7 @@
 #include <cerrno>
 #include <utime.h>
 #ifdef __APPLE__
+#include <pthread.h>
 #include <malloc/malloc.h>
 #else
 #include <malloc.h>
@@ -299,8 +300,9 @@ ssize_t shim::__read_chk(int fd, void *buf, size_t count, size_t buf_size) {
 long shim::fakesyscall(long sysno, ...) {
     if (sysno == FAKE_SYS_gettid) {
         #ifdef __APPLE__
-            // Since OSX 10.6
-            return syscall(SYS_thread_selfid);
+	    uint64_t tid;
+	    pthread_threadid_np(NULL, &tid);
+            return (long&)tid;
         #elif defined(SYS_gettid)
             return syscall(SYS_gettid);
         #else
