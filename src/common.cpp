@@ -444,6 +444,7 @@ void shim::add_malloc_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"posix_memalign", ::posix_memalign},
         {"_Znwj", (void *(*)(size_t)) ::operator new},
         {"_ZdlPv", (void (*)(void *)) ::operator delete},
+        {"mallinfo", ::mallinfo},
     });
 }
 
