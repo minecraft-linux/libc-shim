@@ -60,6 +60,7 @@ namespace shim {
 
     }
 
+    int gettid();
     void assert_impl(const char* file, int line, const char* msg);
     void assert2_impl(const char* file, int line, const char* function, const char* msg);
 

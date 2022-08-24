@@ -297,18 +297,22 @@ ssize_t shim::__read_chk(int fd, void *buf, size_t count, size_t buf_size) {
     return read(fd, buf, count);
 }
 
+int shim::gettid() {
+    #ifdef __APPLE__
+    uint64_t tid;
+    pthread_threadid_np(NULL, &tid);
+        return (long&)tid;
+    #elif defined(SYS_gettid)
+        return syscall(SYS_gettid);
+    #else
+        // Fallback for freebsd
+        return pthread_getthreadid_np();
+    #endif
+}
+
 long shim::fakesyscall(long sysno, ...) {
     if (sysno == FAKE_SYS_gettid) {
-        #ifdef __APPLE__
-	    uint64_t tid;
-	    pthread_threadid_np(NULL, &tid);
-            return (long&)tid;
-        #elif defined(SYS_gettid)
-            return syscall(SYS_gettid);
-        #else
-            // Fallback for freebsd
-            return pthread_getthreadid_np();
-        #endif
+        return shim::gettid();
     } else if (sysno == FAKE_SYS_getrandom) {
         va_list l;
         va_start(l, sysno);
@@ -569,6 +573,9 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"getpagesize", ::getpagesize},
         {"getdtablesize", ::getdtablesize},
         {"syscall", fakesyscall},
+        {"gettid", gettid},
+        {"sched_get_priority_min", sched_get_priority_min},
+        {"sched_get_priority_max", sched_get_priority_max},
         {"lockf", WithErrnoUpdate(::lockf)},
         {"swab", ::swab},
 
