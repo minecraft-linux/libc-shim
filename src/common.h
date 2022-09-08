@@ -106,6 +106,10 @@ namespace shim {
 
     char* __strcpy_chk(char* dst, const char* src, size_t dst_len);
 
+    char* __strcat_chk(char *dst, const char *src, size_t dst_len);
+
+    char* __strncat_chk(char *dst, const char * src, size_t n, size_t dst_len);
+
     char* __strncpy_chk(char* dst, const char* src, size_t len, size_t dst_len);
 
     char* __strncpy_chk2(char* dst, const char* src, size_t n, size_t dst_len, size_t src_len);
@@ -153,5 +157,7 @@ namespace shim {
     void add_setjmp_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     void add_misc_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
+    void add_fnmatch_shimmed_symbols(std::vector<shim::shimmed_symbol> &list);
 
 }

@@ -26,6 +26,7 @@
 #include <clocale>
 #include <cerrno>
 #include <utime.h>
+#include <fnmatch.h>
 #ifdef __APPLE__
 #include <pthread.h>
 #include <malloc/malloc.h>
@@ -269,6 +270,14 @@ int shim::__vsprintf_chk(char* dst, int flags, size_t dst_len_from_compiler, con
 
 char* shim::__strcpy_chk(char* dst, const char* src, size_t dst_len) {
   return strcpy(dst, src);
+}
+
+char* shim::__strcat_chk(char *dst, const char *src, size_t dst_len) {
+    return strcat(dst, src);
+}
+
+char* shim::__strncat_chk(char *dst, const char *src, size_t n, size_t dst_len) {
+    return strncat(dst, src, n);
 }
 
 char* shim::__strncpy_chk(char* dst, const char* src, size_t len, size_t dst_len) {
@@ -524,6 +533,13 @@ void shim::add_sched_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     });
 }
 
+void shim::add_fnmatch_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+        {"fnmatch", ::fnmatch},
+    });
+
+}
+
 void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"access", WithErrnoUpdate(IOREWRITE1(::access))},
@@ -552,6 +568,7 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"execlp", ::execlp},
         {"nice", WithErrnoUpdate(::nice)},
         {"_exit", ::_exit},
+        {"getchar", getchar},
         {"getuid", WithErrnoUpdate(::getuid)},
         {"getpid", WithErrnoUpdate(::getpid)},
         {"getgid", WithErrnoUpdate(::getgid)},
@@ -665,6 +682,8 @@ void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"strndup", ::strndup},
         {"strncmp", ::strncmp},
         {"strncpy", ::strncpy},
+        {"__strcat_chk", __strcat_chk},
+        {"__strncat_chk", __strncat_chk},
         {"__strncpy_chk", __strncpy_chk},
         {"__strncpy_chk2", __strncpy_chk2},
         {"strlcpy", bionic::strlcpy},
@@ -691,6 +710,9 @@ void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 void shim::add_wchar_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         /* wchar.h */
+        {"wcscat", ::wcscat},
+        {"wcscpy", ::wcscpy},
+        {"wcscmp", ::wcscmp},
         {"wcslen", ::wcslen},
         {"wctob", ::wctob},
         {"btowc", ::btowc},
@@ -836,5 +858,6 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_misc_shimmed_symbols(ret);
     add_sysconf_shimmed_symbols(ret);
     add_eventfd_shimmed_symbols(ret);
+    add_fnmatch_shimmed_symbols(ret);
     return ret;
 }
