@@ -193,6 +193,10 @@ int shim::clock_gettime(bionic::clock_type clock, struct timespec *ts) {
 #endif
 }
 
+bionic::mallinfo shim::mallinfo() {
+    return { .ordblks = 8000000, .usmblks= 8000000, .fordblks= 8000000 };
+}
+
 void* shim::memalign(size_t alignment, size_t size) {
     void* ret;
     if (posix_memalign(&ret, alignment, size) != 0)
@@ -449,6 +453,7 @@ void shim::add_malloc_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 #else
         {"malloc_usable_size", ::malloc_usable_size},
 #endif
+        {"mallinfo", mallinfo},
         {"free", ::free},
         {"calloc", ::calloc},
         {"realloc", ::realloc},

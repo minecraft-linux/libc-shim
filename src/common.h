@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <sys/types.h>
 #include "argrewrite.h"
+#include "mallinfo.h"
 #include <stdarg.h>
 
 namespace shim {
@@ -79,6 +80,8 @@ namespace shim {
 
     ssize_t pwrite(int fd, const void *buf, size_t len, bionic::off_t off);
 #endif
+
+    bionic::mallinfo mallinfo();
 
     void *memalign(size_t alignment, size_t size);
 
