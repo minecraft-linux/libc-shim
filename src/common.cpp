@@ -13,6 +13,7 @@
 #include "stat.h"
 #include "file_misc.h"
 #include "sysconf.h"
+#include "system_properties.h"
 #include <cmath>
 #include <unistd.h>
 #include <sys/time.h>
@@ -862,6 +863,7 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_epoll_shimmed_symbols(ret);
     add_misc_shimmed_symbols(ret);
     add_sysconf_shimmed_symbols(ret);
+    add_system_properties_shimmed_symbols(ret);
     add_eventfd_shimmed_symbols(ret);
     add_fnmatch_shimmed_symbols(ret);
     return ret;
