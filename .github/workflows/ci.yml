@@ -11,7 +11,7 @@ jobs:
             "ref": ${{ tojson(github.sha) }}
           }
         ]
-  macOS:
+ macOS:
     uses: ChristopherHX/osx-packaging-scripts/.github/workflows/main.yml@main
     with:
       submodule-refs: |-
