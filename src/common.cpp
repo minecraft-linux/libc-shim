@@ -310,12 +310,17 @@ char* shim::__strncpy_chk2(char* dst, const char* src, size_t n, size_t dst_len,
     return strncpy(dst, src, n);
 }
 
-int shim::sendfile(int src, int dst, off_t *offset, size_t count) {
+int shim::sendfile(int src, int dst, bionic::off_t *offset, size_t count) {
+    off_t c = offset ? (off_t)offset : 0;
 #ifdef __APPLE__
-    return ::sendfile(src, dst, *offset, &count, nullptr, 0);
+    auto ret = ::sendfile(src, dst, c, offset ? &c : nullptr, nullptr, 0);
 #else
-    return ::sendfile(src, dst, offset, count);
+    auto ret = ::sendfile(src, dst, offset ? &c : nullptr, count);
 #endif
+    if(offset) {
+        *offset = (bionic::off_t)c;
+    }
+    return ret;
 }
 
 size_t shim::ctype_get_mb_cur_max() {
