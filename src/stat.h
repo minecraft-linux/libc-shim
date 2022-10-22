@@ -1,6 +1,7 @@
 #pragma once
 
 #include <time.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <libc_shim.h>
 
@@ -77,6 +78,7 @@ namespace shim {
 
     int stat(const char *path, bionic::stat *s);
     int fstat(int fd, bionic::stat *s);
+    int lstat(const char *path,bionic::stat *s);
 
     void add_stat_shimmed_symbols(std::vector<shimmed_symbol> &list);
 

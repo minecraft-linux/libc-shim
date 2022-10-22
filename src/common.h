@@ -97,6 +97,8 @@ namespace shim {
 
     int prctl(bionic::prctl_num opt, unsigned long a2, unsigned long a3, unsigned long a4, unsigned long a5);
 
+    int sendfile(int src, int dst, off_t *offset, size_t count);
+
     uint32_t arc4random();
 
     void *__memcpy_chk(void *dst, const void *src, size_t size, size_t max_len);
@@ -126,6 +128,8 @@ namespace shim {
     long fakesyscall(long sysno, ...);
 
     int isnan(double d);
+
+    int utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags);
 
     void add_common_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
@@ -162,5 +166,7 @@ namespace shim {
     void add_misc_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     void add_fnmatch_shimmed_symbols(std::vector<shim::shimmed_symbol> &list);
+
+    void add_socket_shimmed_symbols(std::vector<shim::shimmed_symbol> &list);
 
 }
