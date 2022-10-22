@@ -38,6 +38,13 @@ int shim::fstat(int fd, shim::bionic::stat *s) {
     return ret;
 }
 
+int shim::lstat(const char *path, bionic::stat *s) {
+    struct ::stat64 tmp = {};
+    int ret = ::lstat64(path, &tmp);
+    bionic::from_host(tmp, *s);
+    return ret;
+}
+
 #else
 
 void bionic::from_host(struct ::stat const &info, stat &result) {
@@ -83,7 +90,10 @@ void shim::add_stat_shimmed_symbols(std::vector<shimmed_symbol> &list) {
         {"fstat64", fstat},
         {"chmod", IOREWRITE1(::chmod)},
         {"fchmod", ::fchmod},
+        {"fchmodat", ::fchmodat},
         {"umask", ::umask},
         {"mkdir", IOREWRITE1(::mkdir)},
+        {"utimensat", utimensat},
+        {"lstat", ::lstat},
     });
 }

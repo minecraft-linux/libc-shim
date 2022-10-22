@@ -25,12 +25,16 @@
 #include <sys/utsname.h>
 #include <csetjmp>
 #include <clocale>
+#include <locale.h>
 #include <cerrno>
 #include <utime.h>
 #include <fnmatch.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #ifdef __APPLE__
 #include <pthread.h>
 #include <malloc/malloc.h>
+#include <sys/socket.h>
 #else
 #include <malloc.h>
 #endif
@@ -55,9 +59,14 @@
 #elif defined(__APPLE__) || defined(__linux__)
 #include <sys/syscall.h>
 #endif
+#ifdef __linux__
+#include <sys/sendfile.h>
+#include <fcntl.h>
+#endif
 #include "fakesyscall.h"
 #include "iorewrite.h"
 #include "armhfrewrite.h"
+#include "statvfs.h"
 
 using namespace shim;
 
@@ -227,6 +236,14 @@ int shim::getrlimit(bionic::rlimit_resource res, bionic::rlimit *info) {
     return ret;
 }
 
+int shim::utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags) {
+#ifdef __APPLE__
+    return 0; // utimensat not available on all macOS versions
+#else
+    return ::utimensat(dirfd, pathname, times, flags);
+#endif
+}
+
 int shim::prctl(bionic::prctl_num opt, unsigned long a2, unsigned long a3, unsigned long a4, unsigned long a5) {
 #ifdef __linux__
     return ::prctl((int) opt, a2, a3, a4, a5);
@@ -291,6 +308,19 @@ char* shim::__strncpy_chk(char* dst, const char* src, size_t len, size_t dst_len
 
 char* shim::__strncpy_chk2(char* dst, const char* src, size_t n, size_t dst_len, size_t src_len) {
     return strncpy(dst, src, n);
+}
+
+int shim::sendfile(int src, int dst, bionic::off_t *offset, size_t count) {
+    off_t c = offset ? (off_t)offset : 0;
+#ifdef __APPLE__
+    auto ret = ::sendfile(src, dst, c, offset ? &c : nullptr, nullptr, 0);
+#else
+    auto ret = ::sendfile(src, dst, offset ? &c : nullptr, count);
+#endif
+    if(offset) {
+        *offset = (bionic::off_t)c;
+    }
+    return ret;
 }
 
 size_t shim::ctype_get_mb_cur_max() {
@@ -484,6 +514,8 @@ void shim::add_ctype_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"isupper", isupper},
         {"isxdigit", isxdigit},
         {"isascii", isascii},
+        {"isxdigit_l", ::isxdigit_l},
+        {"isdigit_l", ::isxdigit_l},
 
         {"tolower", ::tolower},
         {"toupper", ::toupper},
@@ -601,6 +633,8 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"sched_get_priority_max", sched_get_priority_max},
         {"lockf", WithErrnoUpdate(::lockf)},
         {"swab", ::swab},
+        {"pathconf", ::pathconf},
+        {"truncate", ::truncate},
 
         /* Use our impl or fallback to system */
         {"ftruncate", WithErrnoUpdate(ftruncate)},
@@ -700,6 +734,12 @@ void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"strsignal", ::strsignal},
         {"strcoll", ::strcoll},
         {"strxfrm", ::strxfrm},
+        {"strcoll_l", ::strcoll_l},
+        {"strxfrm_l", ::strxfrm_l},
+        {"islower_l", ::islower_l},
+        {"isupper_l", ::isupper_l},
+        {"tolower_l", ::tolower_l},
+        {"toupper_l", ::toupper_l},
 
         /* strings.h */
         {"bcmp", ::bcmp},
@@ -710,6 +750,13 @@ void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"rindex", ::rindex},
         {"strcasecmp", ::strcasecmp},
         {"strncasecmp", ::strncasecmp},
+    });
+}
+
+void shim::add_socket_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+        /* socket.h */
+        {"sendfile", sendfile},
     });
 }
 
@@ -744,23 +791,37 @@ void shim::add_wchar_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"wcstod", wcstod},
         {"wcstold", wcstold},
         {"swprintf", swprintf},
+        {"wcscoll_l", ::wcscoll_l},
+        {"wcsxfrm_l", ::wcsxfrm_l},
 
         /* wctype.h */
         {"wctype", ::wctype},
         {"iswspace", ::iswspace},
         {"iswctype", ::iswctype},
         {"towlower", ::towlower},
+        {"towlower_l", ::towlower_l},
         {"towupper", ::towupper},
+        {"towupper_l", ::towupper_l},
 
         {"iswlower",  iswlower},
+        {"iswlower_l",  ::iswlower_l},
         {"iswprint",  iswprint},
+        {"iswprint_l",  ::iswprint_l},
         {"iswblank",  iswblank},
+        {"iswblank_l",  ::iswblank_l},
         {"iswcntrl",  iswcntrl},
+        {"iswcntrl_l",  ::iswcntrl_l},
         {"iswupper",  iswupper},
+        {"iswupper_l",  ::iswupper_l},
         {"iswalpha",  iswalpha},
+        {"iswalpha_l",  ::iswalpha_l},
         {"iswdigit",  iswdigit},
+        {"iswdigit_l",  ::iswdigit_l},
         {"iswpunct",  iswpunct},
-        {"iswxdigit", iswxdigit}
+        {"iswpunct_l",  ::iswpunct_l},
+        {"iswxdigit", iswxdigit},
+        {"iswxdigit_l", ::iswxdigit_l},
+        {"iswspace_l", ::iswspace_l},
     });
 }
 
@@ -866,5 +927,7 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_system_properties_shimmed_symbols(ret);
     add_eventfd_shimmed_symbols(ret);
     add_fnmatch_shimmed_symbols(ret);
+    add_socket_shimmed_symbols(ret);
+    add_statvfs_shimmed_symbols(ret);
     return ret;
 }
