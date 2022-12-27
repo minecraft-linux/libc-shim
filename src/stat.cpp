@@ -80,6 +80,13 @@ int shim::fstat(int fd, shim::bionic::stat *s) {
     return ret;
 }
 
+int shim::lstat(const char *path, bionic::stat *s) {
+    struct ::stat tmp = {};
+    int ret = ::lstat(path, &tmp);
+    bionic::from_host(tmp, *s);
+    return ret;
+}
+
 #endif
 
 void shim::add_stat_shimmed_symbols(std::vector<shimmed_symbol> &list) {
@@ -94,6 +101,6 @@ void shim::add_stat_shimmed_symbols(std::vector<shimmed_symbol> &list) {
         {"umask", ::umask},
         {"mkdir", IOREWRITE1(::mkdir)},
         {"utimensat", utimensat},
-        {"lstat", ::lstat},
+        {"lstat", IOREWRITE1(lstat)},
     });
 }
