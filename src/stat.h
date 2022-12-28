@@ -76,6 +76,8 @@ namespace shim {
 
     }
 
+    int utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags);
+
     int stat(const char *path, bionic::stat *s);
     int fstat(int fd, bionic::stat *s);
     int lstat(const char *path,bionic::stat *s);
