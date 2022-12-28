@@ -440,6 +440,8 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
         {"pthread_cond_broadcast", pthread_cond_broadcast},
         {"pthread_cond_signal", pthread_cond_signal},
         {"pthread_cond_timedwait", pthread_cond_timedwait},
+        // TODO figure out how to implement this correctly, this will use the default clock of the cond variable
+        {"pthread_cond_timedwait_monotonic_np", pthread_cond_timedwait},
         {"pthread_condattr_init", pthread_condattr_init},
         {"pthread_condattr_destroy", pthread_condattr_destroy},
         {"pthread_condattr_setclock", pthread_condattr_setclock},
