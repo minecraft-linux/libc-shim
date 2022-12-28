@@ -89,6 +89,15 @@ int shim::lstat(const char *path, bionic::stat *s) {
 
 #endif
 
+int shim::utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags) {
+#ifdef __APPLE__
+    if(!utimensat) {
+        return 0; // utimensat not available on macOS 10.12 or lower
+    }
+#endif
+    return ::utimensat(dirfd, pathname, times, flags);
+}
+
 void shim::add_stat_shimmed_symbols(std::vector<shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"stat", IOREWRITE1(stat)},

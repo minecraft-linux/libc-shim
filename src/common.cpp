@@ -236,14 +236,6 @@ int shim::getrlimit(bionic::rlimit_resource res, bionic::rlimit *info) {
     return ret;
 }
 
-int shim::utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags) {
-#ifdef __APPLE__
-    return 0; // utimensat not available on all macOS versions
-#else
-    return ::utimensat(dirfd, pathname, times, flags);
-#endif
-}
-
 int shim::prctl(bionic::prctl_num opt, unsigned long a2, unsigned long a3, unsigned long a4, unsigned long a5) {
 #ifdef __linux__
     return ::prctl((int) opt, a2, a3, a4, a5);
