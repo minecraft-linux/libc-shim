@@ -243,7 +243,7 @@ int shim::prctl(bionic::prctl_num opt, unsigned long a2, unsigned long a3, unsig
 #else
     switch (opt) {
         case bionic::prctl_num::SET_NAME:
-            return pthread_setname_np((const char *) a2);
+            return ::pthread_setname_np((const char *) a2);
         default:
             Log::error("Shim/Common", "Unexpected prctl: %i", opt);
             return EINVAL;

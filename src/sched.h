@@ -4,6 +4,6 @@
 #include <sched.h>
 
 namespace shim {
-    int sched_setaffinity(pid_t pid, size_t set_size, const cpu_set_t* set);
+    int sched_setaffinity(pid_t pid, size_t set_size, const void* mask);
 
 }
