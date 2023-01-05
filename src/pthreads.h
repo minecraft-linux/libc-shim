@@ -202,6 +202,8 @@ namespace shim {
     int pthread_attr_getstack(pthread_attr_t *attr, void **stackaddr, size_t *stacksize);
     int pthread_attr_getstacksize(pthread_attr_t *attr, size_t *value);
 
+    int pthread_setname_np(pthread_t thread, const char* name);
+
     int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr);
     int pthread_mutex_destroy(pthread_mutex_t *mutex);
     int pthread_mutex_lock(pthread_mutex_t *mutex);
@@ -237,6 +239,8 @@ namespace shim {
     void pthread_cleanup_pop_impl(bionic::pthread_cleanup_t *c, int execute);
 
     int pthread_once(pthread_once_t *control, void (*routine)());
+
+    pid_t pthread_gettid_np(pthread_t thread);
 
     void add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list);
 

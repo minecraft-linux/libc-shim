@@ -14,6 +14,7 @@
 #include "file_misc.h"
 #include "sysconf.h"
 #include "system_properties.h"
+#include "sched.h"
 #include <cmath>
 #include <unistd.h>
 #include <sys/time.h>
@@ -560,6 +561,7 @@ void shim::add_time_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 void shim::add_sched_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"sched_yield", ::sched_yield},
+        {"sched_setaffinity", sched_setaffinity},
     });
 }
 
