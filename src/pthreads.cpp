@@ -411,7 +411,11 @@ int shim::pthread_once(pthread_once_t *control, void (*routine)()) {
 }
 
 pid_t shim::pthread_gettid_np(pthread_t thread) {
+#ifdef __linux__
     pid_t ret = thread;
+#else
+    pid_t ret = thread->sig;
+#endif
     return ret;
 }
 
