@@ -239,6 +239,14 @@ int shim::pthread_attr_getstacksize(shim::pthread_attr_t *attr, size_t *value) {
     return 0;
 }
 
+int shim::pthread_setname_np(pthread_t thread, const char* name) {
+#ifdef __linux__
+    return ::pthread_setname_np(thread,name);
+#else
+    return 0;
+#endif
+}
+
 int shim::pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr) {
     host_mutexattr hattr (attr);
     int ret = detail::make_c_wrapped<pthread_mutex_t, const ::pthread_mutexattr_t *>(mutex, &::pthread_mutex_init, &hattr.attr);
@@ -402,6 +410,15 @@ int shim::pthread_once(pthread_once_t *control, void (*routine)()) {
     return 0;
 }
 
+pid_t shim::pthread_gettid_np(pthread_t thread) {
+#ifdef __linux__
+    pid_t ret = thread;
+#else
+    pid_t ret = thread->__sig;
+#endif
+    return ret;
+}
+
 void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"pthread_create", pthread_create},
@@ -423,6 +440,8 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
         {"pthread_attr_setstacksize", pthread_attr_setstacksize},
         {"pthread_attr_getstack", pthread_attr_getstack},
         {"pthread_attr_getstacksize", pthread_attr_getstacksize},
+
+        {"pthread_setname_np", pthread_setname_np},
 
         {"pthread_mutex_init", pthread_mutex_init},
         {"pthread_mutex_destroy", pthread_mutex_destroy},
@@ -463,6 +482,7 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
         {"__pthread_cleanup_push", pthread_cleanup_push_impl},
         {"__pthread_cleanup_pop", pthread_cleanup_pop_impl},
 
-        {"pthread_once", pthread_once}
+        {"pthread_once", pthread_once},
+        {"pthread_gettid_np", pthread_gettid_np}
     });
 }

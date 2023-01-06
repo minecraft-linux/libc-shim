@@ -14,6 +14,7 @@
 #include "file_misc.h"
 #include "sysconf.h"
 #include "system_properties.h"
+#include "sched.h"
 #include <cmath>
 #include <unistd.h>
 #include <sys/time.h>
@@ -242,7 +243,7 @@ int shim::prctl(bionic::prctl_num opt, unsigned long a2, unsigned long a3, unsig
 #else
     switch (opt) {
         case bionic::prctl_num::SET_NAME:
-            return pthread_setname_np((const char *) a2);
+            return ::pthread_setname_np((const char *) a2);
         default:
             Log::error("Shim/Common", "Unexpected prctl: %i", opt);
             return EINVAL;
@@ -560,6 +561,7 @@ void shim::add_time_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 void shim::add_sched_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"sched_yield", ::sched_yield},
+        {"sched_setaffinity", sched_setaffinity},
     });
 }
 
