@@ -23,7 +23,6 @@ namespace shim {
 
     std::vector<shimmed_symbol> get_shimmed_symbols();
 
-    // Rewrite access from from_android_data_dir ( "/data/data" ) to to_android_data_dir folder
-    extern std::vector<std::string> from_android_data_dir;
-    extern std::string to_android_data_dir;
+    // Rewrite filesystem access
+    extern std::vector<std::pair<std::string, std::string>> rewrite_filesystem_access;
 }

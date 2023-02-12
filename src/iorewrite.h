@@ -5,27 +5,23 @@
 static std::string iorewrite0(const char * path) {
     auto len = path ? strlen(path) : 0;
     if(len > 0) {
-        for(auto&& from : shim::from_android_data_dir) {
-            if (len >= from.size() && !memcmp(path, from.data(), from.size()) && shim::to_android_data_dir.rfind(from.data(), 0)) {
-                return shim::to_android_data_dir + std::string(path + from.length());
+        for(auto&& kv : shim::rewrite_filesystem_access) {
+            if (path[0] != '/' && kv.first == ".") {
+                return kv.second + path;
+            }
+            if (len >= kv.first.size() && !memcmp(path, kv.first.data(), kv.first.size()) && kv.second.rfind(kv.first.data(), 0)) {
+                return kv.second + std::string(path + kv.first.length());
             }
         }
+        return path;
     }
-    return path;
+    return {};
 }
 
 template<class T> struct iorewrite1;
 template<class R, class ... arg > struct iorewrite1<R (*) (const char * ,arg...)> {
     template<R(*org)(const char *, arg...)> static R rewrite(const char *path1, arg...a) {
-        auto len = path1 ? strlen(path1) : 0;
-        if(len > 0) {
-            for(auto&& from : shim::from_android_data_dir) {
-                if (len >= from.size() && !memcmp(path1, from.data(), from.size()) && shim::to_android_data_dir.rfind(from.data(), 0)) {
-                    return org((shim::to_android_data_dir + std::string(path1 + from.length())).data(), a...);
-                }
-            }
-        }
-        return org(path1, a...);
+        return org(iorewrite0(path1).data(), a...);
     }
 };
 
@@ -36,19 +32,7 @@ template<class R, class ... arg > struct iorewrite1<R(const char *,arg...) noexc
 template<class T> struct iorewrite2;
 template<class R, class ... arg > struct iorewrite2<R (*)(const char *,const char *,arg...)> {
     template<R(*org)(const char *,const char *,arg...)> static R rewrite(const char *path1, const char *path2, arg...a) {
-        auto len1 = path1 ? strlen(path1) : 0;
-        auto len2 = path2 ? strlen(path2) : 0;
-        if(len1 > 0 || len2 > 0) {
-            for(auto&& from : shim::from_android_data_dir) {
-                if (len1 >= from.length() && !memcmp(path1, from.data(), from.length()) && shim::to_android_data_dir.rfind(from.data(), 0)) {
-                    return rewrite<org>((shim::to_android_data_dir + std::string(path1 + from.length())).data(), path2, a...);
-                }
-                if (len2 >= from.length() && !memcmp(path2, from.data(), from.length()) && shim::to_android_data_dir.rfind(from.data(), 0)) {
-                    return org(path1, (shim::to_android_data_dir + std::string(path2 + from.length())).data(), a...);
-                }
-            }
-        }
-        return org(path1, path2, a...);
+        return org(iorewrite0(path1).data(), iorewrite0(path2).data(), a...);
     }
 };
 
