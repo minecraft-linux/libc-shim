@@ -629,7 +629,9 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"swab", ::swab},
         {"pathconf", ::pathconf},
         {"truncate", ::truncate},
-	{"fdatasync", ::fdatasync},
+	#ifndef __APPLE__
+	{"fdatasync", ::fdatasync}, //Unsupported on macOS
+	#endif
 
         /* Use our impl or fallback to system */
         {"ftruncate", WithErrnoUpdate(ftruncate)},
