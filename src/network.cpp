@@ -1,6 +1,5 @@
 #include "network.h"
 #include "errno.h"
-
 #include <netinet/in.h>
 #include <net/if.h>
 #include <arpa/inet.h>
@@ -35,7 +34,8 @@ bionic::af_family bionic::from_host_af_family(int family) {
         case AF_UNSPEC: return af_family::UNSPEC;
         case AF_INET: return af_family::INET;
         case AF_INET6: return af_family::INET6;
-        default: throw std::runtime_error("Unknown af_family");
+        case AF_NETLINK: return af_family::NETLINK;
+        default: return af_family::UNSPEC;
     }
 }
 
@@ -44,7 +44,8 @@ int bionic::to_host_af_family(bionic::af_family family) {
         case af_family::UNSPEC: return AF_UNSPEC;
         case af_family::INET: return AF_INET;
         case af_family::INET6: return AF_INET6;
-        default: throw std::runtime_error("Unknown af_family");
+        case af_family::NETLINK: return AF_NETLINK;
+        default: return 0;
     }
 }
 
