@@ -34,7 +34,9 @@ bionic::af_family bionic::from_host_af_family(int family) {
         case AF_UNSPEC: return af_family::UNSPEC;
         case AF_INET: return af_family::INET;
         case AF_INET6: return af_family::INET6;
+        #ifndef __APPLE__
         case AF_NETLINK: return af_family::NETLINK;
+        #endif
         default: return af_family::UNSPEC;
     }
 }
