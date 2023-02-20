@@ -35,7 +35,10 @@ bionic::af_family bionic::from_host_af_family(int family) {
         case AF_UNSPEC: return af_family::UNSPEC;
         case AF_INET: return af_family::INET;
         case AF_INET6: return af_family::INET6;
-        default: throw std::runtime_error("Unknown af_family");
+#ifdef AF_NETLINK
+        case AF_NETLINK: return af_family::NETLINK;
+#endif
+        default: return af_family::UNSPEC;
     }
 }
 
@@ -44,7 +47,10 @@ int bionic::to_host_af_family(bionic::af_family family) {
         case af_family::UNSPEC: return AF_UNSPEC;
         case af_family::INET: return AF_INET;
         case af_family::INET6: return AF_INET6;
-        default: throw std::runtime_error("Unknown af_family");
+#ifdef AF_NETLINK
+        case af_family::NETLINK: return AF_NETLINK;
+#endif
+        default: return AF_UNSPEC;
     }
 }
 

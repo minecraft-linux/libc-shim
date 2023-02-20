@@ -22,7 +22,8 @@ namespace shim {
         enum class af_family : int {
             UNSPEC = 0,
             INET = 2,
-            INET6 = 10
+            INET6 = 10,
+            NETLINK = 16
         };
 
         enum class socktype : int {

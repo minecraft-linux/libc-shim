@@ -110,7 +110,7 @@ int shim::ioctl(int fd, bionic::ioctl_index cmd, void *arg) {
             return ret;
         }
         default:
-            throw std::runtime_error("Unsupported ioctl");
+            return 0;
     }
 }
 
