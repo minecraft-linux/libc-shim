@@ -334,17 +334,23 @@ ssize_t shim::__read_chk(int fd, void *buf, size_t count, size_t buf_size) {
     return read(fd, buf, count);
 }
 
+#ifdef __APPLE__
+int shim::fdatasync(int fildes) {
+    return fcntl(fildes, F_FULLFSYNC);
+}
+#endif
+
 int shim::gettid() {
-    #ifdef __APPLE__
+#ifdef __APPLE__
     uint64_t tid;
     pthread_threadid_np(NULL, &tid);
-        return (long&)tid;
-    #elif defined(SYS_gettid)
-        return syscall(SYS_gettid);
-    #else
-        // Fallback for freebsd
-        return pthread_getthreadid_np();
-    #endif
+    return (long&)tid;
+#elif defined(SYS_gettid)
+    return syscall(SYS_gettid);
+#else
+    // Fallback for freebsd
+    return pthread_getthreadid_np();
+#endif
 }
 
 long shim::fakesyscall(long sysno, ...) {
@@ -629,9 +635,7 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"swab", ::swab},
         {"pathconf", ::pathconf},
         {"truncate", ::truncate},
-	#ifndef __APPLE__
-	{"fdatasync", ::fdatasync}, //Unsupported on macOS
-	#endif
+	    {"fdatasync", WithErrnoUpdate(fdatasync)},
 
         /* Use our impl or fallback to system */
         {"ftruncate", WithErrnoUpdate(ftruncate)},
