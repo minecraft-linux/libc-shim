@@ -125,6 +125,10 @@ namespace shim {
 
     ssize_t __read_chk(int fd, void* buf, size_t count, size_t buf_size);
 
+#ifdef __APPLE__
+    int fdatasync(int fildes);
+#endif
+
     long fakesyscall(long sysno, ...);
 
     int isnan(double d);
