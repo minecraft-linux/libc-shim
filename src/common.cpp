@@ -21,6 +21,9 @@
 #include <cwctype>
 #include <csignal>
 #include <cstring>
+#ifdef __APPLE__
+#include <sys/fcntl.h>
+#endif
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/utsname.h>
