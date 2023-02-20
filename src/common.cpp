@@ -339,7 +339,7 @@ ssize_t shim::__read_chk(int fd, void *buf, size_t count, size_t buf_size) {
 
 #ifdef __APPLE__
 int shim::fdatasync(int fildes) {
-    return fcntl(fildes, F_FULLFSYNC);
+    return ::fcntl(fildes, F_FULLFSYNC);
 }
 #endif
 
