@@ -761,6 +761,7 @@ void shim::add_socket_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         /* socket.h */
         {"sendfile", sendfile},
+	{"__cmsg_nxthdr", __cmsg_nxthdr},
     });
 }
 
