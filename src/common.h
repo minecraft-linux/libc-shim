@@ -127,6 +127,7 @@ namespace shim {
 
 #ifdef __APPLE__
     int fdatasync(int fildes);
+    int __cmsg_nxthdr();
 #endif
 
     long fakesyscall(long sysno, ...);
