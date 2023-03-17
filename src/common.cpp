@@ -341,6 +341,9 @@ ssize_t shim::__read_chk(int fd, void *buf, size_t count, size_t buf_size) {
 int shim::fdatasync(int fildes) {
     return ::fcntl(fildes, F_FULLFSYNC);
 }
+int shim::__cmsg_nxthdr() {
+    return 0;
+}
 #endif
 
 int shim::gettid() {
@@ -761,7 +764,7 @@ void shim::add_socket_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         /* socket.h */
         {"sendfile", sendfile},
-	{"__cmsg_nxthdr", __cmsg_nxthdr},
+        {"__cmsg_nxthdr", __cmsg_nxthdr},
     });
 }
 
