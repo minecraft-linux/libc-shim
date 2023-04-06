@@ -57,6 +57,8 @@ namespace shim {
 
     int open_2(const char *pathname, bionic::file_status_flags flags);
 
+    int open_3(const char *pathname, bionic::file_status_flags flags, int mode);
+
     int fcntl(int fd, bionic::fcntl_index cmd, void *arg);
 
     int poll_via_select(pollfd *fds, nfds_t nfds, int timeout);

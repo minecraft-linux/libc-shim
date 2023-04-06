@@ -359,6 +359,21 @@ int shim::gettid() {
 #endif
 }
 
+ssize_t shim::getrandom(void *buf, size_t len, unsigned int flags) {
+#ifdef __linux__
+        return (ssize_t)syscall(SYS_getrandom, buf, len, flags);
+#elif defined(_WIN32)
+        // TODO Implement if needed
+        // this insecure stub works for Minecraft
+        return (ssize_t)len;
+#else
+        // TODO do we need look at flags?
+        // Should work for bsd and macOS
+        arc4random_buf(buf, len);
+        return (ssize_t)len;
+#endif
+}
+
 long shim::fakesyscall(long sysno, ...) {
     if (sysno == FAKE_SYS_gettid) {
         return shim::gettid();
@@ -368,18 +383,7 @@ long shim::fakesyscall(long sysno, ...) {
         auto buf = va_arg(l, char*);
         auto len = va_arg(l, size_t);
         auto flags = va_arg(l, unsigned int);
-#ifdef __linux__
-        auto res = syscall(SYS_getrandom, buf, len, flags);
-#elif defined(_WIN32)
-        // TODO Implement if needed
-        // this insecure stub works for Minecraft
-        auto res = len;
-#else
-        // TODO do we need look at flags?
-        // Should work for bsd and macOS
-        arc4random_buf(buf, len);
-        auto res = len;
-#endif
+        long res = (long)shim::getrandom(buf, len, flags);
         va_end(l);
         return res;
     }
@@ -634,6 +638,7 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"getpagesize", ::getpagesize},
         {"getdtablesize", ::getdtablesize},
         {"syscall", fakesyscall},
+        {"getrandom", getrandom},
         {"gettid", gettid},
         {"sched_get_priority_min", sched_get_priority_min},
         {"sched_get_priority_max", sched_get_priority_max},
