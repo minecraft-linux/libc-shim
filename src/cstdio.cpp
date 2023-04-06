@@ -4,6 +4,7 @@
 
 #include "wchar.h"
 #include <libgen.h>
+#include "variadic.h"
 
 using namespace shim;
 
@@ -163,10 +164,12 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"fputs", AutoArgRewritten(::fputs)},
         {"fread", fread},
         {"fwrite", AutoArgRewritten(::fwrite)},
+#if LIBC_SHIM_DEFINE_VARIADIC
         {"fprintf", fprintf},
         {"vfprintf", AutoArgRewritten(::vfprintf)},
         {"fscanf", fscanf},
         {"vfscanf", vfscanf},
+#endif
         {"getc", AutoArgRewritten(::getc)},
         {"getc_unlocked", AutoArgRewritten(::getc_unlocked)},
         {"getdelim", AutoArgRewritten(::getdelim)},
@@ -192,6 +195,7 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 
         {"putchar", ::putchar},
         {"puts", ::puts},
+#if LIBC_SHIM_DEFINE_VARIADIC
         {"printf", ::printf},
         {"vprintf", ::vprintf},
         {"sprintf", ::sprintf},
@@ -206,6 +210,7 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"sscanf", ::sscanf},
         {"vscanf", ::vscanf},
         {"vsscanf", ::vsscanf},
+#endif
         {"perror", ::perror},
 
         {"stdin", &bionic::standard_files[0]},

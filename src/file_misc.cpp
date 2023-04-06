@@ -10,6 +10,7 @@
 #include "network.h"
 #include "errno.h"
 #include "iorewrite.h"
+#include "variadic.h"
 
 using namespace shim;
 
@@ -218,7 +219,9 @@ void shim::add_ioctl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 
 void shim::add_fcntl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
+#if LIBC_SHIM_DEFINE_VARIADIC
         {"open", open},
+#endif
         {"__open_2", IOREWRITE1(open_2)},
         // for platforms with ABI incompatible variadic
         {"__libc_shim_open_3", IOREWRITE1(open_3)},

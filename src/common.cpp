@@ -71,6 +71,7 @@
 #include "iorewrite.h"
 #include "armhfrewrite.h"
 #include "statvfs.h"
+#include "variadic.h"
 
 using namespace shim;
 
@@ -637,7 +638,9 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"sync", WithErrnoUpdate(::sync)},
         {"getpagesize", ::getpagesize},
         {"getdtablesize", ::getdtablesize},
+#if LIBC_SHIM_DEFINE_VARIADIC
         {"syscall", fakesyscall},
+#endif
         {"getrandom", getrandom},
         {"gettid", gettid},
         {"sched_get_priority_min", sched_get_priority_min},
@@ -713,7 +716,9 @@ void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"memset", ::memset},
         {"__memset_chk", ::__memset_chk},
         {"memmem", ::memmem},
+#if LIBC_SHIM_DEFINE_VARIADIC
         {"__vsprintf_chk", __vsprintf_chk},
+#endif
         {"strchr", (char *(*)(char *, int)) ::strchr},
         {"strrchr", (char *(*)(char *, int)) ::strrchr},
         {"strlen", ::strlen},
@@ -803,7 +808,9 @@ void shim::add_wchar_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"wcstof", wcstof},
         {"wcstod", wcstod},
         {"wcstold", wcstold},
+#if LIBC_SHIM_DEFINE_VARIADIC
         {"swprintf", swprintf},
+#endif
         {"wcscoll_l", ::wcscoll_l},
         {"wcsxfrm_l", ::wcsxfrm_l},
 
@@ -848,7 +855,9 @@ void shim::add_mman_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"msync", WithErrnoUpdate(::msync)},
         {"mlock", WithErrnoUpdate(::mlock)},
         {"munlock", WithErrnoUpdate(::munlock)},
+#if LIBC_SHIM_DEFINE_VARIADIC
         {"mremap", mremap},
+#endif
     });
 }
 
