@@ -120,7 +120,7 @@ int shim::open(const char *pathname, bionic::file_status_flags flags, ...) {
     mode_t mode = 0;
 
     int hflags = bionic::to_host_file_status_flags(flags);
-    if (hflags & O_CREAT || hflags & O_TMPFILE) { 
+    if (hflags & O_CREAT) { 
         va_start(ap, flags);
         mode = (mode_t) va_arg(ap, int);
         va_end(ap);
