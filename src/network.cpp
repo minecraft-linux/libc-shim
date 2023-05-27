@@ -59,7 +59,7 @@ bionic::socktype bionic::from_host_socktype(int socktype) {
         case SOCK_STREAM: return socktype::STREAM;
         case SOCK_DGRAM: return socktype::DGRAM;
         case SOCK_RAW: return socktype::RAW;
-        default: throw std::runtime_error("Unknown socktype");
+        default: return (bionic::socktype)0;
     }
 }
 
@@ -68,7 +68,7 @@ int bionic::to_host_socktype(bionic::socktype socktype) {
         case socktype::STREAM: return SOCK_STREAM;
         case socktype::DGRAM: return SOCK_DGRAM;
         case socktype::RAW: return SOCK_RAW;
-        default: throw std::runtime_error("Unknown socktype");
+        default: return 0;
     }
 }
 
