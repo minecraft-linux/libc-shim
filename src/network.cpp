@@ -200,7 +200,7 @@ void bionic::free_bionic_list(bionic::addrinfo *list) {
     out->ai_flags = to_host_ai_flags(in->ai_flags);
     out->ai_family = to_host_af_family(in->ai_family);
     // ai_socktype == 0 is only allowed here, see man getaddrinfo
-    out->ai_socktype = in->ai_socktype != 0 ? to_host_socktype(in->ai_socktype) : 0;
+    out->ai_socktype = in->ai_socktype != (bionic::socktype)0 ? to_host_socktype(in->ai_socktype) : 0;
     out->ai_protocol = to_host_ipproto(in->ai_protocol);
     out->ai_addrlen = get_host_len(in->ai_addr);
     out->ai_addr = nullptr;
