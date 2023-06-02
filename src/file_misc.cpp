@@ -10,6 +10,7 @@
 #include "network.h"
 #include "errno.h"
 #include "iorewrite.h"
+#include "variadic.h"
 
 using namespace shim;
 
@@ -119,7 +120,7 @@ int shim::open(const char *pathname, bionic::file_status_flags flags, ...) {
     mode_t mode = 0;
 
     int hflags = bionic::to_host_file_status_flags(flags);
-    if (hflags & O_CREAT) {
+    if (hflags & O_CREAT) { 
         va_start(ap, flags);
         mode = (mode_t) va_arg(ap, int);
         va_end(ap);
@@ -133,6 +134,13 @@ int shim::open(const char *pathname, bionic::file_status_flags flags, ...) {
 int shim::open_2(const char *pathname, bionic::file_status_flags flags) {
     int hflags = bionic::to_host_file_status_flags(flags);
     int ret = ::open(pathname, hflags, 0);
+    bionic::update_errno();
+    return ret;
+}
+
+int shim::open_3(const char *pathname, bionic::file_status_flags flags, int mode) {
+    int hflags = bionic::to_host_file_status_flags(flags);
+    int ret = ::open(iorewrite0(pathname).data(), hflags, mode);
     bionic::update_errno();
     return ret;
 }
@@ -211,8 +219,12 @@ void shim::add_ioctl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 
 void shim::add_fcntl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
+#if LIBC_SHIM_DEFINE_VARIADIC
         {"open", open},
+#endif
         {"__open_2", IOREWRITE1(open_2)},
+        // for platforms with ABI incompatible variadic
+        {"__libc_shim_open_3", IOREWRITE1(open_3)},
         {"fcntl", WithErrnoUpdate(fcntl)},
     });
 }

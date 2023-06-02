@@ -71,6 +71,7 @@
 #include "iorewrite.h"
 #include "armhfrewrite.h"
 #include "statvfs.h"
+#include "variadic.h"
 
 using namespace shim;
 
@@ -359,6 +360,21 @@ int shim::gettid() {
 #endif
 }
 
+ssize_t shim::getrandom(void *buf, size_t len, unsigned int flags) {
+#ifdef __linux__
+        return (ssize_t)syscall(SYS_getrandom, buf, len, flags);
+#elif defined(_WIN32)
+        // TODO Implement if needed
+        // this insecure stub works for Minecraft
+        return (ssize_t)len;
+#else
+        // TODO do we need look at flags?
+        // Should work for bsd and macOS
+        arc4random_buf(buf, len);
+        return (ssize_t)len;
+#endif
+}
+
 long shim::fakesyscall(long sysno, ...) {
     if (sysno == FAKE_SYS_gettid) {
         return shim::gettid();
@@ -368,18 +384,7 @@ long shim::fakesyscall(long sysno, ...) {
         auto buf = va_arg(l, char*);
         auto len = va_arg(l, size_t);
         auto flags = va_arg(l, unsigned int);
-#ifdef __linux__
-        auto res = syscall(SYS_getrandom, buf, len, flags);
-#elif defined(_WIN32)
-        // TODO Implement if needed
-        // this insecure stub works for Minecraft
-        auto res = len;
-#else
-        // TODO do we need look at flags?
-        // Should work for bsd and macOS
-        arc4random_buf(buf, len);
-        auto res = len;
-#endif
+        long res = (long)shim::getrandom(buf, len, flags);
         va_end(l);
         return res;
     }
@@ -633,7 +638,10 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"sync", WithErrnoUpdate(::sync)},
         {"getpagesize", ::getpagesize},
         {"getdtablesize", ::getdtablesize},
+#if LIBC_SHIM_DEFINE_VARIADIC
         {"syscall", fakesyscall},
+#endif
+        {"getrandom", getrandom},
         {"gettid", gettid},
         {"sched_get_priority_min", sched_get_priority_min},
         {"sched_get_priority_max", sched_get_priority_max},
@@ -708,7 +716,9 @@ void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"memset", ::memset},
         {"__memset_chk", ::__memset_chk},
         {"memmem", ::memmem},
+#if LIBC_SHIM_DEFINE_VARIADIC
         {"__vsprintf_chk", __vsprintf_chk},
+#endif
         {"strchr", (char *(*)(char *, int)) ::strchr},
         {"strrchr", (char *(*)(char *, int)) ::strrchr},
         {"strlen", ::strlen},
@@ -798,7 +808,9 @@ void shim::add_wchar_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"wcstof", wcstof},
         {"wcstod", wcstod},
         {"wcstold", wcstold},
+#if LIBC_SHIM_DEFINE_VARIADIC
         {"swprintf", swprintf},
+#endif
         {"wcscoll_l", ::wcscoll_l},
         {"wcsxfrm_l", ::wcsxfrm_l},
 
@@ -843,7 +855,9 @@ void shim::add_mman_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"msync", WithErrnoUpdate(::msync)},
         {"mlock", WithErrnoUpdate(::mlock)},
         {"munlock", WithErrnoUpdate(::munlock)},
+#if LIBC_SHIM_DEFINE_VARIADIC
         {"mremap", mremap},
+#endif
     });
 }
 
