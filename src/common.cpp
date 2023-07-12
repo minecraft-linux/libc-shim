@@ -865,6 +865,7 @@ void shim::add_resource_shimmed_symbols(std::vector<shim::shimmed_symbol> &list)
     list.insert(list.end(), {
         /* sys/resource.h */
         {"getrusage", WithErrnoUpdate(getrusage)},
+        {"getpriority", WithErrnoUpdate(getpriority)},
         {"getrlimit", WithErrnoUpdate(getrlimit)}
     });
 }
