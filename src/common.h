@@ -6,6 +6,7 @@
 #include "argrewrite.h"
 #include "mallinfo.h"
 #include <stdarg.h>
+#include <ctime>
 
 namespace shim {
 
@@ -175,5 +176,57 @@ namespace shim {
     void add_fnmatch_shimmed_symbols(std::vector<shim::shimmed_symbol> &list);
 
     void add_socket_shimmed_symbols(std::vector<shim::shimmed_symbol> &list);
+
+    namespace detail {
+
+        template <class T>
+        struct tm_detail {
+            tm loc;
+            using source = T;
+
+            source before(source src) {
+                if(src) {
+                    loc = *src;
+                    switch(loc.tm_isdst) {
+                        case 1: 
+                            loc.tm_isdst = 0;
+                            break;
+                        case 0: 
+                            loc.tm_isdst = 1;
+                            break;
+                        default:
+                            break;
+                    } 
+                    return &loc;
+                }
+                return nullptr;
+            }
+            void after(const tm* src) {
+
+            }
+
+            void after(tm* src) {
+                if(src) {
+                    switch(loc.tm_isdst) {
+                        case 1:
+                            loc.tm_isdst = 0;
+                            break;
+                        case 0:
+                            loc.tm_isdst = 1;
+                            break;
+                        default:
+                            break;
+                    } 
+                    *src = loc;
+                }
+            }
+        };
+
+        template <>
+        struct arg_rewrite<tm *> : tm_detail<tm*> {};
+        template <>
+        struct arg_rewrite<const tm *> : tm_detail<const tm*> {};
+
+    }
 
 }
