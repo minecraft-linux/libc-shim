@@ -178,7 +178,7 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"putc_unlocked", AutoArgRewritten(::putc_unlocked)},
         {"rewind", AutoArgRewritten(::rewind)},
         {"setbuf", AutoArgRewritten(::setbuf)},
-        {"setvbuf", AutoArgRewritten(::setvbuf)},
+        {"setvbuf", +[]() {} /*AutoArgRewritten(::setvbuf) crash in 1.20.71.01*/},
         {"setbuffer", AutoArgRewritten(::setbuffer)},
         {"setlinebuf", AutoArgRewritten(::setlinebuf)},
         {"ungetc", AutoArgRewritten(::ungetc)},

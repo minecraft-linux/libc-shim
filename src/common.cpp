@@ -338,6 +338,21 @@ ssize_t shim::__read_chk(int fd, void *buf, size_t count, size_t buf_size) {
     return read(fd, buf, count);
 }
 
+static ssize_t __recvfrom_chk(int socket, void* buf, size_t len, size_t buf_size,
+                       int flags, sockaddr* src_addr, socklen_t* addrlen) {
+  return recvfrom(socket, buf, len, flags, src_addr, addrlen);
+}
+
+static ssize_t __sendto_chk(int socket, const void* buf, size_t len, size_t buflen,
+                     int flags, const struct sockaddr* dest_addr,
+                     socklen_t addrlen) {
+  return sendto(socket, buf, len, flags, dest_addr, addrlen);
+}
+
+static ssize_t __write_chk(int fd, const void* buf, size_t count, size_t buf_size) {
+  return write(fd, buf, count);
+}
+
 #ifdef __APPLE__
 int shim::fdatasync(int fildes) {
     return ::fcntl(fildes, F_FULLFSYNC);
@@ -655,6 +670,9 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"close", WithErrnoUpdate(::close)},
         {"read", WithErrnoUpdate(::read)},
         {"__read_chk", __read_chk},
+        {"__write_chk", __write_chk},
+        {"__recvfrom_chk", __recvfrom_chk},
+        {"__sendto_chk", __sendto_chk},
         {"write", WithErrnoUpdate(::write)},
         {"pipe", WithErrnoUpdate(::pipe)},
         {"alarm", WithErrnoUpdate(::alarm)},
