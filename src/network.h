@@ -89,6 +89,14 @@ namespace shim {
             struct addrinfo *ai_next;
         };
 
+        struct ifaddrs {
+            struct ifaddrs* ifa_next;
+            char* ifa_name;
+            unsigned int ifa_flags;
+            struct sockaddr* ifa_addr;
+            struct sockaddr* ifa_netmask;
+        };
+
         addrinfo *from_host_alloc(const ::addrinfo *in);
 
         void free_bionic_list(addrinfo *list);
@@ -179,6 +187,10 @@ namespace shim {
     int shutdown(int sockfd, int how);
 
     void add_network_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
+    int getifaddrs(bionic::ifaddrs** result);
+
+    void freeifaddrs(bionic::ifaddrs *__ifa);
 
     namespace detail {
 
