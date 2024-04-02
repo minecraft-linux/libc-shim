@@ -5,6 +5,7 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <cstring>
+#include <ifaddrs.h>
 
 using namespace shim;
 
@@ -330,6 +331,184 @@ void shim::freeaddrinfo(bionic::addrinfo *ai) {
     bionic::free_bionic_list(ai);
 }
 
+enum class IFF : unsigned int {
+  UP = 1 << 0,
+  BROADCAST = 1 << 1,
+  DEBUG = 1 << 2,
+  LOOPBACK = 1 << 3,
+  POINTOPOINT = 1 << 4,
+  NOTRAILERS = 1 << 5,
+  RUNNING = 1 << 6,
+  NOARP = 1 << 7,
+  PROMISC = 1 << 8,
+  ALLMULTI = 1 << 9,
+  MASTER = 1 << 10,
+  SLAVE = 1 << 11,
+  MULTICAST = 1 << 12,
+  PORTSEL = 1 << 13,
+  AUTOMEDIA = 1 << 14,
+  DYNAMIC = 1 << 15,
+  LOWER_UP = 1 << 16,
+  DORMANT = 1 << 17,
+  ECHO = 1 << 18,
+};
+
+int shim::getifaddrs(bionic::ifaddrs** result) {
+    ::ifaddrs * nresult = nullptr;
+    auto ret = ::getifaddrs(&nresult);
+    if(ret != 0) {
+        return ret;
+    }
+    bionic::ifaddrs* pc = nullptr;
+    auto c = nresult;
+    *result = nullptr;
+    while(c) {
+        auto v4 = c->ifa_addr->sa_family == AF_INET;
+        auto v6 = c->ifa_addr->sa_family == AF_INET6;
+        if(v4 || v6) {
+            shim::bionic::ifaddrs * n = new bionic::ifaddrs;
+            n->ifa_addr = (bionic::sockaddr*)malloc(bionic::get_bionic_len(c->ifa_addr));
+            bionic::from_host(c->ifa_addr, n->ifa_addr);
+            auto len = bionic::get_bionic_len(c->ifa_netmask);
+            if(len) {
+                n->ifa_netmask = (bionic::sockaddr*)malloc(len);
+                bionic::from_host(c->ifa_netmask, n->ifa_netmask);
+            } else {
+                n->ifa_netmask = nullptr;
+            }
+            n->ifa_name = c->ifa_name ? strdup(c->ifa_name) : nullptr;
+            n->ifa_flags = 0;
+            // #ifdef IFF_$0
+            // if(c->ifa_flags & IFF_$0) {
+            //     n->ifa_flags |= (unsigned int)IFF::$0;
+            // }
+            // #endif
+            #ifdef IFF_UP
+            if(c->ifa_flags & IFF_UP) {
+                n->ifa_flags |= (unsigned int)IFF::UP;
+            }
+            #endif
+            #ifdef IFF_BROADCAST
+            if(c->ifa_flags & IFF_BROADCAST) {
+                n->ifa_flags |= (unsigned int)IFF::BROADCAST;
+            }
+            #endif
+            #ifdef IFF_DEBUG
+            if(c->ifa_flags & IFF_DEBUG) {
+                n->ifa_flags |= (unsigned int)IFF::DEBUG;
+            }
+            #endif
+            #ifdef IFF_LOOPBACK
+            if(c->ifa_flags & IFF_LOOPBACK) {
+                n->ifa_flags |= (unsigned int)IFF::LOOPBACK;
+            }
+            #endif
+            #ifdef IFF_POINTOPOINT
+            if(c->ifa_flags & IFF_POINTOPOINT) {
+                n->ifa_flags |= (unsigned int)IFF::POINTOPOINT;
+            }
+            #endif
+            #ifdef IFF_NOTRAILERS
+            if(c->ifa_flags & IFF_NOTRAILERS) {
+                n->ifa_flags |= (unsigned int)IFF::NOTRAILERS;
+            }
+            #endif
+            #ifdef IFF_RUNNING
+            if(c->ifa_flags & IFF_RUNNING) {
+                n->ifa_flags |= (unsigned int)IFF::RUNNING;
+            }
+            #endif
+            #ifdef IFF_NOARP
+            if(c->ifa_flags & IFF_NOARP) {
+                n->ifa_flags |= (unsigned int)IFF::NOARP;
+            }
+            #endif
+            #ifdef IFF_PROMISC
+            if(c->ifa_flags & IFF_PROMISC) {
+                n->ifa_flags |= (unsigned int)IFF::PROMISC;
+            }
+            #endif
+            #ifdef IFF_ALLMULTI
+            if(c->ifa_flags & IFF_ALLMULTI) {
+                n->ifa_flags |= (unsigned int)IFF::ALLMULTI;
+            }
+            #endif
+            #ifdef IFF_MASTER
+            if(c->ifa_flags & IFF_MASTER) {
+                n->ifa_flags |= (unsigned int)IFF::MASTER;
+            }
+            #endif
+            #ifdef IFF_SLAVE
+            if(c->ifa_flags & IFF_SLAVE) {
+                n->ifa_flags |= (unsigned int)IFF::SLAVE;
+            }
+            #endif
+            #ifdef IFF_MULTICAST
+            if(c->ifa_flags & IFF_MULTICAST) {
+                n->ifa_flags |= (unsigned int)IFF::MULTICAST;
+            }
+            #endif
+            #ifdef IFF_PORTSEL
+            if(c->ifa_flags & IFF_PORTSEL) {
+                n->ifa_flags |= (unsigned int)IFF::PORTSEL;
+            }
+            #endif
+            #ifdef IFF_AUTOMEDIA
+            if(c->ifa_flags & IFF_AUTOMEDIA) {
+                n->ifa_flags |= (unsigned int)IFF::AUTOMEDIA;
+            }
+            #endif
+            #ifdef IFF_DYNAMIC
+            if(c->ifa_flags & IFF_DYNAMIC) {
+                n->ifa_flags |= (unsigned int)IFF::DYNAMIC;
+            }
+            #endif
+            #ifdef IFF_LOWER_UP
+            if(c->ifa_flags & IFF_LOWER_UP) {
+                n->ifa_flags |= (unsigned int)IFF::LOWER_UP;
+            }
+            #endif
+            #ifdef IFF_DORMANT
+            if(c->ifa_flags & IFF_DORMANT) {
+                n->ifa_flags |= (unsigned int)IFF::DORMANT;
+            }
+            #endif
+            #ifdef IFF_ECHO
+            if(c->ifa_flags & IFF_ECHO) {
+                n->ifa_flags |= (unsigned int)IFF::ECHO;
+            }
+            #endif
+            n->ifa_next = nullptr;
+            if(pc == nullptr) {
+                *result = n;
+            } else {
+                pc->ifa_next = n;
+            }
+            pc = n;
+        }
+        c = c->ifa_next;
+    }
+    ::freeifaddrs(nresult);
+    return 0;
+}
+
+void shim::freeifaddrs(shim::bionic::ifaddrs *c) {
+    while(c) {
+        if(c->ifa_addr) {
+            free(c->ifa_addr);
+        }
+        if(c->ifa_netmask) {
+            free(c->ifa_netmask);
+        }
+        if(c->ifa_name) {
+            free(c->ifa_name);
+        }
+        auto n = c->ifa_next;
+        delete c;
+        c = n;
+    }
+}
+
 int shim::getnameinfo(const bionic::sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen,
         char *serv, socklen_t servlen, bionic::nameinfo_flags flags) {
     try {
@@ -514,5 +693,7 @@ void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) 
         {"if_indextoname", if_indextoname},
         {"if_nameindex", if_nameindex},
         {"if_freenameindex", if_freenameindex},
+        {"getifaddrs", getifaddrs},
+        {"freeifaddrs", freeifaddrs},
     });
 }
