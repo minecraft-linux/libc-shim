@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include "argrewrite.h"
 #include "mallinfo.h"
 #include <stdarg.h>
@@ -125,6 +126,15 @@ namespace shim {
     int gettimeofday(bionic::timeval *tv, void *p);
 
     ssize_t __read_chk(int fd, void* buf, size_t count, size_t buf_size);
+
+    ssize_t __recvfrom_chk(int socket, void* buf, size_t len, size_t buf_size,
+                        int flags, sockaddr* src_addr, socklen_t* addrlen);
+
+    ssize_t __sendto_chk(int socket, const void* buf, size_t len, size_t buflen,
+                        int flags, const struct sockaddr* dest_addr,
+                        socklen_t addrlen);
+
+    ssize_t __write_chk(int fd, const void* buf, size_t count, size_t buf_size);
 
 #ifdef __APPLE__
     int fdatasync(int fildes);
