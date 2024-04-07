@@ -138,6 +138,8 @@ namespace shim {
 
 #ifdef __APPLE__
     int fdatasync(int fildes);
+#endif
+#if defined(__APPLE__) || defined(__FreeBSD__)
     int __cmsg_nxthdr();
 #endif
 

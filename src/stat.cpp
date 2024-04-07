@@ -3,7 +3,7 @@
 
 using namespace shim;
 
-#ifndef __APPLE__
+#if !defined(__APPLE__) && !defined(__FreeBSD__)
 
 void bionic::from_host(struct ::stat64 const &info, stat &result) {
     result.st_dev = info.st_dev;

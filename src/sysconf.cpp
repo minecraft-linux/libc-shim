@@ -25,7 +25,9 @@ int shim::bionic::to_host_sysconf_id(int arg) {
         case 0x0009: return _SC_LINE_MAX;
         case 0x000a: return _SC_NGROUPS_MAX;
         case 0x000b: return _SC_OPEN_MAX;
+#ifndef _SC_PASS_MAX
         case 0x000c: return _SC_PASS_MAX;
+#endif
         case 0x000d: return _SC_2_C_BIND;
         case 0x000e: return _SC_2_C_DEV;
         case 0x0010: return _SC_2_CHAR_TERM;
@@ -96,7 +98,7 @@ int shim::bionic::to_host_sysconf_id(int arg) {
         case 0x0060: return _SC_NPROCESSORS_CONF;
         case 0x0061: return _SC_NPROCESSORS_ONLN;
         case 0x0062: return _SC_PHYS_PAGES;
-#ifdef __linux__
+#ifdef _SC_AVPHYS_PAGES
         case 0x0063: return _SC_AVPHYS_PAGES;
 #endif
         case 0x0064: return _SC_MONOTONIC_CLOCK;

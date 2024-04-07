@@ -6,7 +6,7 @@ add_library(libc-shim src/common.cpp src/pthreads.cpp src/pthreads.h src/meta.h 
 target_include_directories(libc-shim PUBLIC include/)
 target_link_libraries(libc-shim logger)
 
-if(APPLE)
+if(APPLE OR FREEBSD)
     target_link_libraries(libc-shim epoll-shim)
 endif()
 

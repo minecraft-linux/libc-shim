@@ -1,7 +1,13 @@
 #include "network.h"
 #include "errno.h"
 
+#ifdef __FreeBSD__
+#define _KERNEL
+#endif
 #include <netinet/in.h>
+#ifdef __FreeBSD__
+#undef _KERNEL
+#endif
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <cstring>
