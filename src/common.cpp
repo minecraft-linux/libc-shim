@@ -73,6 +73,8 @@
 #include "armhfrewrite.h"
 #include "statvfs.h"
 #include "variadic.h"
+#include <chrono>
+#include <unistd.h>
 
 using namespace shim;
 
@@ -572,66 +574,23 @@ void shim::add_math_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     });
 }
 
-static bool hasNegativeDST() {
+void shim::add_time_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    // Europe/Dublin xal sdk problem, clear out region
     tm t;
     time_t cur = time(nullptr);
     localtime_r(&cur, &t);
-    t.tm_mday = 1;
-    t.tm_mon = 0;
-    time_t after = mktime(&t);
-    return t.tm_isdst;
-}
+    std::chrono::seconds s(t.tm_gmtoff >= 0 ? t.tm_gmtoff : -t.tm_gmtoff);
+    auto m = std::chrono::duration_cast<std::chrono::minutes>(s);
+    s -= m;
+    auto h = std::chrono::duration_cast<std::chrono::hours>(m);
+    m -= h;
+    static char buf[20] = { '\0' };
+    sprintf(buf, "<%.5s>%c%02d:%02d:%02d", t.tm_zone, t.tm_gmtoff > 0 ? '-' : '+', (int)h.count(), (int)m.count(), (int)s.count());
+    setenv("TZ", buf, true);
 
-void shim::add_time_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
-    // fixup timezones like Europe/Dublin by reversing the tm_isdst field of the tm structure
-    // Microsoft Xbox Authentication Library for android doesn't work with negative DST behavior
-    if(hasNegativeDST()) {
-        list.insert(list.end(), {
-            /* sys/time.h */
-            {"gettimeofday", gettimeofday},
+    tzset();
+    localtime_r(&cur, &t);
 
-            /* time.h */
-            {"clock", ::clock},
-            {"time", ::time},
-            {"difftime", ::difftime},
-            {"mktime", &detail::arg_rewrite_helper<decltype(::mktime)>::rewrite<::mktime>},
-            {"strftime", &detail::arg_rewrite_helper<decltype(::strftime)>::rewrite<::strftime>},
-            {"strptime", &detail::arg_rewrite_helper<decltype(::strptime)>::rewrite<::strptime>},
-            {"strftime_l", &detail::arg_rewrite_helper<decltype(::strftime_l)>::rewrite<::strftime_l>},
-            {"strptime_l", &detail::arg_rewrite_helper<decltype(::strptime_l)>::rewrite<::strptime_l>},
-            {"gmtime", ::gmtime},
-            {"gmtime_r", ::gmtime_r},
-            {"localtime", +[](const time_t* time) {
-                auto loc = ::localtime(time);
-                if(!loc) {
-                    return loc;
-                }
-                switch(loc->tm_isdst) {
-                        case 1: 
-                            loc->tm_isdst = 0;
-                            break;
-                        case 0:
-                            loc->tm_isdst = 1;
-                            break;
-                        default:
-                            break;
-                    }
-                return loc;
-            }},
-            {"localtime_r", &detail::arg_rewrite_helper<decltype(::localtime_r)>::rewrite<::localtime_r>},
-            {"asctime", &detail::arg_rewrite_helper<decltype(::asctime)>::rewrite<::asctime>},
-            {"ctime", ::ctime},
-            {"asctime_r", &detail::arg_rewrite_helper<decltype(::asctime_r)>::rewrite<::asctime_r>},
-            {"ctime_r", ::ctime_r},
-            {"tzname", ::tzname},
-            {"tzset", ::tzset},
-            {"daylight", &::daylight},
-            {"timezone", &::timezone},
-            {"nanosleep", ::nanosleep},
-            {"clock_gettime", clock_gettime},
-        });
-        return;
-    }
     list.insert(list.end(), {
         /* sys/time.h */
         {"gettimeofday", gettimeofday},
