@@ -369,8 +369,8 @@ int shim::getifaddrs(bionic::ifaddrs** result) {
     auto c = nresult;
     *result = nullptr;
     while(c) {
-        auto v4 = c->ifa_addr->sa_family == AF_INET;
-        auto v6 = c->ifa_addr->sa_family == AF_INET6;
+        auto v4 = c->ifa_addr && c->ifa_addr->sa_family == AF_INET;
+        auto v6 = c->ifa_addr && c->ifa_addr->sa_family == AF_INET6;
         if(v4 || v6) {
             shim::bionic::ifaddrs * n = new bionic::ifaddrs;
             n->ifa_addr = (bionic::sockaddr*)malloc(bionic::get_bionic_len(c->ifa_addr));
