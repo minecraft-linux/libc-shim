@@ -25,7 +25,7 @@ int shim::bionic::to_host_sysconf_id(int arg) {
         case 0x0009: return _SC_LINE_MAX;
         case 0x000a: return _SC_NGROUPS_MAX;
         case 0x000b: return _SC_OPEN_MAX;
-#ifndef _SC_PASS_MAX
+#ifdef _SC_PASS_MAX
         case 0x000c: return _SC_PASS_MAX;
 #endif
         case 0x000d: return _SC_2_C_BIND;
