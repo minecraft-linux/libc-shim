@@ -25,6 +25,10 @@ void shim::bionic::update_errno() {
     errno_value = translate_errno_from_host(errno);
 }
 
+void shim::bionic::sync_errno() {
+    errno = translate_errno_to_host(errno_value);
+}
+
 int *shim::bionic::get_errno() {
     return &errno_value;
 }
