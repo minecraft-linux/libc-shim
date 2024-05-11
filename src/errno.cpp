@@ -19,7 +19,7 @@ int shim::strerror_r(int err, char* buf, size_t len) {
 
 #ifdef ERRNO_TRANSLATION
 
-int shim::bionic::errno_value;
+thread_local int shim::bionic::errno_value;
 
 void shim::bionic::update_errno() {
     errno_value = translate_errno_from_host(errno);

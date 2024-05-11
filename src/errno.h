@@ -11,7 +11,7 @@ namespace shim {
     namespace bionic {
 
 #ifdef ERRNO_TRANSLATION
-        extern int errno_value;
+        extern thread_local int errno_value;
 #endif
 
         int translate_errno_from_host(int err);
