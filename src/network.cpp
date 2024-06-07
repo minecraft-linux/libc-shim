@@ -375,8 +375,8 @@ int shim::getifaddrs(bionic::ifaddrs** result) {
             shim::bionic::ifaddrs * n = new bionic::ifaddrs;
             n->ifa_addr = (bionic::sockaddr*)malloc(bionic::get_bionic_len(c->ifa_addr));
             bionic::from_host(c->ifa_addr, n->ifa_addr);
-            auto len = bionic::get_bionic_len(c->ifa_netmask);
-            if(len) {
+            if(c->ifa_netmask && (c->ifa_netmask->sa_family == AF_INET || c->ifa_netmask->sa_family == AF_INET6)) {
+                auto len = bionic::get_bionic_len(c->ifa_netmask);
                 n->ifa_netmask = (bionic::sockaddr*)malloc(len);
                 bionic::from_host(c->ifa_netmask, n->ifa_netmask);
             } else {
