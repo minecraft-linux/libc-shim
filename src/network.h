@@ -192,6 +192,10 @@ namespace shim {
 
     void freeifaddrs(bionic::ifaddrs *__ifa);
 
+    int inet_pton(bionic::af_family af, const char *src, void *dst);
+
+    const char * inet_ntop(bionic::af_family af, const void *src, char *dst, socklen_t size);
+
     namespace detail {
 
         struct sockaddr_in {

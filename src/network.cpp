@@ -629,6 +629,14 @@ int shim::shutdown(int sockfd, int how) {
     return ::shutdown(sockfd, hhow);
 }
 
+int shim::inet_pton(bionic::af_family af, const char *src, void *dst) {
+    return ::inet_pton(bionic::to_host_af_family(af), src, dst);
+}
+
+const char * shim::inet_ntop(bionic::af_family af, const void *src, char *dst, socklen_t size) {
+    return ::inet_ntop(bionic::to_host_af_family(af), src, dst, size);
+}
+
 detail::sock_send_flags::sock_send_flags(int fd, int flags) : fd(fd), src_flags(flags), flags(0) {
     if (flags & 0x4000) {
 #ifdef __APPLE__
