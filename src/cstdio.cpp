@@ -126,12 +126,12 @@ int shim::__snprintf_chk(char *dst, size_t in_len, int flags, size_t max_len, co
     return ret;
 }
 
-char *shim::__fgets_chk(char *dst, int len, FILE *stream, size_t max_len) {
+char *shim::__fgets_chk(char *dst, int len, bionic::FILE *stream, size_t max_len) {
     if (len < 0 || (size_t) len > max_len) {
         fprintf(stderr, "detected write past buffer");
         abort();
     }
-    return ::fgets(dst, len, stream);
+    return ::fgets(dst, len, stream->wrapped);
 }
 
 void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
