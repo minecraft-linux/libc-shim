@@ -77,7 +77,7 @@ namespace shim {
 
     int __snprintf_chk(char *dst, size_t in_len, int flags, size_t max_len, const char* fmt, ...);
 
-    char *__fgets_chk(char *dst, int len, FILE *stream, size_t max_len);
+    char *__fgets_chk(char *dst, int len, bionic::FILE *stream, size_t max_len);
 
     void add_cstdio_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
