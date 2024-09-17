@@ -55,6 +55,8 @@ namespace shim {
 
     int open(const char *pathname, bionic::file_status_flags flags, ...);
 
+    int openat(int dirfd, const char *pathname, bionic::file_status_flags flags, ...);
+
     int open_2(const char *pathname, bionic::file_status_flags flags);
 
     int open_3(const char *pathname, bionic::file_status_flags flags, int mode);

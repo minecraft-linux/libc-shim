@@ -135,6 +135,22 @@ int shim::open(const char *pathname, bionic::file_status_flags flags, ...) {
     return ret;
 }
 
+int shim::openat(int dirfd, const char *pathname, bionic::file_status_flags flags, ...) {
+    va_list ap;
+    mode_t mode = 0;
+
+    int hflags = bionic::to_host_file_status_flags(flags);
+    if (hflags & O_CREAT) {
+        va_start(ap, flags);
+        mode = (mode_t) va_arg(ap, int);
+        va_end(ap);
+    }
+
+    int ret = ::openat(dirfd, iorewrite0(pathname).data(), hflags, mode);
+    bionic::update_errno();
+    return ret;
+}
+
 int shim::open_2(const char *pathname, bionic::file_status_flags flags) {
     int hflags = bionic::to_host_file_status_flags(flags);
     int ret = ::open(pathname, hflags, 0);
@@ -225,6 +241,7 @@ void shim::add_fcntl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
 #if LIBC_SHIM_DEFINE_VARIADIC
         {"open", open},
+        {"openat", openat},
 #endif
         {"__open_2", IOREWRITE1(open_2)},
         // for platforms with ABI incompatible variadic

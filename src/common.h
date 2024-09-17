@@ -147,6 +147,8 @@ namespace shim {
 
     ssize_t getrandom(void *buf, size_t len, unsigned int flags);
 
+    int unlinkat(int dirfd, const char *pathname, int flags);
+
     int isnan(double d);
 
     int utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags);

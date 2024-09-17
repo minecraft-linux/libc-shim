@@ -420,6 +420,12 @@ long shim::fakesyscall(long sysno, ...) {
     return ENOSYS;
 }
 
+int shim::unlinkat(int dirfd, const char *pathname, int flags) {
+    int ret = ::unlinkat(dirfd, iorewrite0(pathname).data(), flags);
+    bionic::update_errno();
+    return ret;
+}
+
 int shim::isnan(double d) {
 	return std::isnan(d);
 }
@@ -682,6 +688,7 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"symlink", WithErrnoUpdate(IOREWRITE2(::symlink))},
         {"readlink", WithErrnoUpdate(::readlink)},
         {"unlink", WithErrnoUpdate(IOREWRITE1(::unlink))},
+        {"unlinkat", unlinkat},
         {"rmdir", WithErrnoUpdate(IOREWRITE1(::rmdir))},
         {"gethostname", WithErrnoUpdate(::gethostname)},
         {"fsync", WithErrnoUpdate(::fsync)},
