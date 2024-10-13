@@ -259,6 +259,14 @@ int bionic::to_host_sockopt_so(int opt) {
         case 10: return SO_OOBINLINE;
         case 13: return SO_LINGER;
         case 15: return SO_REUSEPORT;
+#ifdef SO_TIMESTAMP_OLD
+        case 29: return SO_TIMESTAMP_OLD;
+#else
+        case 29: return SO_TIMESTAMP;
+#endif
+#ifdef SO_TIMESTAMP_NEW
+        case 63: return SO_TIMESTAMP_NEW;
+#endif
         default: throw std::runtime_error("Unknown SO sockopt");
     }
 }
@@ -709,5 +717,7 @@ void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) 
         {"if_freenameindex", if_freenameindex},
         {"getifaddrs", getifaddrs},
         {"freeifaddrs", freeifaddrs},
+        {"in6addr_any", (void*)&in6addr_any},
+        {"in6addr_loopback", (void*)&in6addr_loopback},
     });
 }
