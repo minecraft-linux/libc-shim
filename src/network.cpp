@@ -11,6 +11,7 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <cstring>
+#include <cstdio>
 #include <ifaddrs.h>
 
 using namespace shim;
@@ -116,7 +117,11 @@ void bionic::from_host(const ::sockaddr *in, bionic::sockaddr *out) {
             memcpy(((bionic::sockaddr_in6 *) out)->addr, ((::sockaddr_in6*) in)->sin6_addr.s6_addr, 16);
             ((bionic::sockaddr_in6 *) out)->scope = ((::sockaddr_in6*) in)->sin6_scope_id;
             break;
-        default: throw std::runtime_error("Unknown socket family when converting sockaddr from host");
+        default:
+            fprintf(stderr, "Unknown socket family when converting sockaddr from host in from_host %d\n", in->sa_family);
+            //throw std::runtime_error("Unknown socket family when converting sockaddr from host in from_host");
+            out->family = (uint16_t) af_family::UNSPEC;
+            break;
     }
 }
 
@@ -137,7 +142,11 @@ void bionic::to_host(const bionic::sockaddr *in, ::sockaddr *out) {
             memcpy(((::sockaddr_in6*) out)->sin6_addr.s6_addr, ((bionic::sockaddr_in6 *) in)->addr, 16);
             ((::sockaddr_in6*) out)->sin6_scope_id = ((bionic::sockaddr_in6 *) in)->scope;
             break;
-        default: throw std::runtime_error("Unknown socket family when converting sockaddr to host");
+        default:
+            fprintf(stderr, "Unknown socket family when converting sockaddr to host in to_host %d\n", in->family);
+            //throw std::runtime_error("Unknown socket family when converting sockaddr to host in to_host");
+            out->sa_family = AF_UNSPEC;
+            break;
     }
 }
 
@@ -147,7 +156,10 @@ size_t bionic::get_host_len(const bionic::sockaddr *in) {
     switch ((af_family) in->family) {
         case af_family::INET: return sizeof(::sockaddr_in);
         case af_family::INET6: return sizeof(::sockaddr_in6);
-        default: throw std::runtime_error("Unknown socket family when converting sockaddr to host");
+        default:
+            fprintf(stderr, "Unknown socket family when converting sockaddr to host in get_host_len %d\n", in->family);
+            // throw std::runtime_error("Unknown socket family when converting sockaddr to host in get_host_len");
+            return 0;
     }
 }
 
@@ -157,7 +169,10 @@ size_t bionic::get_bionic_len(const ::sockaddr *in) {
     switch (in->sa_family) {
         case AF_INET: return sizeof(bionic::sockaddr_in);
         case AF_INET6: return sizeof(bionic::sockaddr_in6);
-        default: throw std::runtime_error("Unknown socket family when converting sockaddr from host");
+        default:
+            fprintf(stderr, "Unknown socket family when converting sockaddr from host in get_bionic_len %d\n", in->sa_family);
+            // throw std::runtime_error("Unknown socket family when converting sockaddr from host in get_bionic_len");
+            return 0;
     }
 }
 
