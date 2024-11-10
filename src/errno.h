@@ -2,6 +2,8 @@
 
 #include <cstddef>
 #include <stdexcept>
+#include <cstdio>
+#include <cerrno>
 
 #ifdef __APPLE__
 #define ERRNO_TRANSLATION
