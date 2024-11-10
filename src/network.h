@@ -222,7 +222,7 @@ namespace shim {
 
             void apply(bionic::sockaddr *addr, socklen_t *addrlen) {
                 if (bionic::get_bionic_len((::sockaddr *) &haddr) > *addrlen)
-                    throw std::runtime_error("buffer for sockaddr not big enough");
+                    handle_runtime_error("buffer for sockaddr not big enough");
                 bionic::from_host((::sockaddr *) &haddr, addr);
                 *addrlen = bionic::get_bionic_len((::sockaddr *) &haddr);
             }

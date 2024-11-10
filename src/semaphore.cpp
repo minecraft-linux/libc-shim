@@ -27,7 +27,7 @@ int shim::sem_destroy(sem_t *sem) {
 
 int shim::sem_init(sem_t *sem, int pshared, unsigned int value) {
     if (pshared)
-        throw std::runtime_error("sem_init: pshared not supported");
+        handle_runtime_error("sem_init: pshared not supported");
 
     auto sem_create_wrapper = +[](semaphore_t *sem, int policy, int value) {
         return semaphore_create(mach_task_self(), sem, policy, value);

@@ -66,7 +66,7 @@ bionic::socktype bionic::from_host_socktype(int socktype) {
         case SOCK_STREAM: return socktype::STREAM;
         case SOCK_DGRAM: return socktype::DGRAM;
         case SOCK_RAW: return socktype::RAW;
-        default: throw std::runtime_error("Unknown socktype");
+        default: handle_runtime_error("Unknown socktype %d", socktype);
     }
 }
 
@@ -75,7 +75,7 @@ int bionic::to_host_socktype(bionic::socktype socktype) {
         case socktype::STREAM: return SOCK_STREAM;
         case socktype::DGRAM: return SOCK_DGRAM;
         case socktype::RAW: return SOCK_RAW;
-        default: throw std::runtime_error("Unknown socktype");
+        default: handle_runtime_error("Unknown socktype %d", (int)socktype);
     }
 }
 
@@ -85,7 +85,7 @@ bionic::ipproto bionic::from_host_ipproto(int proto) {
         case IPPROTO_TCP: return ipproto::TCP;
         case IPPROTO_UDP: return ipproto::UDP;
         case IPPROTO_IPV6: return ipproto::IPV6;
-        default: throw std::runtime_error("Unknown ipproto");
+        default: handle_runtime_error("Unknown ipproto %d", proto);
     }
 }
 
@@ -95,7 +95,7 @@ int bionic::to_host_ipproto(bionic::ipproto proto) {
         case ipproto::TCP: return IPPROTO_TCP;
         case ipproto::UDP: return IPPROTO_UDP;
         case ipproto::IPV6: return IPPROTO_IPV6;
-        default: throw std::runtime_error("Unknown ipproto");
+        default: handle_runtime_error("Unknown ipproto %d", (int)proto);
     }
 }
 
@@ -116,7 +116,7 @@ void bionic::from_host(const ::sockaddr *in, bionic::sockaddr *out) {
             memcpy(((bionic::sockaddr_in6 *) out)->addr, ((::sockaddr_in6*) in)->sin6_addr.s6_addr, 16);
             ((bionic::sockaddr_in6 *) out)->scope = ((::sockaddr_in6*) in)->sin6_scope_id;
             break;
-        default: throw std::runtime_error("Unknown socket family when converting sockaddr from host");
+        default: handle_runtime_error("Unknown socket family when converting sockaddr from host %d", (int)in->sa_family);
     }
 }
 
@@ -137,7 +137,7 @@ void bionic::to_host(const bionic::sockaddr *in, ::sockaddr *out) {
             memcpy(((::sockaddr_in6*) out)->sin6_addr.s6_addr, ((bionic::sockaddr_in6 *) in)->addr, 16);
             ((::sockaddr_in6*) out)->sin6_scope_id = ((bionic::sockaddr_in6 *) in)->scope;
             break;
-        default: throw std::runtime_error("Unknown socket family when converting sockaddr to host");
+        default: handle_runtime_error("Unknown socket family when converting sockaddr to host %d", (int)in->family);
     }
 }
 
@@ -147,7 +147,7 @@ size_t bionic::get_host_len(const bionic::sockaddr *in) {
     switch ((af_family) in->family) {
         case af_family::INET: return sizeof(::sockaddr_in);
         case af_family::INET6: return sizeof(::sockaddr_in6);
-        default: throw std::runtime_error("Unknown socket family when converting sockaddr to host");
+        default: handle_runtime_error("Unknown socket family when converting sockaddr to host %d", (int)in->family);
     }
 }
 
@@ -157,7 +157,7 @@ size_t bionic::get_bionic_len(const ::sockaddr *in) {
     switch (in->sa_family) {
         case AF_INET: return sizeof(bionic::sockaddr_in);
         case AF_INET6: return sizeof(bionic::sockaddr_in6);
-        default: throw std::runtime_error("Unknown socket family when converting sockaddr from host");
+        default: handle_runtime_error("Unknown socket family when converting sockaddr from host %d", (int)in->sa_family);
     }
 }
 
@@ -182,7 +182,10 @@ bionic::addrinfo* bionic::from_host_alloc(const ::addrinfo *in) {
         out->ai_next = from_host_alloc(in->ai_next);
         return out;
     }
-    catch (...) {
+    catch (std::exception& ex) {
+        ::fprintf(::stderr, "libc-shim from_host_alloc(addrinfo) runtime error: %s", ex.what());
+        ::fflush(::stderr);
+
         delete out;
         //TODO Log errors
         return from_host_alloc(in->ai_next);
@@ -267,7 +270,7 @@ int bionic::to_host_sockopt_so(int opt) {
 #ifdef SO_TIMESTAMP_NEW
         case 63: return SO_TIMESTAMP_NEW;
 #endif
-        default: throw std::runtime_error("Unknown SO sockopt");
+        default: handle_runtime_error("Unknown SO sockopt %d", opt);
     }
 }
 
@@ -285,7 +288,7 @@ int bionic::to_host_sockopt_ip(int opt) {
         case 34: return IP_MULTICAST_LOOP;
         case 35: return IP_ADD_MEMBERSHIP;
         case 36: return IP_DROP_MEMBERSHIP;
-        default: throw std::runtime_error("Unknown IP sockopt");
+        default: handle_runtime_error("Unknown IP sockopt %d", opt);
     }
 }
 
@@ -306,7 +309,7 @@ int bionic::to_host_sockopt_ipv6(int opt) {
         case 21: return IPV6_LEAVE_GROUP;
         case 26: return IPV6_V6ONLY;
         case 34: return IPV6_IPSEC_POLICY;
-        default: throw std::runtime_error("Unknown IPv6 sockopt");
+        default: handle_runtime_error("Unknown IPv6 sockopt %d", opt);
     }
 }
 
@@ -321,7 +324,7 @@ int bionic::to_host_sockopt(int level, int opt) {
         case SOL_SOCKET: return to_host_sockopt_so(opt);
         case IPPROTO_IP: return to_host_sockopt_ip(opt);
         case IPPROTO_IPV6: return to_host_sockopt_ipv6(opt);
-        default: throw std::runtime_error("Unknown sockopt level");
+        default: handle_runtime_error("Unknown sockopt level %d", level);
     }
 }
 
@@ -530,6 +533,9 @@ int shim::getnameinfo(const bionic::sockaddr *addr, socklen_t addrlen, char *hos
         return ::getnameinfo(haddr.ptr(), haddr.len, host, hostlen, serv, servlen,
                 bionic::to_host_nameinfo_flags(flags));
     } catch  (std::exception& ex) {
+        ::fprintf(::stderr, "libc-shim getnameinfo runtime error: %s", ex.what());
+        ::fflush(::stderr);
+
         // TODO: A random sockaddr is passed to this function,
         // while connecting to Minecraft win10
         return 5 /* EAI_FAMILY */;
@@ -558,25 +564,27 @@ ssize_t shim::sendmsg(int sockfd, const msghdr *data, int flags) {
 
 ssize_t shim::recv(int sockfd, void *buf, size_t len, int flags) {
     if (flags != 0)
-        throw std::runtime_error("recv with unsupported flags");
+        handle_runtime_error("recv with unsupported flags %d", flags);
     return ::recv(sockfd, buf, len, flags);
 }
 
 ssize_t shim::recvmsg(int sockfd, struct msghdr *data, int flags) {
     if (flags != 0)
-        throw std::runtime_error("recvmsg with unsupported flags");
+        handle_runtime_error("recvmsg with unsupported flags %d", flags);
     return ::recvmsg(sockfd, data, flags);
 }
 
 ssize_t shim::sendto(int sockfd, const void *buf, size_t len, int flags, const bionic::sockaddr *addr, socklen_t addrlen) {
-    detail::sockaddr_in haddr (addr, addrlen);
-    detail::sock_send_flags hflags (sockfd, flags);
-    return ::sendto(sockfd, buf, len, hflags.flags, haddr.ptr(), haddr.len);
+    // detail::sockaddr_in haddr (addr, addrlen);
+    // detail::sock_send_flags hflags (sockfd, flags);
+    // return ::sendto(sockfd, buf, len, hflags.flags, haddr.ptr(), haddr.len);
+    errno = EDESTADDRREQ;
+    return -1;
 }
 
 ssize_t shim::recvfrom(int sockfd, void *buf, size_t len, int flags, bionic::sockaddr *addr, socklen_t *addrlen) {
     if (flags != 0)
-        throw std::runtime_error("recvfrom with unsupported flags");
+        handle_runtime_error("recvfrom with unsupported flags %d", flags);
     if (addr == nullptr)
         return ::recvfrom(sockfd, buf, len, flags, nullptr, nullptr);
     detail::sockaddr_out haddr;
@@ -632,7 +640,7 @@ int shim::shutdown(int sockfd, int how) {
         case 0: hhow = SHUT_RD; break;
         case 1: hhow = SHUT_WR; break;
         case 2: hhow = SHUT_RDWR; break;
-        default: throw std::runtime_error("Unexpected how parameter passed to shutdown");
+        default: handle_runtime_error("Unexpected how parameter passed to shutdown %d", how);
     }
     return ::shutdown(sockfd, hhow);
 }
@@ -658,7 +666,7 @@ detail::sock_send_flags::sock_send_flags(int fd, int flags) : fd(fd), src_flags(
         flags &= ~0x4000;
     }
     if (flags != 0)
-        throw std::runtime_error("Unexpected flags in a socket send operation");
+        handle_runtime_error("Unexpected flags in a socket send operation %d", flags);
 }
 
 detail::sock_send_flags::~sock_send_flags() {

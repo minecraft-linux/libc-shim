@@ -78,6 +78,17 @@
 
 using namespace shim;
 
+void shim::handle_runtime_error(const char *fmt, ...) {
+    char buf[255];
+    va_list l;
+    va_start(l, fmt);
+    ::vsnprintf(buf, sizeof(buf), fmt, l);
+    va_end(l);
+    ::fprintf(::stderr, "libc-shim runtime error: %s\ns", buf);
+    ::fflush(::stderr);
+    throw std::runtime_error(std::string(buf));
+};
+
 #if __i386__ || defined(__arm__)
 extern "C" unsigned long __umoddi3(unsigned long a, unsigned long b);
 extern "C" unsigned long __udivdi3(unsigned long a, unsigned long b);
@@ -112,14 +123,14 @@ clockid_t bionic::to_host_clock_type(bionic::clock_type type) {
 #else
         case clock_type::BOOTTIME: return CLOCK_BOOTTIME;
 #endif
-        default: throw std::runtime_error("Unexpected clock type");
+        default: handle_runtime_error("Unexpected clock type %d", (int)type);
     }
 }
 
 int bionic::to_host_mmap_flags(bionic::mmap_flags flags) {
     if (((uint32_t) flags & ~((uint32_t) mmap_flags::FIXED | (uint32_t) mmap_flags::ANON |
         (uint32_t) mmap_flags::NORESERVE | (uint32_t) mmap_flags::PRIVATE)) != 0)
-        throw std::runtime_error("Used unsupported mmap flags");
+        handle_runtime_error("Used unsupported mmap flags %d", (int)flags);
 
     int ret = 0;
     if ((uint32_t) flags & (uint32_t) mmap_flags::PRIVATE)
@@ -138,7 +149,7 @@ int bionic::to_host_mmap_flags(bionic::mmap_flags flags) {
 int bionic::to_host_rlimit_resource(shim::bionic::rlimit_resource r) {
     switch (r) {
         case rlimit_resource::NOFILE: return RLIMIT_NOFILE;
-        default: throw std::runtime_error("Unknown rlimit resource");
+        default: handle_runtime_error("Unknown rlimit resource %d", (int)r);
     }
 }
 
@@ -337,7 +348,7 @@ size_t shim::ctype_get_mb_cur_max() {
 
 int shim::gettimeofday(bionic::timeval *tv, void *p) {
     if (p)
-        throw std::runtime_error("gettimeofday adtimezone is not supported");
+        handle_runtime_error("gettimeofday adtimezone is not supported");
     timeval htv {};
     int ret = ::gettimeofday(&htv, nullptr);
     tv->tv_sec = htv.tv_sec;

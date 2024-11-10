@@ -26,4 +26,6 @@ namespace shim {
 
     // Rewrite filesystem access
     extern std::vector<std::pair<std::string, std::string>> rewrite_filesystem_access;
+
+    [[noreturn]] void handle_runtime_error(const char* fmt, ...);
 }

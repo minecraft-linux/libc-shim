@@ -40,7 +40,7 @@ int bionic::to_host_file_status_flags(bionic::file_status_flags flags) {
 bionic::file_status_flags bionic::from_host_file_status_flags(int flags) {
     using flag = file_status_flags;
     if (((uint32_t) flags & (~(uint32_t) flag::KNOWN_FLAGS)) != 0)
-        throw std::runtime_error("Unsupported fd flag used");
+        handle_runtime_error("Unsupported fd flag used %d", flags);
 
     int ret = 0;
     if ((uint32_t) flags & (uint32_t) flag::RDONLY) ret |= O_RDONLY;
@@ -184,7 +184,7 @@ int shim::fcntl(int fd, bionic::fcntl_index cmd, void *arg) {
             return ::fcntl(fd, F_SETLK, &fl);
         }
         default:
-            throw std::runtime_error("Unsupported fcntl " + std::to_string((int)cmd));
+            handle_runtime_error("Unsupported fcntl %d", (int)cmd);
     }
 }
 

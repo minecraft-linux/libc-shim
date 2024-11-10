@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <stdexcept>
 
 #ifdef __APPLE__
 #define ERRNO_TRANSLATION
@@ -46,10 +47,21 @@ namespace shim {
             template <Ret (*Ptr)(Args...)>
             static Ret wrapper(Args... args) {
                 auto i = make_destroy_invoker ([] { bionic::update_errno(); });
-                // code like `errno = 0;`
-                // needs reverse update to work, otherwise the errno reset doesn't work on macOS
-                bionic::sync_errno();
-                return Ptr(args...);
+                try {
+                    // code like `errno = 0;`
+                    // needs reverse update to work, otherwise the errno reset doesn't work on macOS
+                    bionic::sync_errno();
+                    return Ptr(args...);
+                } catch(std::exception& err) {
+                    ::fprintf(::stderr, "libc-shim runtime error at %s: %s\n", __PRETTY_FUNCTION__, err.what());
+                    ::fflush(::stderr);
+                    errno = EINVAL;
+                    if constexpr(std::is_pointer_v<Ret>) {
+                        return (Ret)NULL;
+                    } else {
+                        return (Ret)-1;
+                    }
+                }
             }
         };
         template <typename Ret, typename ...Args>

@@ -41,7 +41,7 @@ void bionic::mutex_static_initializer(shim::pthread_mutex_t *mutex) {
     else if (init_value == errorcheck_mutex_init_value)
         pthread_mutexattr_settype(&attr, (int) mutex_type::ERRORCHECK);
     if (pthread_mutex_init(mutex, &attr) != 0)
-        throw std::runtime_error("Failed to init mutex");
+        handle_runtime_error("Failed to init mutex");
     pthread_mutexattr_destroy(&attr);
 }
 
@@ -64,14 +64,14 @@ int bionic::to_host_mutex_type(bionic::mutex_type type) {
         case mutex_type::NORMAL: return PTHREAD_MUTEX_NORMAL;
         case mutex_type::RECURSIVE: return PTHREAD_MUTEX_RECURSIVE;
         case mutex_type::ERRORCHECK: return PTHREAD_MUTEX_ERRORCHECK;
-        default: throw std::runtime_error("Invalid mutex type");
+        default: handle_runtime_error("Invalid mutex type");
     }
 }
 
 int bionic::to_host_sched_policy(shim::bionic::sched_policy type) {
     switch (type) {
         case sched_policy::OTHER: return SCHED_OTHER;
-        default: throw std::runtime_error("Invalid sched policy");
+        default: handle_runtime_error("Invalid sched policy");
     }
 }
 
@@ -359,7 +359,7 @@ int shim::pthread_condattr_getclock(const pthread_condattr_t *attr, int *clock) 
 
 int shim::pthread_rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr) {
     if (attr != nullptr)
-        throw std::runtime_error("non-NULL rwlock attr is currently not supported");
+        handle_runtime_error("non-NULL rwlock attr is currently not supported");
     int ret = detail::make_c_wrapped<pthread_rwlock_t, const ::pthread_rwlockattr_t *>(rwlock, &::pthread_rwlock_init, nullptr);
     return bionic::translate_errno_from_host(ret);
 }
@@ -375,7 +375,7 @@ int shim::pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
     ::pthread_key_t host_key;
     int ret = ::pthread_key_create(&host_key, destructor);
     if (host_key > INT_MAX)
-        throw std::runtime_error("Unsupported host pthread key implementation");
+        handle_runtime_error("Unsupported host pthread key implementation");
     *key = host_key;
     return bionic::translate_errno_from_host(ret);
 }
