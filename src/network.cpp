@@ -575,11 +575,9 @@ ssize_t shim::recvmsg(int sockfd, struct msghdr *data, int flags) {
 }
 
 ssize_t shim::sendto(int sockfd, const void *buf, size_t len, int flags, const bionic::sockaddr *addr, socklen_t addrlen) {
-    // detail::sockaddr_in haddr (addr, addrlen);
-    // detail::sock_send_flags hflags (sockfd, flags);
-    // return ::sendto(sockfd, buf, len, hflags.flags, haddr.ptr(), haddr.len);
-    errno = EDESTADDRREQ;
-    return -1;
+    detail::sockaddr_in haddr (addr, addrlen);
+    detail::sock_send_flags hflags (sockfd, flags);
+    return ::sendto(sockfd, buf, len, hflags.flags, haddr.ptr(), haddr.len);
 }
 
 ssize_t shim::recvfrom(int sockfd, void *buf, size_t len, int flags, bionic::sockaddr *addr, socklen_t *addrlen) {
