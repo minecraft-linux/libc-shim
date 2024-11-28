@@ -571,7 +571,19 @@ ssize_t shim::recv(int sockfd, void *buf, size_t len, int flags) {
 ssize_t shim::recvmsg(int sockfd, struct msghdr *data, int flags) {
     if (flags != 0)
         handle_runtime_error("recvmsg with unsupported flags %d", flags);
-    return ::recvmsg(sockfd, data, flags);
+    auto name = (bionic::sockaddr*)data->msg_name;
+    auto addrlen = data->msg_namelen;
+    detail::sockaddr_out haddr;
+    if(name) {
+        data->msg_name = haddr.ptr();
+        data->msg_namelen = haddr.len;
+    }
+
+    auto val = ::recvmsg(sockfd, data, flags);
+    if(val > 0 && name) {
+        haddr.apply(name, &data->msg_namelen);
+    }
+    return val;
 }
 
 ssize_t shim::sendto(int sockfd, const void *buf, size_t len, int flags, const bionic::sockaddr *addr, socklen_t addrlen) {
