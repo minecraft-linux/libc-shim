@@ -1,3 +1,4 @@
+#include "no-fortify.h"
 #include "sysconf.h"
 
 #include <unistd.h>

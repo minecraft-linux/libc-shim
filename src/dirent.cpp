@@ -1,3 +1,4 @@
+#include "no-fortify.h"
 #include "dirent.h"
 #include "iorewrite.h"
 

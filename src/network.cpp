@@ -1,3 +1,4 @@
+#include "no-fortify.h"
 #include "network.h"
 #include "errno.h"
 

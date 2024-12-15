@@ -1,3 +1,4 @@
+#include "no-fortify.h"
 #include "stat.h"
 #include "iorewrite.h"
 

@@ -1,3 +1,4 @@
+#include "no-fortify.h"
 #include "semaphore.h"
 
 #include <stdexcept>

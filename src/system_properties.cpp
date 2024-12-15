@@ -1,3 +1,4 @@
+#include "no-fortify.h"
 #include "system_properties.h"
 
 #include <unistd.h>

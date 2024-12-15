@@ -1,3 +1,4 @@
+#include "no-fortify.h"
 #include "statvfs.h"
 
 using namespace shim;

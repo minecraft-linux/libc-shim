@@ -1,3 +1,4 @@
+#include "no-fortify.h"
 #include "file_misc.h"
 
 #ifdef __FreeBSD__

@@ -1,3 +1,4 @@
+#include "no-fortify.h"
 #include <cstdlib>
 #include "cstdio.h"
 #include "iorewrite.h"

@@ -1,3 +1,4 @@
+#include "no-fortify.h"
 #include <libc_shim.h>
 
 #include <log.h>
