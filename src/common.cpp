@@ -19,6 +19,7 @@
 #include <cmath>
 #include <unistd.h>
 #include <sys/time.h>
+#include <sys/wait.h>
 #include <cwctype>
 #include <csignal>
 #include <cstring>
@@ -640,6 +641,13 @@ void shim::add_time_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"clock_gettime", clock_gettime},
     });
 }
+
+void shim::add_wait_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
+    list.insert(list.end(), {
+        {"waitpid", ::waitpid},
+    });
+}
+
 void shim::add_sched_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"sched_yield", ::sched_yield},
@@ -994,6 +1002,7 @@ std::vector<shimmed_symbol> shim::get_shimmed_symbols() {
     add_ctype_shimmed_symbols(ret);
     add_math_shimmed_symbols(ret);
     add_time_shimmed_symbols(ret);
+    add_wait_shimmed_symbols(ret);
     add_sched_shimmed_symbols(ret);
     add_unistd_shimmed_symbols(ret);
     add_signal_shimmed_symbols(ret);

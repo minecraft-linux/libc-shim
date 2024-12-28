@@ -165,6 +165,8 @@ namespace shim {
 
     void add_time_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
+    void add_wait_shimmed_symbols(std::vector<shimmed_symbol> &list);
+
     void add_sched_shimmed_symbols(std::vector<shimmed_symbol> &list);
 
     void add_unistd_shimmed_symbols(std::vector<shimmed_symbol> &list);
