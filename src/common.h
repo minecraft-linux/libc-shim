@@ -151,6 +151,10 @@ namespace shim {
 
     int isnan(double d);
 
+#ifdef __linux__
+    void arc4random_buf(void* buf, size_t len);
+#endif
+
     int utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags);
 
     void add_common_shimmed_symbols(std::vector<shimmed_symbol> &list);

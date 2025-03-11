@@ -441,6 +441,13 @@ int shim::isnan(double d) {
 	return std::isnan(d);
 }
 
+#ifdef __linux__
+void shim::arc4random_buf(void* buf, size_t len) {
+    // We could use glibc arc4random_buf iff we would target glibc 2.36
+    (void)syscall(SYS_getrandom, buf, len, 0);
+}
+#endif
+
 void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"__errno", bionic::get_errno},
@@ -631,6 +638,11 @@ void shim::add_time_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"ctime_r", ::ctime_r},
         {"tzname", ::tzname},
         {"tzset", ::tzset},
+#ifdef __linux__
+        {"arc4random_buf", shim::arc4random_buf},
+#else
+        {"arc4random_buf", ::arc4random_buf},
+#endif
 #ifndef __FreeBSD__
         {"daylight", &::daylight},
 #endif
