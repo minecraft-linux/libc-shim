@@ -449,8 +449,10 @@ int shim::isnan(double d) {
 	return std::isnan(d);
 }
 
-#ifndef HAS_ARC4RANDOM_BUF
 void shim::arc4random_buf(void* buf, size_t len) {
+#ifdef HAS_ARC4RANDOM_BUF
+    ::arc4random_buf(buf, len);
+#else
     // Using SYS_getrandom is a bit complex since it can be interrupted
     // or not supported. Even if we used SYS_getrandom, we would have to
     // fall back to an alternative strategy or error out if it failed.
@@ -464,6 +466,7 @@ void shim::arc4random_buf(void* buf, size_t len) {
         buf = (uint8_t*)buf + n;
         len -= n;
     }
+#endif
 }
 
 uint32_t shim::arc4random() {
@@ -471,7 +474,6 @@ uint32_t shim::arc4random() {
     shim::arc4random_buf(&u, sizeof(u));
     return u;
 }
-#endif
 
 void shim::add_common_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
