@@ -76,6 +76,18 @@
 #include <chrono>
 #include <unistd.h>
 
+#ifdef __linux__
+// glibc introduced arc4random_buf in 2.36
+#if defined(__GLIBC__) && !(__GLIBC__ < 2 || __GLIBC__ == 2 && __GLIBC_MINOR__ < 36)
+#define HAS_ARC4RANDOM_BUF 1
+#else
+#include <random>
+#endif
+#else
+// OSX has arc4random_buf
+#define HAS_ARC4RANDOM_BUF 1
+#endif
+
 using namespace shim;
 
 void shim::handle_runtime_error(const char *fmt, ...) {
@@ -275,10 +287,6 @@ int shim::prctl(bionic::prctl_num opt, unsigned long a2, unsigned long a3, unsig
 #endif
 }
 
-uint32_t shim::arc4random() {
-    return 0; // TODO:
-}
-
 void* shim::__memcpy_chk(void *dst, const void *src, size_t size, size_t max_len) {
     if (size > max_len) {
         fprintf(stderr, "detected copy past buffer size");
@@ -410,7 +418,7 @@ ssize_t shim::getrandom(void *buf, size_t len, unsigned int flags) {
 #else
         // TODO do we need look at flags?
         // Should work for bsd and macOS
-        arc4random_buf(buf, len);
+        ::arc4random_buf(buf, len);
         return (ssize_t)len;
 #endif
 }
@@ -441,10 +449,27 @@ int shim::isnan(double d) {
 	return std::isnan(d);
 }
 
-#ifdef __linux__
+#ifndef HAS_ARC4RANDOM_BUF
 void shim::arc4random_buf(void* buf, size_t len) {
-    // We could use glibc arc4random_buf iff we would target glibc 2.36
-    (void)syscall(SYS_getrandom, buf, len, 0);
+    // Using SYS_getrandom is a bit complex since it can be interrupted
+    // or not supported. Even if we used SYS_getrandom, we would have to
+    // fall back to an alternative strategy or error out if it failed.
+    // Instead rely on std::random_device to fill buf, allowing
+    // std::random_device to handle the complex stuff.
+    std::random_device get_rand;
+    while(len > 0) {
+        unsigned int u = get_rand();
+        size_t n = std::min(len, sizeof(unsigned int));
+        ::memcpy(buf, &u, n);
+        buf = (uint8_t*)buf + n;
+        len -= n;
+    }
+}
+
+uint32_t shim::arc4random() {
+    uint32_t u;
+    shim::arc4random_buf(&u, sizeof(u));
+    return u;
 }
 #endif
 
@@ -638,7 +663,7 @@ void shim::add_time_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"ctime_r", ::ctime_r},
         {"tzname", ::tzname},
         {"tzset", ::tzset},
-#ifdef __linux__
+#ifndef HAS_ARC4RANDOM_BUF
         {"arc4random_buf", shim::arc4random_buf},
 #else
         {"arc4random_buf", ::arc4random_buf},
@@ -992,8 +1017,11 @@ void shim::add_misc_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"openlog", openlog},
         {"closelog", closelog},
         {"syslog", syslog},
-
-        {"arc4random", arc4random},
+#ifndef HAS_ARC4RANDOM_BUF
+        {"arc4random", shim::arc4random},
+#else
+        {"arc4random", ::arc4random},
+#endif
     });
 }
 
