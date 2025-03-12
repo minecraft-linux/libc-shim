@@ -101,8 +101,6 @@ namespace shim {
 
     int sendfile(int src, int dst, bionic::off_t *offset, size_t count);
 
-    uint32_t arc4random();
-
     void *__memcpy_chk(void *dst, const void *src, size_t size, size_t max_len);
 
     void *__memmove_chk(void *dst, const void *src, size_t size, size_t max_len);
@@ -150,6 +148,10 @@ namespace shim {
     int unlinkat(int dirfd, const char *pathname, int flags);
 
     int isnan(double d);
+
+    void arc4random_buf(void* buf, size_t len);
+
+    uint32_t arc4random();
 
     int utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags);
 
