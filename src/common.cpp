@@ -143,7 +143,7 @@ clockid_t bionic::to_host_clock_type(bionic::clock_type type) {
 
 int bionic::to_host_mmap_flags(bionic::mmap_flags flags) {
     if (((uint32_t) flags & ~((uint32_t) mmap_flags::FIXED | (uint32_t) mmap_flags::ANON |
-        (uint32_t) mmap_flags::NORESERVE | (uint32_t) mmap_flags::PRIVATE)) != 0)
+        (uint32_t) mmap_flags::NORESERVE | (uint32_t) mmap_flags::PRIVATE | (uint32_t) mmap_flags::SHARED)) != 0)
         handle_runtime_error("Used unsupported mmap flags %d", (int)flags);
 
     int ret = 0;
@@ -153,6 +153,8 @@ int bionic::to_host_mmap_flags(bionic::mmap_flags flags) {
         ret |= MAP_FILE;
     if ((uint32_t) flags & (uint32_t) mmap_flags::ANON)
         ret |= MAP_ANONYMOUS;
+    if ((uint32_t) flags & (uint32_t) mmap_flags::SHARED)
+        ret |= MAP_SHARED;
 #ifdef MAP_NORESERVE
     if ((uint32_t) flags & (uint32_t) mmap_flags::NORESERVE)
         ret |= MAP_NORESERVE;
@@ -899,6 +901,7 @@ void shim::add_wchar_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         /* wchar.h */
         {"wcscat", ::wcscat},
         {"wcscpy", ::wcscpy},
+        {"wcsncpy", ::wcsncpy},
         {"wcscmp", ::wcscmp},
         {"wcslen", ::wcslen},
         {"wctob", ::wctob},
