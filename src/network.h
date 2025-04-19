@@ -21,6 +21,7 @@ namespace shim {
 
         enum class af_family : int {
             UNSPEC = 0,
+            UNIX = 1,
             INET = 2,
             INET6 = 10,
             NETLINK = 16
@@ -57,6 +58,9 @@ namespace shim {
 
         struct sockaddr {
             uint16_t family;
+        };
+        struct sockaddr_un : sockaddr {
+            char sun_path[108];
         };
         struct sockaddr_in : sockaddr {
             uint16_t port;
