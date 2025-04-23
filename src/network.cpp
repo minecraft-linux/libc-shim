@@ -9,6 +9,7 @@
 #ifdef __FreeBSD__
 #undef _KERNEL
 #endif
+#include <sys/un.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <cstring>
@@ -41,6 +42,7 @@ int bionic::to_host_ai_flags(bionic::ai_flags flags) {
 bionic::af_family bionic::from_host_af_family(int family) {
     switch (family) {
         case AF_UNSPEC: return af_family::UNSPEC;
+        case AF_UNIX: return af_family::UNIX;
         case AF_INET: return af_family::INET;
         case AF_INET6: return af_family::INET6;
 #ifdef AF_NETLINK
@@ -53,6 +55,7 @@ bionic::af_family bionic::from_host_af_family(int family) {
 int bionic::to_host_af_family(bionic::af_family family) {
     switch (family) {
         case af_family::UNSPEC: return AF_UNSPEC;
+        case af_family::UNIX: return AF_UNIX;
         case af_family::INET: return AF_INET;
         case af_family::INET6: return AF_INET6;
 #ifdef AF_NETLINK
@@ -105,6 +108,10 @@ void bionic::from_host(const ::sockaddr *in, bionic::sockaddr *out) {
         case AF_UNSPEC:
             out->family = (uint16_t) af_family::UNSPEC;
             break;
+        case AF_UNIX:
+            ((bionic::sockaddr_un *)out)->family = ((::sockaddr_un *)in)->sun_family;
+            memcpy(((bionic::sockaddr_un *)out)->sun_path, ((::sockaddr_un *)in)->sun_path, 108);
+            break;    
         case AF_INET:
             out->family = (uint16_t) af_family::INET;
             ((bionic::sockaddr_in *) out)->port = ((::sockaddr_in*) in)->sin_port;
@@ -126,6 +133,10 @@ void bionic::to_host(const bionic::sockaddr *in, ::sockaddr *out) {
         case af_family::UNSPEC:
             out->sa_family = AF_UNSPEC;
             break;
+        case af_family::UNIX:
+            ((::sockaddr_un *)out)->sun_family = ((bionic::sockaddr_un *)in)->family;
+            memcpy(((::sockaddr_un *)out)->sun_path, ((bionic::sockaddr_un *)in)->sun_path, 108);
+            break;
         case af_family::INET:
             out->sa_family = AF_INET;
             ((::sockaddr_in*) out)->sin_port = ((bionic::sockaddr_in *) in)->port;
@@ -146,6 +157,7 @@ size_t bionic::get_host_len(const bionic::sockaddr *in) {
     if (!in)
         return 0;
     switch ((af_family) in->family) {
+        case af_family::UNIX: return sizeof(::sockaddr_un);
         case af_family::INET: return sizeof(::sockaddr_in);
         case af_family::INET6: return sizeof(::sockaddr_in6);
         default: handle_runtime_error("Unknown socket family when converting sockaddr to host %d", (int)in->family);
@@ -156,6 +168,7 @@ size_t bionic::get_bionic_len(const ::sockaddr *in) {
     if (!in)
         return 0;
     switch (in->sa_family) {
+        case AF_UNIX: return sizeof(bionic::sockaddr_un);
         case AF_INET: return sizeof(bionic::sockaddr_in);
         case AF_INET6: return sizeof(bionic::sockaddr_in6);
         default: handle_runtime_error("Unknown socket family when converting sockaddr from host %d", (int)in->sa_family);
@@ -594,7 +607,7 @@ ssize_t shim::sendto(int sockfd, const void *buf, size_t len, int flags, const b
 }
 
 ssize_t shim::recvfrom(int sockfd, void *buf, size_t len, int flags, bionic::sockaddr *addr, socklen_t *addrlen) {
-    if (flags != 0)
+    if (flags != 0 && flags != 0x4000)
         handle_runtime_error("recvfrom with unsupported flags %d", flags);
     if (addr == nullptr)
         return ::recvfrom(sockfd, buf, len, flags, nullptr, nullptr);
