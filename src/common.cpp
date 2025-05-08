@@ -693,6 +693,7 @@ void shim::add_sched_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"sched_yield", ::sched_yield},
         {"sched_setaffinity", sched_setaffinity},
+        {"sched_getaffinity", sched_getaffinity},
     });
 }
 
