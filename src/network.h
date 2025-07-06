@@ -7,6 +7,14 @@
 #include <netdb.h>
 #include "argrewrite.h"
 
+#ifdef __FreeBSD__
+// kinda hacky:
+// this header re#defines inet_ntop/inet_pton as __inet_ntop
+// so while namespace will be incompatible generic way (and we don't need to),
+// I don't need to put other crutches.
+#include <arpa/inet.h>
+#endif
+
 namespace shim {
 
     namespace bionic {
