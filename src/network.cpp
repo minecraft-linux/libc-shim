@@ -3,8 +3,19 @@
 #include "errno.h"
 
 #ifdef __FreeBSD__
-#define _KERNEL
+// They're under #ifdef _KERNEL.
+// I moved them into here to prevent other errors that can occur
+// because _KERNEL isn't intended for general purpose usage.
+// Taken from netinet6/in6.h and removed comments.
+#define IPV6_2292PKTINFO	19
+#define IPV6_2292HOPLIMIT	20
+#define IPV6_2292NEXTHOP	21
+#define IPV6_2292HOPOPTS	22
+#define IPV6_2292DSTOPTS	23
+#define IPV6_2292RTHDR		24
+#define IPV6_2292PKTOPTIONS	25
 #endif
+
 #include <netinet/in.h>
 #ifdef __FreeBSD__
 #undef _KERNEL
