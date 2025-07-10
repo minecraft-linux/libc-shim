@@ -41,7 +41,7 @@ bionic::dirent* shim::readdir(bionic::DIR *dir) {
 #endif
     ent.d_reclen = hent->d_reclen;
     ent.d_type = hent->d_type;
-    memcpy(ent.d_name, hent->d_name, sizeof(ent.d_name));
+    strncpy(ent.d_name, hent->d_name, sizeof(ent.d_name));
     ent.d_name[sizeof(ent.d_name) - 1] = '\0';
 
     return &dir->current;
