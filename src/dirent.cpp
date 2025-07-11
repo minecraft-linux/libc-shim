@@ -3,6 +3,7 @@
 #include "iorewrite.h"
 
 #include <cstring>
+#include <unistd.h>
 
 using namespace shim;
 
@@ -37,9 +38,9 @@ bionic::dirent* shim::readdir(bionic::DIR *dir) {
 #ifndef __APPLE__
     ent.d_off = hent->d_off;
 #else
-    ent.d_off = 0;
+    ent.d_off = ::telldir(dir->wrapped);
 #endif
-    ent.d_reclen = hent->d_reclen;
+    ent.d_reclen = sizeof(bionic::dirent);
     ent.d_type = hent->d_type;
     strncpy(ent.d_name, hent->d_name, sizeof(ent.d_name));
     ent.d_name[sizeof(ent.d_name) - 1] = '\0';
@@ -60,7 +61,15 @@ long shim::telldir(bionic::DIR *dir) {
 }
 
 int shim::dirfd(bionic::DIR *dir) {
-    return ::dirfd(dir->wrapped);
+    int fd = ::dirfd(dir->wrapped);
+#ifdef __APPLE__
+    if (fd != -1) {
+        // On macOS, dirfd returns a file descriptor that is owned by the directory stream and is closed by closedir.
+        // We need to duplicate it to ensure it can be used independently.
+        return dup(fd);
+    }
+#endif
+    return fd;
 }
 
 void shim::add_dirent_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
