@@ -68,6 +68,23 @@ namespace shim {
                 return destructor(object);
         }
 
+        template <typename T> struct Wrapper {
+            T value;
+            operator const T*() const {
+                return &value;
+            }
+        };
+
+        template <typename T> inline Wrapper<T> load_wrapper(const T* wrapper) {
+            auto wrapped_ptr = reinterpret_cast<const std::atomic<T> *>(wrapper);
+            auto val = wrapped_ptr->load(std::memory_order_relaxed);
+            return { val };
+        }
+
+        template <typename T> inline bool update_wrapper(T* wrapper, T& old, const T& update) {
+            auto wrapped_ptr = reinterpret_cast<std::atomic<T> *>(wrapper);
+            return wrapped_ptr->compare_exchange_strong(old, update, std::memory_order_relaxed, std::memory_order_relaxed);
+        }
     }
 
 }

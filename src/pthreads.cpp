@@ -21,10 +21,7 @@ bionic::pthread_cleanup_holder::~pthread_cleanup_holder() {
     }
 }
 
-void bionic::mutex_static_initializer(shim::pthread_mutex_t *mutex) {
-    static std::mutex mutex_guard;
-    std::lock_guard<std::mutex> guard (mutex_guard);
-
+void bionic::mutex_static_initializer(shim::pthread_mutex_t *mutex, shim::pthread_mutex_t &old) {
     if (is_mutex_initialized(mutex))
         return;
 
@@ -33,6 +30,7 @@ void bionic::mutex_static_initializer(shim::pthread_mutex_t *mutex) {
 #else
     auto init_value = (size_t) mutex->wrapped;
 #endif
+    shim::pthread_mutex_t n = old;
 
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
@@ -40,23 +38,51 @@ void bionic::mutex_static_initializer(shim::pthread_mutex_t *mutex) {
         pthread_mutexattr_settype(&attr, (int) mutex_type::RECURSIVE);
     else if (init_value == errorcheck_mutex_init_value)
         pthread_mutexattr_settype(&attr, (int) mutex_type::ERRORCHECK);
-    if (pthread_mutex_init(mutex, &attr) != 0)
+    if (pthread_mutex_init(&n, &attr) != 0)
         handle_runtime_error("Failed to init mutex");
     pthread_mutexattr_destroy(&attr);
+
+    if(!detail::update_wrapper(mutex, old, n)) {
+        // Concurrent creation, we need to destroy the new one
+        detail::destroy_c_wrapped<pthread_mutex_t>(&n, &::pthread_mutex_destroy);
+        old = detail::load_wrapper(mutex).value;
+    } else {
+        old = n;
+    }
 }
 
-void bionic::cond_static_initializer(shim::pthread_cond_t *cond) {
-    static std::mutex mutex_guard;
-    std::lock_guard<std::mutex> guard (mutex_guard);
-    if (!is_cond_initialized(cond))
-         pthread_cond_init(cond, nullptr);
+void bionic::cond_static_initializer(shim::pthread_cond_t *cond, shim::pthread_cond_t &old) {
+    if (is_cond_initialized(&old))
+        return;
+    shim::pthread_cond_t n = old;
+    if(pthread_cond_init(&n, nullptr) == 0) {
+        if(!detail::update_wrapper(cond, old, n)) {
+            // Concurrent creation, we need to destroy the new one
+            detail::destroy_c_wrapped<pthread_cond_t>(&n, &::pthread_cond_destroy);
+            old = detail::load_wrapper(cond).value;
+        } else {
+            old = n;
+        }
+    } else {
+        handle_runtime_error("Failed to init cond");
+    }
 }
 
-void bionic::rwlock_static_initializer(shim::pthread_rwlock_t *rwlock) {
-    static std::mutex mutex_guard;
-    std::lock_guard<std::mutex> guard (mutex_guard);
-    if (!is_rwlock_initialized(rwlock))
-        pthread_rwlock_init(rwlock, nullptr);
+void bionic::rwlock_static_initializer(shim::pthread_rwlock_t *rwlock, shim::pthread_rwlock_t &old) {
+    if (is_rwlock_initialized(&old))
+        return;
+    shim::pthread_rwlock_t n = old;
+    if(pthread_rwlock_init(&n, nullptr) == 0) {
+        if(!detail::update_wrapper(rwlock, old, n)) {
+            // Concurrent creation, we need to destroy the new one
+            detail::destroy_c_wrapped<pthread_rwlock_t>(&n, &::pthread_rwlock_destroy);
+            old = detail::load_wrapper(rwlock).value;
+        } else {
+            old = n;
+        }
+    } else {
+        handle_runtime_error("Failed to init rwlock");
+    }
 }
 
 int bionic::to_host_mutex_type(bionic::mutex_type type) {
@@ -260,10 +286,11 @@ int shim::pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *
     return bionic::translate_errno_from_host(ret);
 }
 
-int shim::pthread_mutex_destroy(pthread_mutex_t *mutex) {
+int shim::pthread_mutex_destroy(pthread_mutex_t *wrapper) {
+    auto mutex = detail::load_wrapper(wrapper);
     if (!bionic::is_mutex_initialized(mutex))
         return 0;
-    int ret = detail::destroy_c_wrapped<pthread_mutex_t>(mutex, &::pthread_mutex_destroy);
+    int ret = detail::destroy_c_wrapped<pthread_mutex_t>(&mutex.value, &::pthread_mutex_destroy);
     return bionic::translate_errno_from_host(ret);
 }
 

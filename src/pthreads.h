@@ -35,7 +35,7 @@ namespace shim {
 #endif
         }
 
-        void mutex_static_initializer(pthread_mutex_t *mutex);
+        void mutex_static_initializer(pthread_mutex_t *mutex, pthread_mutex_t &old);
 
         struct pthread_cond_t {
             ::pthread_cond_t *wrapped;
@@ -45,10 +45,12 @@ namespace shim {
         };
 
         inline bool is_cond_initialized(pthread_cond_t const *m) {
-            return m->wrapped != nullptr;
+            auto wrapped_ptr = reinterpret_cast<const std::atomic<pthread_cond_t> *>(m);
+            auto val = wrapped_ptr->load(std::memory_order_relaxed);
+            return val.wrapped != nullptr;
         }
 
-        void cond_static_initializer(pthread_cond_t *cond);
+        void cond_static_initializer(pthread_cond_t *cond, pthread_cond_t &old);
 
         struct pthread_rwlock_t {
             ::pthread_rwlock_t *wrapped;
@@ -61,25 +63,25 @@ namespace shim {
             return m->wrapped != nullptr;
         }
 
-        void rwlock_static_initializer(pthread_rwlock_t *rwlock);
+        void rwlock_static_initializer(pthread_rwlock_t *rwlock, pthread_rwlock_t &old);
 
         template <>
-        inline auto to_host<pthread_mutex_t>(pthread_mutex_t const *m) {
-            if (!is_mutex_initialized(m))
-                mutex_static_initializer(const_cast<pthread_mutex_t *>(m));
-            return m->wrapped;
+        inline auto to_host<pthread_mutex_t>(pthread_mutex_t const *o) {
+            auto m = detail::load_wrapper(o);
+            mutex_static_initializer(const_cast<pthread_mutex_t *>(o), m.value);
+            return m.value.wrapped;
         }
         template <>
-        inline auto to_host<pthread_cond_t>(pthread_cond_t const *m) {
-            if (m->wrapped == nullptr)
-                cond_static_initializer(const_cast<pthread_cond_t *>(m));
-            return m->wrapped;
+        inline auto to_host<pthread_cond_t>(pthread_cond_t const *o) {
+            auto m = detail::load_wrapper(o);
+            cond_static_initializer(const_cast<pthread_cond_t *>(o), m.value);
+            return m.value.wrapped;
         }
         template <>
-        inline auto to_host<pthread_rwlock_t>(pthread_rwlock_t const *m) {
-            if (m->wrapped == nullptr)
-                rwlock_static_initializer(const_cast<pthread_rwlock_t *>(m));
-            return m->wrapped;
+        inline auto to_host<pthread_rwlock_t>(pthread_rwlock_t const *o) {
+            auto m = detail::load_wrapper(o);
+            rwlock_static_initializer(const_cast<pthread_rwlock_t *>(o), m.value);
+            return m.value.wrapped;
         }
 
         enum class mutex_type : uint32_t {
