@@ -19,13 +19,21 @@ include(CheckCXXSourceCompiles)
 
 check_cxx_source_compiles("
     #include <atomic>
+    struct A {
+        long long a;
+        void* wrapper;
+        long long b;
+    };
     int main() {
-        std::atomic<int> a;
-        return a.load() ? 0 : 1;
+        std::atomic<A> a;
+        auto a2 = a.load();
+        auto a3 = a2;
+        a3.wrapper = &a;
+        return a.compare_exchange_strong(a2, a3, std::memory_order_relaxed, std::memory_order_relaxed) ? 0 : 1;
     }
-" HAS_ATOMIC)
+" HAVE_ATOMICS_WITHOUT_LIB)
 
 # Link atomic library if needed
-if(NOT HAS_ATOMIC)
+if(NOT HAVE_ATOMICS_WITHOUT_LIB)
     target_link_libraries(libc-shim PRIVATE atomic)
 endif()
