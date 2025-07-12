@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 namespace shim {
 
     namespace detail {
