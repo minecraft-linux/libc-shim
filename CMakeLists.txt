@@ -18,15 +18,14 @@ endif()
 include(CheckCXXSourceCompiles)
 
 check_cxx_source_compiles("
-  #include <atomic>
-  struct A { int a[100]; };
-  int main() {
-    std::atomic<A> a;
-    return a.load() ? 0 : 1;
-  }
+    #include <atomic>
+    int main() {
+        std::atomic<int> a;
+        return a.load() ? 0 : 1;
+    }
 " HAS_ATOMIC)
 
 # Link atomic library if needed
 if(NOT HAS_ATOMIC)
-  target_link_libraries(libc-shim PRIVATE atomic)
+    target_link_libraries(libc-shim PRIVATE atomic)
 endif()
