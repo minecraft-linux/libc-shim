@@ -1,3 +1,4 @@
+#include <atomic>
 #include <cerrno>
 #include <stdexcept>
 #include <limits.h>
