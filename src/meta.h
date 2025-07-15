@@ -85,7 +85,7 @@ namespace shim {
 
         template <typename T> inline bool update_wrapper(T* wrapper, T& old, const T& update) {
             auto wrapped_ptr = reinterpret_cast<std::atomic<T> *>(wrapper);
-            return wrapped_ptr->compare_exchange_strong(old, update, std::memory_order_relaxed, std::memory_order_relaxed);
+            return wrapped_ptr->compare_exchange_strong(old, update, std::memory_order_release, std::memory_order_acquire);
         }
     }
 

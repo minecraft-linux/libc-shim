@@ -46,7 +46,6 @@ void bionic::mutex_static_initializer(shim::pthread_mutex_t *mutex, shim::pthrea
     if(!detail::update_wrapper(mutex, old, n)) {
         // Concurrent creation, we need to destroy the new one
         detail::destroy_c_wrapped<pthread_mutex_t>(&n, &::pthread_mutex_destroy);
-        old = detail::load_wrapper(mutex).value;
     } else {
         old = n;
     }
@@ -60,7 +59,6 @@ void bionic::cond_static_initializer(shim::pthread_cond_t *cond, shim::pthread_c
         if(!detail::update_wrapper(cond, old, n)) {
             // Concurrent creation, we need to destroy the new one
             detail::destroy_c_wrapped<pthread_cond_t>(&n, &::pthread_cond_destroy);
-            old = detail::load_wrapper(cond).value;
         } else {
             old = n;
         }
@@ -77,7 +75,6 @@ void bionic::rwlock_static_initializer(shim::pthread_rwlock_t *rwlock, shim::pth
         if(!detail::update_wrapper(rwlock, old, n)) {
             // Concurrent creation, we need to destroy the new one
             detail::destroy_c_wrapped<pthread_rwlock_t>(&n, &::pthread_rwlock_destroy);
-            old = detail::load_wrapper(rwlock).value;
         } else {
             old = n;
         }
