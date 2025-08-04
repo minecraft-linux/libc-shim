@@ -201,6 +201,10 @@ const char* shim::strchr_chk(const char* __s, int __ch, size_t __n) {
     return strchr(__s, __ch);
 }
 
+const char* shim::strrchr_chk(const char* __s, int __ch, size_t __n) {
+    return strrchr(__s, __ch);
+}
+
 #ifndef __LP64__
 int shim::ftruncate(int fd, bionic::off_t len) {
     return ::ftruncate(fd, (::off_t) len);
@@ -843,6 +847,7 @@ void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"strlen", ::strlen},
         {"__strlen_chk", strlen_chk},
         {"__strchr_chk", strchr_chk},
+        {"__strrchr_chk", strrchr_chk},
         {"strcmp", ::strcmp},
         {"strcpy", ::strcpy},
         {"__strcpy_chk", __strcpy_chk},

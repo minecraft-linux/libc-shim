@@ -72,6 +72,7 @@ namespace shim {
 
     size_t strlen_chk(const char *str, size_t max_len);
     const char* strchr_chk(const char* __s, int __ch, size_t __n);
+    const char* strrchr_chk(const char* __s, int __ch, size_t __n);
 
 #ifndef __LP64__
     /* Bionic uses a 32-bit off_t; this doesn't match up on Darwin so let's
