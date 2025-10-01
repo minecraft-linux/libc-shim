@@ -3,6 +3,8 @@
 
 #include <stdexcept>
 #include "meta.h"
+#include "errno.h"
+
 #ifdef __APPLE__
 #include <errno.h>
 #include <mach/mach.h>
