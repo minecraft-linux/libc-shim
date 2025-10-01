@@ -243,6 +243,9 @@ void shim::add_fcntl_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 #if LIBC_SHIM_DEFINE_VARIADIC
         {"open", open},
         {"openat", openat},
+#else
+        // TODO This is wrong
+        {"openat", openat},
 #endif
         {"__open_2", IOREWRITE1(open_2)},
         // for platforms with ABI incompatible variadic

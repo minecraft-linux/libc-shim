@@ -39,8 +39,10 @@ int shim::sem_init(sem_t *sem, int pshared, unsigned int value) {
             errno = EINVAL;
         if (ret == KERN_RESOURCE_SHORTAGE)
             errno = ENOMEM;
+        bionic::update_errno();
         return -1;
     }
+    bionic::update_errno();
     return 0;
 }
 
@@ -81,8 +83,10 @@ int shim::sem_timedwait(host_sem_t *sem, const struct timespec *abs_timeout) {
             errno = ETIMEDOUT;
         if (ret == KERN_ABORTED)
             errno = EINTR;
+        bionic::update_errno();
         return -1;
     }
+    bionic::update_errno();
     return 0;
 }
 

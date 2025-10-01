@@ -219,6 +219,10 @@ ssize_t shim::pwrite(int fd, const void *buf, size_t len, bionic::off_t off) {
 }
 #endif
 
+static int my_clock_getres(bionic::clock_type clock, struct timespec *ts) {
+    return ::clock_getres(bionic::to_host_clock_type(clock), ts);
+}
+
 int shim::clock_gettime(bionic::clock_type clock, struct timespec *ts) {
 #if defined(__APPLE__) && __MAC_OS_X_VERSION_MIN_REQUIRED < 101200
     if(::clock_gettime != NULL) {
@@ -684,6 +688,7 @@ void shim::add_time_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"timezone", &::timezone},
         {"nanosleep", ::nanosleep},
         {"clock_gettime", clock_gettime},
+        {"clock_getres", (void*)my_clock_getres},
     });
 }
 
@@ -708,10 +713,19 @@ void shim::add_fnmatch_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) 
 
 }
 
+static off_t _lseek64(int fd, off_t off, int dir) {
+    return ::lseek(fd, off, dir);
+}
+
+static void stub() {
+    abort();
+}
+
 void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"access", WithErrnoUpdate(IOREWRITE1(::access))},
         {"lseek", WithErrnoUpdate(::lseek)},
+        {"lseek64", WithErrnoUpdate(::_lseek64)},
         {"close", WithErrnoUpdate(::close)},
         {"read", WithErrnoUpdate(::read)},
         {"__read_chk", __read_chk},
@@ -778,6 +792,12 @@ void shim::add_unistd_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"ftruncate", WithErrnoUpdate(ftruncate)},
         {"pread", WithErrnoUpdate(pread)},
         {"pwrite", WithErrnoUpdate(pwrite)},
+        {"__system_property_foreach", (void*)stub},
+        {"fputwc", (void*)stub},
+        {"__system_property_read", (void*)stub},
+        {"abs", (void*)stub},
+        {"utimes", (void*)stub},
+        {"__strrchr_chk", (void*)stub},
     });
 }
 
