@@ -86,7 +86,7 @@ bionic::socktype bionic::from_host_socktype(int socktype) {
 }
 
 int bionic::to_host_socktype(bionic::socktype socktype) {
-    switch (socktype) {
+    switch ((bionic::socktype)((intptr_t)socktype & 0b11)) {
         case socktype::STREAM: return SOCK_STREAM;
         case socktype::DGRAM: return SOCK_DGRAM;
         case socktype::RAW: return SOCK_RAW;
@@ -349,6 +349,7 @@ int bionic::to_host_sockopt(int level, int opt) {
         case SOL_SOCKET: return to_host_sockopt_so(opt);
         case IPPROTO_IP: return to_host_sockopt_ip(opt);
         case IPPROTO_IPV6: return to_host_sockopt_ipv6(opt);
+        case IPPROTO_TCP: return opt;
         default: handle_runtime_error("Unknown sockopt level %d", level);
     }
 }
@@ -588,9 +589,14 @@ ssize_t shim::sendmsg(int sockfd, const msghdr *data, int flags) {
 }
 
 ssize_t shim::recv(int sockfd, void *buf, size_t len, int flags) {
-    if (flags != 0)
-        handle_runtime_error("recv with unsupported flags %d", flags);
-    return ::recv(sockfd, buf, len, flags);
+    int nflags = 0;
+    if(flags & 0x4000) {
+        nflags |= MSG_DONTWAIT;
+    }
+    if(flags & 2) {
+        nflags |= MSG_PEEK;
+    }
+    return ::recv(sockfd, buf, len, nflags);
 }
 
 ssize_t shim::recvmsg(int sockfd, struct msghdr *data, int flags) {
