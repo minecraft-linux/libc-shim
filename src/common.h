@@ -26,7 +26,14 @@ namespace shim {
             PRIVATE = 2,
             FIXED = 0x10,
             ANON = 0x20,
-            NORESERVE = 0x4000
+            NORESERVE = 0x4000,
+            GROWSDOWN = 0x0100,
+            DENYWRITE = 0x0800,
+            EXECUTABLE = 0x1000,
+            LOCKED = 0x2000,
+            // UNINITIALIZED = 0x80000000,
+            STACK = 0x20000, // not used in bionic, but used in musl
+            GROWSDOWN_STACK = 0x10000 // not used in bionic, but used in musl
         };
 
         int to_host_mmap_flags(mmap_flags flags);

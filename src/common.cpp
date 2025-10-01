@@ -143,7 +143,8 @@ clockid_t bionic::to_host_clock_type(bionic::clock_type type) {
 
 int bionic::to_host_mmap_flags(bionic::mmap_flags flags) {
     if (((uint32_t) flags & ~((uint32_t) mmap_flags::FIXED | (uint32_t) mmap_flags::ANON |
-        (uint32_t) mmap_flags::NORESERVE | (uint32_t) mmap_flags::PRIVATE | (uint32_t) mmap_flags::SHARED)) != 0)
+        (uint32_t) mmap_flags::NORESERVE | (uint32_t) mmap_flags::PRIVATE | (uint32_t) mmap_flags::SHARED |
+        (uint32_t) mmap_flags::STACK | (uint32_t)mmap_flags::GROWSDOWN )) != 0)
         handle_runtime_error("Used unsupported mmap flags %d", (int)flags);
 
     int ret = 0;
@@ -158,6 +159,14 @@ int bionic::to_host_mmap_flags(bionic::mmap_flags flags) {
 #ifdef MAP_NORESERVE
     if ((uint32_t) flags & (uint32_t) mmap_flags::NORESERVE)
         ret |= MAP_NORESERVE;
+#endif
+#ifdef MAP_GROWSDOWN
+    if ((uint32_t) flags & (uint32_t) mmap_flags::GROWSDOWN)
+        ret |= MAP_GROWSDOWN;
+#endif
+#ifdef MAP_STACK
+    if ((uint32_t) flags & (uint32_t) mmap_flags::STACK)
+        ret |= MAP_STACK;
 #endif
     return ret;
 }
