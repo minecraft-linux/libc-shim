@@ -69,13 +69,19 @@ namespace shim {
         template <typename Ret, typename ...Args>
         struct errno_update_helper<Ret (Args...) noexcept> : errno_update_helper<Ret (Args...)> {
         };
+        template <typename Ret, typename ...Args>
+        struct errno_update_helper<Ret (&)(Args...)> : errno_update_helper<Ret (Args...)> {
+        };
+        template <typename Ret, typename ...Args>
+        struct errno_update_helper<Ret (&)(Args...) noexcept> : errno_update_helper<Ret (Args...)> {
+        };
 
     }
 
 }
 
 #ifdef ERRNO_TRANSLATION
-#define WithErrnoUpdate(ptr) (&shim::detail::errno_update_helper<decltype(ptr)>::wrapper<ptr>)
+#define WithErrnoUpdate(ptr) (&shim::detail::errno_update_helper<typeof(ptr)>::wrapper<ptr>)
 #else
 #define WithErrnoUpdate(ptr) ptr
 #endif
