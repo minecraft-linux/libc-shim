@@ -46,7 +46,7 @@ namespace shim {
                 arg_rewrite<Arg> rewritten;
                 auto value = rewritten.before(arg);
                 auto i = make_destroy_invoker ([&rewritten, &arg] { rewritten.after(arg); });
-                return arg_rewriter_impl<Args...>::template rewrite<Invoke, RArgs..., typeof(value)>(invoke, rargs..., value, args...);
+                return arg_rewriter_impl<Args...>::template rewrite<Invoke, RArgs..., decltype(value)>(invoke, rargs..., value, args...);
             }
         };
         template <>
@@ -95,4 +95,4 @@ namespace shim {
 }
 
 
-#define AutoArgRewritten(ptr) (&shim::detail::arg_rewrite_helper<typeof(ptr)>::rewrite<ptr>)
+#define AutoArgRewritten(ptr) (&shim::detail::arg_rewrite_helper<decltype(ptr)>::rewrite<ptr>)
