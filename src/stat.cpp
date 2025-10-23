@@ -1,6 +1,8 @@
 #include "no-fortify.h"
 #include "stat.h"
 #include "iorewrite.h"
+#include "argrewrite.h"
+#include "errno.h"
 
 using namespace shim;
 
@@ -101,16 +103,16 @@ int shim::utimensat(int dirfd, const char *pathname, const struct timespec times
 
 void shim::add_stat_shimmed_symbols(std::vector<shimmed_symbol> &list) {
     list.insert(list.end(), {
-        {"stat", IOREWRITE1(stat)},
-        {"fstat", fstat},
-        {"stat64", IOREWRITE1(stat)},
-        {"fstat64", fstat},
-        {"chmod", IOREWRITE1(::chmod)},
-        {"fchmod", ::fchmod},
-        {"fchmodat", ::fchmodat},
-        {"umask", ::umask},
-        {"mkdir", IOREWRITE1(::mkdir)},
-        {"utimensat", utimensat},
-        {"lstat", IOREWRITE1(lstat)},
+        {"stat", WithErrnoUpdate(IOREWRITE1(stat))},
+        {"fstat", WithErrnoUpdate(fstat)},
+        {"stat64", WithErrnoUpdate(IOREWRITE1(stat))},
+        {"fstat64", WithErrnoUpdate(fstat)},
+        {"chmod", WithErrnoUpdate(IOREWRITE1(::chmod))},
+        {"fchmod", WithErrnoUpdate(::fchmod)},
+        {"fchmodat", WithErrnoUpdate(::fchmodat)},
+        {"umask", WithErrnoUpdate(::umask)},
+        {"mkdir", WithErrnoUpdate(IOREWRITE1(::mkdir))},
+        {"utimensat", WithErrnoUpdate(utimensat)},
+        {"lstat", WithErrnoUpdate(IOREWRITE1(lstat))},
     });
 }
