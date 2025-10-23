@@ -23,6 +23,25 @@ int bionic::to_host_file_status_flags(bionic::file_status_flags flags) {
     using flag = file_status_flags;
 
     int ret = 0;
+    if ((uint32_t) flags & (uint32_t) flag::RDONLY) ret |= O_RDONLY;
+    if ((uint32_t) flags & (uint32_t) flag::WRONLY) ret |= O_WRONLY;
+    if ((uint32_t) flags & (uint32_t) flag::RDWR) ret |= O_RDWR;
+    if ((uint32_t) flags & (uint32_t) flag::CREAT) ret |= O_CREAT;
+    if ((uint32_t) flags & (uint32_t) flag::EXCL) ret |= O_EXCL;
+    if ((uint32_t) flags & (uint32_t) flag::NOCTTY) ret |= O_NOCTTY;
+    if ((uint32_t) flags & (uint32_t) flag::TRUNC) ret |= O_TRUNC;
+    if ((uint32_t) flags & (uint32_t) flag::APPEND) ret |= O_APPEND;
+    if ((uint32_t) flags & (uint32_t) flag::NONBLOCK) ret |= O_NONBLOCK;
+    if ((uint32_t) flags & (uint32_t) flag::CLOEXEC) ret |= O_CLOEXEC;
+    return ret;
+}
+
+bionic::file_status_flags bionic::from_host_file_status_flags(int flags) {
+    using flag = file_status_flags;
+    if (((uint32_t) flags & (~(uint32_t) flag::KNOWN_FLAGS)) != 0)
+        handle_runtime_error("Unsupported fd flag used %d", flags);
+
+    int ret = 0;
     // flag::([^)]+)\).*\|= ([^;]+);
     // $2) ret |= (int)flag::$1;
     if ((uint32_t) flags & (uint32_t) O_RDONLY) ret |= (int)flag::RDONLY;
@@ -35,25 +54,7 @@ int bionic::to_host_file_status_flags(bionic::file_status_flags flags) {
     if ((uint32_t) flags & (uint32_t) O_APPEND) ret |= (int)flag::APPEND;
     if ((uint32_t) flags & (uint32_t) O_NONBLOCK) ret |= (int)flag::NONBLOCK;
     if ((uint32_t) flags & (uint32_t) O_CLOEXEC) ret |= (int)flag::CLOEXEC;
-    return ret;
-}
 
-bionic::file_status_flags bionic::from_host_file_status_flags(int flags) {
-    using flag = file_status_flags;
-    if (((uint32_t) flags & (~(uint32_t) flag::KNOWN_FLAGS)) != 0)
-        handle_runtime_error("Unsupported fd flag used %d", flags);
-
-    int ret = 0;
-    if ((uint32_t) flags & (uint32_t) flag::RDONLY) ret |= O_RDONLY;
-    if ((uint32_t) flags & (uint32_t) flag::WRONLY) ret |= O_WRONLY;
-    if ((uint32_t) flags & (uint32_t) flag::RDWR) ret |= O_RDWR;
-    if ((uint32_t) flags & (uint32_t) flag::CREAT) ret |= O_CREAT;
-    if ((uint32_t) flags & (uint32_t) flag::EXCL) ret |= O_EXCL;
-    if ((uint32_t) flags & (uint32_t) flag::NOCTTY) ret |= O_NOCTTY;
-    if ((uint32_t) flags & (uint32_t) flag::TRUNC) ret |= O_TRUNC;
-    if ((uint32_t) flags & (uint32_t) flag::APPEND) ret |= O_APPEND;
-    if ((uint32_t) flags & (uint32_t) flag::NONBLOCK) ret |= O_NONBLOCK;
-    if ((uint32_t) flags & (uint32_t) flag::CLOEXEC) ret |= O_CLOEXEC;
     return (bionic::file_status_flags)ret;
 }
 
