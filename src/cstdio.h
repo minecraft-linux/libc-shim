@@ -37,6 +37,9 @@ namespace shim {
         inline auto to_host<FILE>(FILE const *m) { return m->wrapped; }
 
         extern bionic::FILE standard_files[3];
+        extern bionic::FILE* standard_input;
+        extern bionic::FILE* standard_output;
+        extern bionic::FILE* standard_error;
         extern int io_isthreaded;
 
         void init_standard_files();

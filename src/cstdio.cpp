@@ -10,6 +10,9 @@
 using namespace shim;
 
 bionic::FILE bionic::standard_files[3];
+bionic::FILE* bionic::standard_input = &bionic::standard_files[0];
+bionic::FILE* bionic::standard_output = &bionic::standard_files[1];
+bionic::FILE* bionic::standard_error = &bionic::standard_files[2];
 int bionic::io_isthreaded = 1;
 
 void bionic::init_standard_files() {
@@ -214,9 +217,9 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 #endif
         {"perror", ::perror},
 
-        {"stdin", &bionic::standard_files[0]},
-        {"stdout", &bionic::standard_files[1]},
-        {"stderr", &bionic::standard_files[2]},
+        {"stdin", &bionic::standard_input},
+        {"stdout", &bionic::standard_output},
+        {"stderr", &bionic::standard_error},
         {"__register_atfork", (void*)+[]() {
 
         }},
