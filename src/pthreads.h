@@ -12,7 +12,13 @@ namespace shim {
 
     namespace bionic {
 
-        struct pthread_mutex_t {
+#if defined(__LP64__)
+        #define LIBC_SHIM_BYTE_ALIGNMENT 8
+#else
+        #define LIBC_SHIM_BYTE_ALIGNMENT 4
+#endif
+
+        struct alignas(LIBC_SHIM_BYTE_ALIGNMENT) pthread_mutex_t {
 #if defined(__LP64__)
             // EXPECTED: Size: 40 bytes, alignment 8 bytes
             size_t init_value = 0;
@@ -25,6 +31,8 @@ namespace shim {
             ::pthread_mutex_t* wrapped = nullptr;
 #endif
         };
+
+        #undef LIBC_SHIM_BYTE_ALIGNMENT
 
         constexpr size_t mutex_init_value = 0;
         constexpr size_t recursive_mutex_init_value = 0x4000;
