@@ -12,13 +12,21 @@ namespace shim {
 
     namespace bionic {
 
-        // EXPECTED: Size: 40 bytes, alignment 8 bytes
         struct pthread_mutex_t {
+#if defined(__LP64__)
+            // EXPECTED: Size: 40 bytes, alignment 8 bytes
             size_t init_value = 0;
             ::pthread_mutex_t *wrapped = nullptr;
             std::atomic_int64_t is_initialized = 0;
             std::atomic_int64_t check = 0;
             int64_t priv = 0;
+#else
+            // EXPECTED: Size: 24 bytes, alignment 4 bytes
+            size_t init_value = 0;
+            ::pthread_mutex_t *wrapped = nullptr;
+            std::atomic_int32_t is_initialized = 0;
+            std::atomic_int32_t check = 0;
+#endif
         };
 
         constexpr size_t mutex_init_value = 0;
