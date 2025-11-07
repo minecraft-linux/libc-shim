@@ -278,13 +278,17 @@ int shim::pthread_mutex_destroy(pthread_mutex_t *mutex) {
 
 int shim::pthread_mutex_lock(pthread_mutex_t *mutex) {
     auto host_mutex = bionic::to_host(mutex);
+#if defined(__LP64__)
     auto check_value = reinterpret_cast<::pthread_mutex_t *>(mutex->check.load());
+
     int ret = 0;
 
     if (host_mutex == check_value) [[likely]] {
         ret = ::pthread_mutex_lock(host_mutex);
     }
-
+#else
+    int ret = ::pthread_mutex_lock(mutex->wrapped);
+#endif
     return bionic::translate_errno_from_host(ret);
 }
 

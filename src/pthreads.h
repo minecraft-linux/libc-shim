@@ -21,11 +21,8 @@ namespace shim {
             std::atomic_int64_t check = 0;
             int64_t priv = 0;
 #else
-            // EXPECTED: Size: 24 bytes, alignment 4 bytes
-            size_t init_value = 0;
-            ::pthread_mutex_t *wrapped = nullptr;
-            std::atomic_int32_t is_initialized = 0;
-            std::atomic_int32_t check = 0;
+            // EXPECTED: Size: 4 bytes, alignment 4 bytes
+            ::pthread_mutex_t* wrapped = nullptr;
 #endif
         };
 
@@ -34,18 +31,27 @@ namespace shim {
         constexpr size_t errorcheck_mutex_init_value = 0x8000;
 
         inline bool is_mutex_initialized(pthread_mutex_t const *m) {
+#if defined(__LP64__)
             return m->is_initialized.load();
+#else
+            return ((size_t) m->wrapped != mutex_init_value &&
+                    (size_t) m->wrapped != recursive_mutex_init_value &&
+                    (size_t) m->wrapped != errorcheck_mutex_init_value);
+#endif
         }
 
         inline void mark_mutex_initialized(pthread_mutex_t *m) {
+#if defined(__LP64__)
             m->check.store(reinterpret_cast<uint64_t>(m->wrapped));
-
             m->is_initialized.store(1);
+#endif
         }
 
         inline void mark_mutex_destroyed(pthread_mutex_t *m) {
+#if defined(__LP64__)
             // TODO: have a separate state and detect it
             m->is_initialized.store(0);
+#endif
         }
 
         void mutex_static_initializer(pthread_mutex_t *mutex);
