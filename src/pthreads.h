@@ -11,14 +11,26 @@
 namespace shim {
 
     namespace bionic {
+        enum class MutexState : int64_t {
+            Uninitialized = 0,
+            Initialized = 1,
+            Destroyed = 2,
+        };
 
         struct pthread_mutex_t {
 #if defined(__LP64__)
-            size_t init_value;
-            ::pthread_mutex_t *wrapped;
-            int64_t priv[2];
+            // EXPECTED: Size: 32 bytes, alignment 8 or 16 bytes
+            // NOTE: On OSX and likely other ARM platforms,
+            // alignment will make this structure larger than it is,
+            // so it should be at least a little below spec.
+            // (Bionic is normally 40 bytes with 8 byte alignment)
+            size_t init_value = 0;
+            ::pthread_mutex_t *wrapped = nullptr;
+            std::atomic<MutexState> state{MutexState::Uninitialized};
+            char __private[4];
 #else
-            ::pthread_mutex_t *wrapped;
+            // EXPECTED: Size: 4 bytes, alignment 4 bytes
+            ::pthread_mutex_t* wrapped = nullptr;
 #endif
         };
 
@@ -28,7 +40,7 @@ namespace shim {
 
         inline bool is_mutex_initialized(pthread_mutex_t const *m) {
 #if defined(__LP64__)
-            return (m->wrapped != nullptr);
+            return m->state.load(std::memory_order_acquire) == MutexState::Initialized;
 #else
             return ((size_t) m->wrapped != mutex_init_value &&
                     (size_t) m->wrapped != recursive_mutex_init_value &&
@@ -36,7 +48,19 @@ namespace shim {
 #endif
         }
 
-        void mutex_static_initializer(pthread_mutex_t *mutex, pthread_mutex_t &old);
+        inline __attribute__((always_inline)) void mark_mutex_initialized(pthread_mutex_t *m) {
+#if defined(__LP64__)
+            m->state.store(MutexState::Initialized, std::memory_order_release);
+#endif
+        }
+
+        inline void mark_mutex_destroyed(pthread_mutex_t *m) {
+#if defined(__LP64__)
+            m->state.store(MutexState::Destroyed, std::memory_order_release);
+#endif
+        }
+
+        void mutex_static_initializer(pthread_mutex_t *mutex);
 
         struct pthread_cond_t {
             ::pthread_cond_t *wrapped;
@@ -46,12 +70,10 @@ namespace shim {
         };
 
         inline bool is_cond_initialized(pthread_cond_t const *m) {
-            auto wrapped_ptr = reinterpret_cast<const std::atomic<pthread_cond_t> *>(m);
-            auto val = wrapped_ptr->load(std::memory_order_relaxed);
-            return val.wrapped != nullptr;
+            return m->wrapped != nullptr;
         }
 
-        void cond_static_initializer(pthread_cond_t *cond, pthread_cond_t &old);
+        void cond_static_initializer(pthread_cond_t *cond);
 
         struct pthread_rwlock_t {
             ::pthread_rwlock_t *wrapped;
@@ -64,25 +86,25 @@ namespace shim {
             return m->wrapped != nullptr;
         }
 
-        void rwlock_static_initializer(pthread_rwlock_t *rwlock, pthread_rwlock_t &old);
+        void rwlock_static_initializer(pthread_rwlock_t *rwlock);
 
         template <>
-        inline auto to_host<pthread_mutex_t>(pthread_mutex_t const *o) {
-            auto m = detail::load_wrapper(o);
-            mutex_static_initializer(const_cast<pthread_mutex_t *>(o), m.value);
-            return m.value.wrapped;
+        inline auto to_host<pthread_mutex_t>(pthread_mutex_t const *m) {
+            if (!is_mutex_initialized(m))
+                mutex_static_initializer(const_cast<pthread_mutex_t *>(m));
+            return m->wrapped;
         }
         template <>
-        inline auto to_host<pthread_cond_t>(pthread_cond_t const *o) {
-            auto m = detail::load_wrapper(o);
-            cond_static_initializer(const_cast<pthread_cond_t *>(o), m.value);
-            return m.value.wrapped;
+        inline auto to_host<pthread_cond_t>(pthread_cond_t const *m) {
+            if (m->wrapped == nullptr)
+                cond_static_initializer(const_cast<pthread_cond_t *>(m));
+            return m->wrapped;
         }
         template <>
-        inline auto to_host<pthread_rwlock_t>(pthread_rwlock_t const *o) {
-            auto m = detail::load_wrapper(o);
-            rwlock_static_initializer(const_cast<pthread_rwlock_t *>(o), m.value);
-            return m.value.wrapped;
+        inline auto to_host<pthread_rwlock_t>(pthread_rwlock_t const *m) {
+            if (m->wrapped == nullptr)
+                rwlock_static_initializer(const_cast<pthread_rwlock_t *>(m));
+            return m->wrapped;
         }
 
         enum class mutex_type : uint32_t {
@@ -207,6 +229,7 @@ namespace shim {
 
     int pthread_setname_np(pthread_t thread, const char* name);
 
+    int pthread_mutex_init_internal(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr);
     int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr);
     int pthread_mutex_destroy(pthread_mutex_t *mutex);
     int pthread_mutex_lock(pthread_mutex_t *mutex);
@@ -224,6 +247,7 @@ namespace shim {
     int pthread_cond_broadcast(pthread_cond_t *cond);
     int pthread_cond_signal(pthread_cond_t *cond);
     int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, const struct timespec *ts);
+    int pthread_cond_timedwait_monotonic_np(pthread_cond_t *cond, pthread_mutex_t *mutex, const struct timespec *ts);
 
     int pthread_condattr_init(pthread_condattr_t *attr);
     int pthread_condattr_destroy(pthread_condattr_t *attr);
