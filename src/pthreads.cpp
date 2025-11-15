@@ -285,6 +285,12 @@ int shim::pthread_mutex_destroy(pthread_mutex_t *mutex) {
 }
 
 int shim::pthread_mutex_lock(pthread_mutex_t *mutex) {
+#ifndef __LP64__
+    if (mutex == nullptr) {
+        return bionic::translate_errno_from_host(EINVAL);
+    }
+#endif
+
 #ifdef __LP64__
     bionic::MutexState current_state = mutex->state.load(std::memory_order_acquire);
 
