@@ -268,6 +268,14 @@ int shim::pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *
     return pthread_mutex_init_internal(mutex, attr);
 }
 
+int handle_using_destroyed_mutex(const char* type) {
+    // Using an uninitialized mutex is non-crashing on NDK < 28
+    // MCPE targets NDK 28 exactly, so this is valid.
+    handle_runtime_error("Attempt to %s a destroyed mutex.", type);
+    // In other cases, return EBUSY.
+    return bionic::translate_errno_from_host(EBUSY);
+}
+
 int shim::pthread_mutex_destroy(pthread_mutex_t *mutex) {
     if (!bionic::is_mutex_initialized(mutex))
         return 0;
@@ -282,21 +290,31 @@ int shim::pthread_mutex_lock(pthread_mutex_t *mutex) {
 
     if (current_state == bionic::MutexState::Uninitialized) {
         bionic::mutex_static_initializer(mutex);
-    } else if (current_state == bionic::MutexState::Destroyed) {
-        handle_runtime_error("Attempt to lock a mutex that has been destroyed.");
-        return EINVAL;
+    } else if (current_state == bionic::MutexState::Destroyed) [[unlikely]] {
+        return handle_using_destroyed_mutex("lock");
     }
 #endif
 
     auto host_mutex = bionic::to_host(mutex);
-    int ret = 0;
-
-    ret = ::pthread_mutex_lock(host_mutex);
+    int ret = ::pthread_mutex_lock(host_mutex);
 
     return bionic::translate_errno_from_host(ret);
 }
 
 int shim::pthread_mutex_unlock(pthread_mutex_t *mutex) {
+#ifndef __LP64__
+    if (mutex == nullptr) {
+        return bionic::translate_errno_from_host(EINVAL);
+    }
+#endif
+
+#ifdef __LP64__
+    bionic::MutexState current_state = mutex->state.load(std::memory_order_acquire);
+    if (current_state == bionic::MutexState::Destroyed) [[unlikely]] {
+        return handle_using_destroyed_mutex("unlock");
+    }
+#endif
+
     int ret = ::pthread_mutex_unlock(bionic::to_host(mutex));
     return bionic::translate_errno_from_host(ret);
 }
@@ -319,7 +337,7 @@ int shim::pthread_mutexattr_destroy(pthread_mutexattr_t *attr) {
 
 int shim::pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type) {
     if (type < 0 || type > (int) bionic::mutex_type::END)
-        return EINVAL;
+        return bionic::translate_errno_from_host(EINVAL);
     attr->type = (bionic::mutex_type) type;
     return 0;
 }
