@@ -277,18 +277,22 @@ int shim::pthread_mutex_destroy(pthread_mutex_t *mutex) {
 }
 
 int shim::pthread_mutex_lock(pthread_mutex_t *mutex) {
-    auto host_mutex = bionic::to_host(mutex);
-#if defined(__LP64__)
-    auto check_value = reinterpret_cast<::pthread_mutex_t *>(mutex->check.load());
+#ifdef __LP64__
+    bionic::MutexState current_state = mutex->state.load(std::memory_order_acquire);
 
+    if (current_state == bionic::MutexState::Uninitialized) {
+        bionic::mutex_static_initializer(mutex);
+    } else if (current_state == bionic::MutexState::Destroyed) {
+        handle_runtime_error("Attempt to lock a mutex that has been destroyed.");
+        return EINVAL;
+    }
+#endif
+
+    auto host_mutex = bionic::to_host(mutex);
     int ret = 0;
 
-    if (host_mutex == check_value) [[likely]] {
-        ret = ::pthread_mutex_lock(host_mutex);
-    }
-#else
-    int ret = ::pthread_mutex_lock(mutex->wrapped);
-#endif
+    ret = ::pthread_mutex_lock(host_mutex);
+
     return bionic::translate_errno_from_host(ret);
 }
 

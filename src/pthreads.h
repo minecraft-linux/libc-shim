@@ -11,28 +11,28 @@
 namespace shim {
 
     namespace bionic {
+        enum class MutexState : int64_t {
+            Uninitialized = 0,
+            Initialized = 1,
+            Destroyed = 2,
+        };
 
+        struct pthread_mutex_t {
 #if defined(__LP64__)
-        #define LIBC_SHIM_BYTE_ALIGNMENT 8
-#else
-        #define LIBC_SHIM_BYTE_ALIGNMENT 4
-#endif
-
-        struct alignas(LIBC_SHIM_BYTE_ALIGNMENT) pthread_mutex_t {
-#if defined(__LP64__)
-            // EXPECTED: Size: 40 bytes, alignment 8 bytes
+            // EXPECTED: Size: 32 bytes, alignment 8 or 16 bytes
+            // NOTE: On OSX and likely other ARM platforms,
+            // alignment will make this structure larger than it is,
+            // so it should be at least a little below spec.
+            // (Bionic is normally 40 bytes with 8 byte alignment)
             size_t init_value = 0;
             ::pthread_mutex_t *wrapped = nullptr;
-            std::atomic_int64_t is_initialized = 0;
-            std::atomic_int64_t check = 0;
-            int64_t priv = 0;
+            std::atomic<MutexState> state{MutexState::Uninitialized};
+            char __private[4];
 #else
             // EXPECTED: Size: 4 bytes, alignment 4 bytes
             ::pthread_mutex_t* wrapped = nullptr;
 #endif
         };
-
-        #undef LIBC_SHIM_BYTE_ALIGNMENT
 
         constexpr size_t mutex_init_value = 0;
         constexpr size_t recursive_mutex_init_value = 0x4000;
@@ -40,7 +40,7 @@ namespace shim {
 
         inline bool is_mutex_initialized(pthread_mutex_t const *m) {
 #if defined(__LP64__)
-            return m->is_initialized.load();
+            return m->state.load(std::memory_order_acquire) == MutexState::Initialized;
 #else
             return ((size_t) m->wrapped != mutex_init_value &&
                     (size_t) m->wrapped != recursive_mutex_init_value &&
@@ -48,17 +48,15 @@ namespace shim {
 #endif
         }
 
-        inline void mark_mutex_initialized(pthread_mutex_t *m) {
+        inline __attribute__((always_inline)) void mark_mutex_initialized(pthread_mutex_t *m) {
 #if defined(__LP64__)
-            m->check.store(reinterpret_cast<uint64_t>(m->wrapped));
-            m->is_initialized.store(1);
+            m->state.store(MutexState::Initialized, std::memory_order_release);
 #endif
         }
 
         inline void mark_mutex_destroyed(pthread_mutex_t *m) {
 #if defined(__LP64__)
-            // TODO: have a separate state and detect it
-            m->is_initialized.store(0);
+            m->state.store(MutexState::Destroyed, std::memory_order_release);
 #endif
         }
 
