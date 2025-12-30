@@ -128,6 +128,8 @@ namespace shim {
 
     char* __strncpy_chk2(char* dst, const char* src, size_t n, size_t dst_len, size_t src_len);
 
+    size_t __strlcpy_chk(char *dst, const char *src, size_t size, size_t max_len);
+
     size_t ctype_get_mb_cur_max();
 
     int gettimeofday(bionic::timeval *tv, void *p);
