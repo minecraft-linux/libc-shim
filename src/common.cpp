@@ -356,6 +356,15 @@ char* shim::__strncpy_chk2(char* dst, const char* src, size_t n, size_t dst_len,
     return strncpy(dst, src, n);
 }
 
+size_t shim::__strlcpy_chk(char *dst, const char *src, size_t size,
+                           size_t max_len) {
+  if (size > max_len) {
+    fprintf(stderr, "detected copy past buffer size");
+    abort();
+  }
+  return bionic::strlcpy(dst, src, size);
+}
+
 int shim::sendfile(int src, int dst, bionic::off_t *offset, size_t count) {
     off_t c = offset ? (off_t)offset : 0;
 #ifdef __APPLE__
@@ -896,6 +905,7 @@ void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"__strncat_chk", __strncat_chk},
         {"__strncpy_chk", __strncpy_chk},
         {"__strncpy_chk2", __strncpy_chk2},
+		{"__strlcpy_chk", __strlcpy_chk},
         {"strlcpy", bionic::strlcpy},
         {"strcspn", ::strcspn},
         {"strpbrk", (char *(*)(char *, const char *)) ::strpbrk},
