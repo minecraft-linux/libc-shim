@@ -148,6 +148,7 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"fopen", IOREWRITE1(fopen)},
         {"fdopen", fdopen},
         {"freopen", IOREWRITE1(freopen)},
+        {"freopen64", IOREWRITE1(freopen)}, // same signature for us
         {"tmpfile", tmpfile},
         {"popen", popen},
         {"fclose", fclose},
