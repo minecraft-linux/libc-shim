@@ -12,6 +12,8 @@
 
 using namespace shim;
 
+static std::mutex global_shim_init_mutex;
+
 thread_local bionic::pthread_cleanup_holder bionic::cleanup;
 
 bionic::pthread_cleanup_holder::~pthread_cleanup_holder() {
@@ -22,7 +24,9 @@ bionic::pthread_cleanup_holder::~pthread_cleanup_holder() {
     }
 }
 
-void bionic::mutex_static_initializer(shim::pthread_mutex_t *mutex, shim::pthread_mutex_t &old) {
+void bionic::mutex_static_initializer(shim::pthread_mutex_t *mutex) {
+    std::lock_guard lk(global_shim_init_mutex);
+
     if (is_mutex_initialized(mutex))
         return;
 
@@ -31,7 +35,6 @@ void bionic::mutex_static_initializer(shim::pthread_mutex_t *mutex, shim::pthrea
 #else
     auto init_value = (size_t) mutex->wrapped;
 #endif
-    shim::pthread_mutex_t n = old;
 
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
@@ -39,48 +42,21 @@ void bionic::mutex_static_initializer(shim::pthread_mutex_t *mutex, shim::pthrea
         pthread_mutexattr_settype(&attr, (int) mutex_type::RECURSIVE);
     else if (init_value == errorcheck_mutex_init_value)
         pthread_mutexattr_settype(&attr, (int) mutex_type::ERRORCHECK);
-    if (pthread_mutex_init(&n, &attr) != 0)
+    if (pthread_mutex_init_internal(mutex, &attr) != 0)
         handle_runtime_error("Failed to init mutex");
     pthread_mutexattr_destroy(&attr);
-
-    if(!detail::update_wrapper(mutex, old, n)) {
-        // Concurrent creation, we need to destroy the new one
-        detail::destroy_c_wrapped<pthread_mutex_t>(&n, &::pthread_mutex_destroy);
-    } else {
-        old = n;
-    }
 }
 
-void bionic::cond_static_initializer(shim::pthread_cond_t *cond, shim::pthread_cond_t &old) {
-    if (is_cond_initialized(&old))
-        return;
-    shim::pthread_cond_t n = old;
-    if(pthread_cond_init(&n, nullptr) == 0) {
-        if(!detail::update_wrapper(cond, old, n)) {
-            // Concurrent creation, we need to destroy the new one
-            detail::destroy_c_wrapped<pthread_cond_t>(&n, &::pthread_cond_destroy);
-        } else {
-            old = n;
-        }
-    } else {
-        handle_runtime_error("Failed to init cond");
-    }
+void bionic::cond_static_initializer(shim::pthread_cond_t *cond) {
+    std::lock_guard lk(global_shim_init_mutex);
+    if (!is_cond_initialized(cond))
+        pthread_cond_init(cond, nullptr);
 }
 
-void bionic::rwlock_static_initializer(shim::pthread_rwlock_t *rwlock, shim::pthread_rwlock_t &old) {
-    if (is_rwlock_initialized(&old))
-        return;
-    shim::pthread_rwlock_t n = old;
-    if(pthread_rwlock_init(&n, nullptr) == 0) {
-        if(!detail::update_wrapper(rwlock, old, n)) {
-            // Concurrent creation, we need to destroy the new one
-            detail::destroy_c_wrapped<pthread_rwlock_t>(&n, &::pthread_rwlock_destroy);
-        } else {
-            old = n;
-        }
-    } else {
-        handle_runtime_error("Failed to init rwlock");
-    }
+void bionic::rwlock_static_initializer(shim::pthread_rwlock_t *rwlock) {
+    std::lock_guard lk(global_shim_init_mutex);
+    if (!is_rwlock_initialized(rwlock))
+        pthread_rwlock_init(rwlock, nullptr);
 }
 
 int bionic::to_host_mutex_type(bionic::mutex_type type) {
@@ -218,11 +194,11 @@ int shim::pthread_getattr_np(pthread_t th, pthread_attr_t* attr) {
 }
 
 int shim::pthread_attr_init(pthread_attr_t *attr) {
-    *attr = pthread_attr_t{false, false, 0, nullptr, 0, 0, bionic::sched_policy::OTHER, 0};
+    *attr = pthread_attr_t{false, false, 0, nullptr, 0, 0, bionic::sched_policy::OTHER, 0, {0,0}};
     return 0;
 }
 
-int shim::pthread_attr_destroy(shim::pthread_attr_t *attr) {
+int shim::pthread_attr_destroy(shim::pthread_attr_t *) {
     return 0;
 }
 
@@ -249,7 +225,7 @@ int shim::pthread_attr_getschedparam(shim::pthread_attr_t *attr, shim::bionic::s
 }
 
 int shim::pthread_attr_setstacksize(shim::pthread_attr_t *attr, size_t value) {
-    if (value < PTHREAD_STACK_MIN)
+    if ((long)value < PTHREAD_STACK_MIN)
         return 0;
     attr->stack_size = value;
     return 0;
@@ -278,26 +254,73 @@ int shim::pthread_setname_np(pthread_t thread, const char* name) {
 #endif
 }
 
-int shim::pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr) {
+int shim::pthread_mutex_init_internal(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr) {
     host_mutexattr hattr (attr);
     int ret = detail::make_c_wrapped<pthread_mutex_t, const ::pthread_mutexattr_t *>(mutex, &::pthread_mutex_init, &hattr.attr);
+    if (ret == 0) {
+        mark_mutex_initialized(mutex);
+    }
     return bionic::translate_errno_from_host(ret);
 }
 
-int shim::pthread_mutex_destroy(pthread_mutex_t *wrapper) {
-    auto mutex = detail::load_wrapper(wrapper);
+int shim::pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr) {
+    std::lock_guard lk(global_shim_init_mutex);
+    return pthread_mutex_init_internal(mutex, attr);
+}
+
+int handle_using_destroyed_mutex(const char* type) {
+    // Using an uninitialized mutex is non-crashing on NDK < 28
+    // MCPE targets NDK 28 exactly, so this is valid.
+    handle_runtime_error("Attempt to %s a destroyed mutex.", type);
+    // In other cases, return EBUSY.
+    return bionic::translate_errno_from_host(EBUSY);
+}
+
+int shim::pthread_mutex_destroy(pthread_mutex_t *mutex) {
     if (!bionic::is_mutex_initialized(mutex))
         return 0;
-    int ret = detail::destroy_c_wrapped<pthread_mutex_t>(&mutex.value, &::pthread_mutex_destroy);
+    int ret = detail::destroy_c_wrapped<pthread_mutex_t>(mutex, &::pthread_mutex_destroy);
+    mark_mutex_destroyed(mutex);
     return bionic::translate_errno_from_host(ret);
 }
 
 int shim::pthread_mutex_lock(pthread_mutex_t *mutex) {
-    int ret = ::pthread_mutex_lock(bionic::to_host(mutex));
+#ifndef __LP64__
+    if (mutex == nullptr) {
+        return bionic::translate_errno_from_host(EINVAL);
+    }
+#endif
+
+#ifdef __LP64__
+    bionic::MutexState current_state = mutex->state.load(std::memory_order_acquire);
+
+    if (current_state == bionic::MutexState::Uninitialized) {
+        bionic::mutex_static_initializer(mutex);
+    } else if (current_state == bionic::MutexState::Destroyed) [[unlikely]] {
+        return handle_using_destroyed_mutex("lock");
+    }
+#endif
+
+    auto host_mutex = bionic::to_host(mutex);
+    int ret = ::pthread_mutex_lock(host_mutex);
+
     return bionic::translate_errno_from_host(ret);
 }
 
 int shim::pthread_mutex_unlock(pthread_mutex_t *mutex) {
+#ifndef __LP64__
+    if (mutex == nullptr) {
+        return bionic::translate_errno_from_host(EINVAL);
+    }
+#endif
+
+#ifdef __LP64__
+    bionic::MutexState current_state = mutex->state.load(std::memory_order_acquire);
+    if (current_state == bionic::MutexState::Destroyed) [[unlikely]] {
+        return handle_using_destroyed_mutex("unlock");
+    }
+#endif
+
     int ret = ::pthread_mutex_unlock(bionic::to_host(mutex));
     return bionic::translate_errno_from_host(ret);
 }
@@ -313,12 +336,14 @@ int shim::pthread_mutexattr_init(pthread_mutexattr_t *attr) {
 }
 
 int shim::pthread_mutexattr_destroy(pthread_mutexattr_t *attr) {
+    // TODO: have a unique state and detect usage of destroyed mutex attrs
+    *attr = pthread_mutexattr_t{bionic::mutex_type::NORMAL};
     return 0;
 }
 
 int shim::pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type) {
     if (type < 0 || type > (int) bionic::mutex_type::END)
-        return EINVAL;
+        return bionic::translate_errno_from_host(EINVAL);
     attr->type = (bionic::mutex_type) type;
     return 0;
 }
@@ -360,12 +385,25 @@ int shim::pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, c
     return bionic::translate_errno_from_host(ret);
 }
 
+int shim::pthread_cond_timedwait_monotonic_np(pthread_cond_t *cond, pthread_mutex_t *mutex, const struct timespec *ts) {
+    int ret;
+    #if __linux__
+    ret = ::pthread_cond_clockwait(bionic::to_host(cond), bionic::to_host(mutex), CLOCK_MONOTONIC, ts);
+    #else
+    ret = shim::pthread_cond_timedwait(cond, mutex, ts);
+    #endif
+
+    return bionic::translate_errno_from_host(ret);
+}
+
 int shim::pthread_condattr_init(pthread_condattr_t *attr) {
     *attr = {false, bionic::clock_type::MONOTONIC};
     return 0;
 }
 
 int shim::pthread_condattr_destroy(pthread_condattr_t *attr) {
+    // TODO: have a unique state and detect usage of destroyed condattr
+    *attr = {false, bionic::clock_type::MONOTONIC};
     return 0;
 }
 
@@ -494,8 +532,7 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
         {"pthread_cond_broadcast", pthread_cond_broadcast},
         {"pthread_cond_signal", pthread_cond_signal},
         {"pthread_cond_timedwait", pthread_cond_timedwait},
-        // TODO figure out how to implement this correctly, this will use the default clock of the cond variable
-        {"pthread_cond_timedwait_monotonic_np", pthread_cond_timedwait},
+        {"pthread_cond_timedwait_monotonic_np", pthread_cond_timedwait_monotonic_np},
         {"pthread_condattr_init", pthread_condattr_init},
         {"pthread_condattr_destroy", pthread_condattr_destroy},
         {"pthread_condattr_setclock", pthread_condattr_setclock},
