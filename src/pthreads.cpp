@@ -23,13 +23,13 @@ bionic::pthread_cleanup_holder::~pthread_cleanup_holder() {
 }
 
 void bionic::mutex_static_initializer(shim::pthread_mutex_t *mutex, shim::pthread_mutex_t &old) {
-    if (is_mutex_initialized(mutex))
+    if (is_mutex_initialized(&old))
         return;
 
 #ifdef __LP64__
-    auto init_value = mutex->init_value;
+    auto init_value = old.init_value;
 #else
-    auto init_value = (size_t) mutex->wrapped;
+    auto init_value = (size_t) old.wrapped;
 #endif
     shim::pthread_mutex_t n = old;
 
@@ -46,6 +46,9 @@ void bionic::mutex_static_initializer(shim::pthread_mutex_t *mutex, shim::pthrea
     if(!detail::update_wrapper(mutex, old, n)) {
         // Concurrent creation, we need to destroy the new one
         detail::destroy_c_wrapped<pthread_mutex_t>(&n, &::pthread_mutex_destroy);
+        if(!is_mutex_initialized(&old)) {
+            handle_runtime_error("Failed to init mutex by other thread");
+        }
     } else {
         old = n;
     }
@@ -59,6 +62,9 @@ void bionic::cond_static_initializer(shim::pthread_cond_t *cond, shim::pthread_c
         if(!detail::update_wrapper(cond, old, n)) {
             // Concurrent creation, we need to destroy the new one
             detail::destroy_c_wrapped<pthread_cond_t>(&n, &::pthread_cond_destroy);
+            if (is_cond_initialized(&old)) {
+                handle_runtime_error("Failed to init cond by other thread");
+            }
         } else {
             old = n;
         }
@@ -75,6 +81,9 @@ void bionic::rwlock_static_initializer(shim::pthread_rwlock_t *rwlock, shim::pth
         if(!detail::update_wrapper(rwlock, old, n)) {
             // Concurrent creation, we need to destroy the new one
             detail::destroy_c_wrapped<pthread_rwlock_t>(&n, &::pthread_rwlock_destroy);
+            if (is_rwlock_initialized(&old)) {
+                handle_runtime_error("Failed to init rwlock by other thread");
+            }
         } else {
             old = n;
         }
