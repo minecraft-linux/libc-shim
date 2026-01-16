@@ -62,7 +62,7 @@ void bionic::cond_static_initializer(shim::pthread_cond_t *cond, shim::pthread_c
         if(!detail::update_wrapper(cond, old, n)) {
             // Concurrent creation, we need to destroy the new one
             detail::destroy_c_wrapped<pthread_cond_t>(&n, &::pthread_cond_destroy);
-            if (is_cond_initialized(&old)) {
+            if (!is_cond_initialized(&old)) {
                 handle_runtime_error("Failed to init cond by other thread");
             }
         } else {
@@ -81,7 +81,7 @@ void bionic::rwlock_static_initializer(shim::pthread_rwlock_t *rwlock, shim::pth
         if(!detail::update_wrapper(rwlock, old, n)) {
             // Concurrent creation, we need to destroy the new one
             detail::destroy_c_wrapped<pthread_rwlock_t>(&n, &::pthread_rwlock_destroy);
-            if (is_rwlock_initialized(&old)) {
+            if (!is_rwlock_initialized(&old)) {
                 handle_runtime_error("Failed to init rwlock by other thread");
             }
         } else {
