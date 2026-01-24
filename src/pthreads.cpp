@@ -25,7 +25,7 @@ bionic::pthread_cleanup_holder::~pthread_cleanup_holder() {
 ::pthread_mutex_t *shim::bionic::mutex_static_initializer(int32_t init_value, shim::bionic::atomic_uintptr_t *p, uintptr_t payload) {
     // assert((uintptr_t)p % 8 == 0);
 
-    ::pthread_mutex_t *mutex_ptr = (::pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
+    ::pthread_mutex_t *mutex_ptr = (::pthread_mutex_t *)malloc(sizeof(::pthread_mutex_t));
 
     ::pthread_mutexattr_t attr;
     ::pthread_mutexattr_init(&attr);
@@ -48,7 +48,7 @@ bionic::pthread_cleanup_holder::~pthread_cleanup_holder() {
     if(!is_mutex_initialized(payload)) [[unlikely]] {
         handle_runtime_error("Failed to init mutex by other thread");
     }
-    return (::pthread_mutex_t*)payload;    
+    return (::pthread_mutex_t*)payload;
 }
 
 void bionic::cond_static_initializer(shim::pthread_cond_t *cond, shim::pthread_cond_t &old) {
