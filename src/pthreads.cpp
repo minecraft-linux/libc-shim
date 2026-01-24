@@ -71,23 +71,24 @@ bionic::pthread_cleanup_holder::~pthread_cleanup_holder() {
     return (::pthread_cond_t*)payload;
 }
 
-void bionic::rwlock_static_initializer(shim::pthread_rwlock_t *rwlock, shim::pthread_rwlock_t &old) {
-    if (is_rwlock_initialized(&old))
-        return;
-    shim::pthread_rwlock_t n = old;
-    if(pthread_rwlock_init(&n, nullptr) == 0) {
-        if(!detail::update_wrapper(rwlock, old, n)) {
-            // Concurrent creation, we need to destroy the new one
-            detail::destroy_c_wrapped<pthread_rwlock_t>(&n, &::pthread_rwlock_destroy);
-            if (!is_rwlock_initialized(&old)) {
-                handle_runtime_error("Failed to init rwlock by other thread");
-            }
-        } else {
-            old = n;
-        }
-    } else {
+::pthread_rwlock_t *bionic::rwlock_static_initializer(shim::bionic::atomic_uintptr_t *p, uintptr_t payload) {
+    // assert((uintptr_t)p % 8 == 0);
+
+    ::pthread_rwlock_t *rwlock_ptr = (::pthread_rwlock_t *)malloc(sizeof(::pthread_rwlock_t));
+    
+    if (::pthread_rwlock_init(rwlock_ptr, nullptr) != 0)
         handle_runtime_error("Failed to init rwlock");
+    
+    if(atomic_compare_exchange_strong_explicit(p, &payload, (uintptr_t)rwlock_ptr,
+       std::memory_order_release, std::memory_order_acquire)) [[likely]] {
+        return rwlock_ptr;
     }
+    // Concurrent creation, we need to destroy the new one
+    free(rwlock_ptr);
+    if(!is_rwlock_initialized(payload)) [[unlikely]] {
+        handle_runtime_error("Failed to init rwlock by other thread");
+    }
+    return (::pthread_rwlock_t*)payload;
 }
 
 int bionic::to_host_mutex_type(bionic::mutex_type type) {
@@ -417,14 +418,26 @@ int shim::pthread_condattr_getclock(const pthread_condattr_t *attr, int *clock) 
 int shim::pthread_rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr) {
     if (attr != nullptr)
         handle_runtime_error("non-NULL rwlock attr is currently not supported");
-    int ret = detail::make_c_wrapped<pthread_rwlock_t, const ::pthread_rwlockattr_t *>(rwlock, &::pthread_rwlock_init, nullptr);
-    return bionic::translate_errno_from_host(ret);
+    ::pthread_rwlock_t *rwlock_ptr = (::pthread_rwlock_t *)malloc(sizeof(::pthread_rwlock_t));
+
+    int ret = ::pthread_rwlock_init(rwlock_ptr, nullptr);
+    if (ret != 0) {
+        free(rwlock_ptr);
+        return bionic::translate_errno_from_host(ret);
+    }
+
+    atomic_store(bionic::get_payload_pointer(rwlock), (uintptr_t)rwlock_ptr);
+    return bionic::translate_errno_from_host(0);
 }
 
 int shim::pthread_rwlock_destroy(pthread_rwlock_t *rwlock) {
-    if (!bionic::is_rwlock_initialized(rwlock))
+    auto p = bionic::get_payload_pointer(rwlock);
+    uintptr_t v = atomic_load(p);
+    if (!bionic::is_rwlock_initialized(v))
         return 0;
-    int ret = detail::destroy_c_wrapped<pthread_rwlock_t>(rwlock, &::pthread_rwlock_destroy);
+    auto ret = ::pthread_rwlock_destroy((::pthread_rwlock_t *)v);
+    atomic_store(p, 0);
+    free((void *)v);
     return bionic::translate_errno_from_host(ret);
 }
 

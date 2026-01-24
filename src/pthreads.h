@@ -71,18 +71,18 @@ namespace shim {
         ::pthread_cond_t * cond_static_initializer(bionic::atomic_uintptr_t *p, uintptr_t payload);
 
         struct pthread_rwlock_t {
-            ::pthread_rwlock_t *wrapped;
 #if defined(__LP64__)
-            int64_t priv[6];
+            int32_t data[14];
+#else
+            int32_t data[1];
 #endif
         };
 
-        inline bool is_rwlock_initialized(pthread_rwlock_t const *m) {
-            return m->wrapped != nullptr;
+        inline bool is_rwlock_initialized(uintptr_t v) {
+            return v != 0;
         }
 
-        void rwlock_static_initializer(pthread_rwlock_t *rwlock, pthread_rwlock_t &old);
-
+        ::pthread_rwlock_t * rwlock_static_initializer(bionic::atomic_uintptr_t *p, uintptr_t payload);
         template <>
         inline auto to_host<pthread_mutex_t>(pthread_mutex_t const *o) {
             atomic_uintptr_t *payload_ptr = get_payload_pointer(const_cast<pthread_mutex_t *>(o));
@@ -103,9 +103,12 @@ namespace shim {
         }
         template <>
         inline auto to_host<pthread_rwlock_t>(pthread_rwlock_t const *o) {
-            auto m = detail::load_wrapper(o);
-            rwlock_static_initializer(const_cast<pthread_rwlock_t *>(o), m.value);
-            return m.value.wrapped;
+            atomic_uintptr_t *payload_ptr = get_payload_pointer(const_cast<pthread_rwlock_t *>(o));
+            uintptr_t payload = atomic_load_explicit(payload_ptr, std::memory_order_relaxed);
+            if(is_rwlock_initialized(payload)) [[likely]] {
+                return (::pthread_rwlock_t *)payload;
+            }
+            return rwlock_static_initializer(payload_ptr, payload);
         }
 
         enum class mutex_type : uint32_t {
