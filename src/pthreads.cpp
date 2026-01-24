@@ -287,7 +287,7 @@ int shim::pthread_setname_np(pthread_t thread, const char* name) {
 
 int shim::pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr) {
     host_mutexattr hattr (attr);
-    ::pthread_mutex_t *mutex_ptr = (::pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
+    ::pthread_mutex_t *mutex_ptr = (::pthread_mutex_t *)malloc(sizeof(::pthread_mutex_t));
 
     int ret = ::pthread_mutex_init(mutex_ptr, &hattr.attr);
     if (ret != 0) {
@@ -349,7 +349,7 @@ int shim::pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type) 
 
 int shim::pthread_cond_init(pthread_cond_t *cond, const shim::pthread_condattr_t *attr) {
     host_condattr hattr (attr);
-    ::pthread_cond_t *cond_ptr = (::pthread_cond_t *)malloc(sizeof(pthread_cond_t));
+    ::pthread_cond_t *cond_ptr = (::pthread_cond_t *)malloc(sizeof(::pthread_cond_t));
 
     int ret = ::pthread_cond_init(cond_ptr, &hattr.attr);
     if (ret != 0) {
