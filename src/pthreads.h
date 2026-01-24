@@ -11,32 +11,50 @@
 namespace shim {
 
     namespace bionic {
+        using atomic_uintptr_t = std::atomic_uintptr_t;
+
+        static_assert(alignof(atomic_uintptr_t) == alignof(uintptr_t));
+        static_assert(sizeof(atomic_uintptr_t) == sizeof(uintptr_t));
 
         struct pthread_mutex_t {
 #if defined(__LP64__)
-            size_t init_value;
-            ::pthread_mutex_t *wrapped;
-            int64_t priv[2];
+            int32_t data[10];
 #else
-            ::pthread_mutex_t *wrapped;
+            int32_t data[1];
 #endif
         };
+
+        static_assert(alignof(pthread_mutex_t) == 4);
 
         constexpr size_t mutex_init_value = 0;
         constexpr size_t recursive_mutex_init_value = 0x4000;
         constexpr size_t errorcheck_mutex_init_value = 0x8000;
 
-        inline bool is_mutex_initialized(pthread_mutex_t const *m) {
+        atomic_uintptr_t *get_payload_pointer(pthread_mutex_t *p) {
 #if defined(__LP64__)
-            return (m->wrapped != nullptr);
+            uintptr_t v = (uintptr_t)p;
+            v += sizeof(int32_t); // leave the first 4 bytes untouched
+            v += alignof(atomic_uintptr_t) - 1;
+            v &= -alignof(atomic_uintptr_t);
+            p = (pthread_mutex_t *)v;
 #else
-            return ((size_t) m->wrapped != mutex_init_value &&
-                    (size_t) m->wrapped != recursive_mutex_init_value &&
-                    (size_t) m->wrapped != errorcheck_mutex_init_value);
+            static_assert(alignof(atomic_uintptr_t) == alignof(pthread_mutex_t));
+            static_assert(sizeof(atomic_uintptr_t) == sizeof(pthread_mutex_t));
+#endif
+            return (atomic_uintptr_t *)p;
+        }
+
+
+        inline bool is_mutex_initialized(uintptr_t v) {
+#if defined(__LP64__)
+            return v != 0;
+#else
+            constexpr uintptr_t INIT_MUTEX_MASK = ~(3u << 14);
+            return (v & INIT_MUTEX_MASK) != 0;
 #endif
         }
 
-        void mutex_static_initializer(pthread_mutex_t *mutex, pthread_mutex_t &old);
+        ::pthread_mutex_t * mutex_static_initializer(int32_t init_value, bionic::atomic_uintptr_t *p, uintptr_t payload);
 
         struct pthread_cond_t {
             ::pthread_cond_t *wrapped;
@@ -68,9 +86,12 @@ namespace shim {
 
         template <>
         inline auto to_host<pthread_mutex_t>(pthread_mutex_t const *o) {
-            auto m = detail::load_wrapper(o);
-            mutex_static_initializer(const_cast<pthread_mutex_t *>(o), m.value);
-            return m.value.wrapped;
+            atomic_uintptr_t *payload_ptr = get_payload_pointer(const_cast<pthread_mutex_t *>(o));
+            uintptr_t payload = atomic_load_explicit(payload_ptr, std::memory_order_relaxed);
+            if(is_mutex_initialized(payload)) [[likely]] {
+                return (::pthread_mutex_t *)payload;
+            }
+            return mutex_static_initializer(o->data[0], payload_ptr, payload);
         }
         template <>
         inline auto to_host<pthread_cond_t>(pthread_cond_t const *o) {
