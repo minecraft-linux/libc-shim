@@ -51,23 +51,24 @@ bionic::pthread_cleanup_holder::~pthread_cleanup_holder() {
     return (::pthread_mutex_t*)payload;
 }
 
-void bionic::cond_static_initializer(shim::pthread_cond_t *cond, shim::pthread_cond_t &old) {
-    if (is_cond_initialized(&old))
-        return;
-    shim::pthread_cond_t n = old;
-    if(pthread_cond_init(&n, nullptr) == 0) {
-        if(!detail::update_wrapper(cond, old, n)) {
-            // Concurrent creation, we need to destroy the new one
-            detail::destroy_c_wrapped<pthread_cond_t>(&n, &::pthread_cond_destroy);
-            if (!is_cond_initialized(&old)) {
-                handle_runtime_error("Failed to init cond by other thread");
-            }
-        } else {
-            old = n;
-        }
-    } else {
+::pthread_cond_t *shim::bionic::cond_static_initializer(shim::bionic::atomic_uintptr_t *p, uintptr_t payload) {
+    // assert((uintptr_t)p % 8 == 0);
+
+    ::pthread_cond_t *cond_ptr = (::pthread_cond_t *)malloc(sizeof(::pthread_cond_t));
+    
+    if (::pthread_cond_init(cond_ptr, nullptr) != 0)
         handle_runtime_error("Failed to init cond");
+    
+    if(atomic_compare_exchange_strong_explicit(p, &payload, (uintptr_t)cond_ptr,
+       std::memory_order_release, std::memory_order_acquire)) [[likely]] {
+        return cond_ptr;
     }
+    // Concurrent creation, we need to destroy the new one
+    free(cond_ptr);
+    if(!is_cond_initialized(payload)) [[unlikely]] {
+        handle_runtime_error("Failed to init cond by other thread");
+    }
+    return (::pthread_cond_t*)payload;
 }
 
 void bionic::rwlock_static_initializer(shim::pthread_rwlock_t *rwlock, shim::pthread_rwlock_t &old) {
@@ -348,14 +349,27 @@ int shim::pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type) 
 
 int shim::pthread_cond_init(pthread_cond_t *cond, const shim::pthread_condattr_t *attr) {
     host_condattr hattr (attr);
-    int ret = detail::make_c_wrapped<pthread_cond_t, const ::pthread_condattr_t *>(cond, &::pthread_cond_init, &hattr.attr);
-    return bionic::translate_errno_from_host(ret);
+    ::pthread_cond_t *cond_ptr = (::pthread_cond_t *)malloc(sizeof(pthread_cond_t));
+
+    int ret = ::pthread_cond_init(cond_ptr, &hattr.attr);
+    if (ret != 0) {
+        free(cond_ptr);
+        return bionic::translate_errno_from_host(ret);
+    }
+
+    atomic_store(bionic::get_payload_pointer(cond), (uintptr_t)cond_ptr);
+    return bionic::translate_errno_from_host(0);
 }
 
 int shim::pthread_cond_destroy(pthread_cond_t *cond) {
-    if (!bionic::is_cond_initialized(cond))
+    auto p = bionic::get_payload_pointer(cond);
+    uintptr_t v = atomic_load(p);
+    if (!bionic::is_cond_initialized(v))
         return 0;
-    return bionic::translate_errno_from_host(detail::destroy_c_wrapped<pthread_cond_t>(cond, &::pthread_cond_destroy));
+    auto ret = ::pthread_cond_destroy((::pthread_cond_t *)v);
+    atomic_store(p, 0);
+    free((void *)v);
+    return bionic::translate_errno_from_host(ret);
 }
 
 int shim::pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex) {

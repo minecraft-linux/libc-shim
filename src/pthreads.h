@@ -30,16 +30,16 @@ namespace shim {
         constexpr size_t recursive_mutex_init_value = 0x4000;
         constexpr size_t errorcheck_mutex_init_value = 0x8000;
 
-        inline atomic_uintptr_t *get_payload_pointer(pthread_mutex_t *p) {
+        template<class T> atomic_uintptr_t *get_payload_pointer(T *p) {
 #if defined(__LP64__)
             uintptr_t v = (uintptr_t)p;
             v += sizeof(int32_t); // leave the first 4 bytes untouched
             v += alignof(atomic_uintptr_t) - 1;
             v &= -alignof(atomic_uintptr_t);
-            p = (pthread_mutex_t *)v;
+            p = (T *)v;
 #else
-            static_assert(alignof(atomic_uintptr_t) == alignof(pthread_mutex_t));
-            static_assert(sizeof(atomic_uintptr_t) == sizeof(pthread_mutex_t));
+            static_assert(alignof(atomic_uintptr_t) == alignof(T));
+            static_assert(sizeof(atomic_uintptr_t) == sizeof(T));
 #endif
             return (atomic_uintptr_t *)p;
         }
@@ -57,19 +57,18 @@ namespace shim {
         ::pthread_mutex_t * mutex_static_initializer(int32_t init_value, bionic::atomic_uintptr_t *p, uintptr_t payload);
 
         struct pthread_cond_t {
-            ::pthread_cond_t *wrapped;
 #if defined(__LP64__)
-            int64_t priv[5];
+            int32_t data[12];
+#else
+            int32_t data[1];
 #endif
         };
 
-        inline bool is_cond_initialized(pthread_cond_t const *m) {
-            auto wrapped_ptr = reinterpret_cast<const std::atomic<pthread_cond_t> *>(m);
-            auto val = wrapped_ptr->load(std::memory_order_relaxed);
-            return val.wrapped != nullptr;
+        inline bool is_cond_initialized(uintptr_t v) {
+            return v != 0;
         }
 
-        void cond_static_initializer(pthread_cond_t *cond, pthread_cond_t &old);
+        ::pthread_cond_t * cond_static_initializer(bionic::atomic_uintptr_t *p, uintptr_t payload);
 
         struct pthread_rwlock_t {
             ::pthread_rwlock_t *wrapped;
@@ -95,9 +94,12 @@ namespace shim {
         }
         template <>
         inline auto to_host<pthread_cond_t>(pthread_cond_t const *o) {
-            auto m = detail::load_wrapper(o);
-            cond_static_initializer(const_cast<pthread_cond_t *>(o), m.value);
-            return m.value.wrapped;
+            atomic_uintptr_t *payload_ptr = get_payload_pointer(const_cast<pthread_cond_t *>(o));
+            uintptr_t payload = atomic_load_explicit(payload_ptr, std::memory_order_relaxed);
+            if(is_cond_initialized(payload)) [[likely]] {
+                return (::pthread_cond_t *)payload;
+            }
+            return cond_static_initializer(payload_ptr, payload);
         }
         template <>
         inline auto to_host<pthread_rwlock_t>(pthread_rwlock_t const *o) {
