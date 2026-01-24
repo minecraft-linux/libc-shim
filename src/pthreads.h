@@ -30,7 +30,7 @@ namespace shim {
         constexpr size_t recursive_mutex_init_value = 0x4000;
         constexpr size_t errorcheck_mutex_init_value = 0x8000;
 
-        atomic_uintptr_t *get_payload_pointer(pthread_mutex_t *p) {
+        inline atomic_uintptr_t *get_payload_pointer(pthread_mutex_t *p) {
 #if defined(__LP64__)
             uintptr_t v = (uintptr_t)p;
             v += sizeof(int32_t); // leave the first 4 bytes untouched
