@@ -33,9 +33,13 @@ namespace shim {
         template<class T> atomic_uintptr_t *get_payload_pointer(T *p) {
 #if defined(__LP64__)
             uintptr_t v = (uintptr_t)p;
-            v += sizeof(int32_t); // leave the first 4 bytes untouched
-            v += alignof(atomic_uintptr_t) - 1;
-            v &= -alignof(atomic_uintptr_t);
+            // leave the first 4 bytes untouched (for init value)
+            static constexpr size_t header_size = sizeof(int32_t);
+            static constexpr size_t pointer_alignment = alignof(atomic_uintptr_t);
+            static constexpr size_t max_header_size = header_size + pointer_alignment - 1;
+            v += max_header_size;
+            v &= -pointer_alignment;
+            static_assert(max_header_size + sizeof(atomic_uintptr_t) < sizeof(*p), "Not enough space for payload pointer");
             p = (T *)v;
 #else
             static_assert(alignof(atomic_uintptr_t) == alignof(T));
