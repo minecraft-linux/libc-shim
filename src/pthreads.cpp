@@ -23,7 +23,9 @@ bionic::pthread_cleanup_holder::~pthread_cleanup_holder() {
 }
 
 ::pthread_mutex_t *shim::bionic::mutex_static_initializer(int32_t init_value, shim::bionic::atomic_uintptr_t *p, uintptr_t payload) {
-    // assert((uintptr_t)p % 8 == 0);
+    if((uintptr_t)p % alignof(::pthread_mutex_t *) != 0) {
+        handle_runtime_error("unaligned mutex");
+    }
 
     ::pthread_mutex_t *mutex_ptr = (::pthread_mutex_t *)malloc(sizeof(::pthread_mutex_t));
 
@@ -52,8 +54,9 @@ bionic::pthread_cleanup_holder::~pthread_cleanup_holder() {
 }
 
 ::pthread_cond_t *shim::bionic::cond_static_initializer(shim::bionic::atomic_uintptr_t *p, uintptr_t payload) {
-    // assert((uintptr_t)p % 8 == 0);
-
+    if((uintptr_t)p % alignof(::pthread_cond_t *) != 0) {
+        handle_runtime_error("unaligned cond");
+    }
     ::pthread_cond_t *cond_ptr = (::pthread_cond_t *)malloc(sizeof(::pthread_cond_t));
     
     if (::pthread_cond_init(cond_ptr, nullptr) != 0)
@@ -72,8 +75,9 @@ bionic::pthread_cleanup_holder::~pthread_cleanup_holder() {
 }
 
 ::pthread_rwlock_t *bionic::rwlock_static_initializer(shim::bionic::atomic_uintptr_t *p, uintptr_t payload) {
-    // assert((uintptr_t)p % 8 == 0);
-
+    if((uintptr_t)p % alignof(::pthread_rwlock_t *) != 0) {
+        handle_runtime_error("unaligned rwlock");
+    }
     ::pthread_rwlock_t *rwlock_ptr = (::pthread_rwlock_t *)malloc(sizeof(::pthread_rwlock_t));
     
     if (::pthread_rwlock_init(rwlock_ptr, nullptr) != 0)
