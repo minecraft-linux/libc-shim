@@ -203,7 +203,7 @@ int shim::pthread_getattr_np(pthread_t th, pthread_attr_t* attr) {
     attr->sched_priority = hparam.sched_priority;
     void* stackaddr = pthread_get_stackaddr_np(th);
     size_t stacksize = pthread_get_stacksize_np(th);
-    attr->stack_base = stackaddr;
+    attr->stack_base = (void*)((intptr_t)stackaddr - stacksize);
     attr->stack_size = stacksize;
 #else
     ::pthread_attr_t hostattr;
