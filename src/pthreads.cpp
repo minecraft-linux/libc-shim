@@ -1,6 +1,7 @@
 #include <atomic>
 #include <cerrno>
 #include <stdexcept>
+#include <thread>
 #include <limits.h>
 #include <mutex>
 #include <signal.h>
@@ -482,11 +483,19 @@ void shim::pthread_cleanup_pop_impl(shim::bionic::pthread_cleanup_t *c, int exec
 }
 
 int shim::pthread_once(pthread_once_t *control, void (*routine)()) {
-    static std::recursive_mutex mutex;
-    std::unique_lock<std::recursive_mutex> lock (mutex);
-    if (*control == 0) {
-        *control = 1;
+    auto acontrol = (std::atomic_int32_t*)(control);
+    int32_t c = 0;
+    if(atomic_compare_exchange_strong_explicit(acontrol, &c, 1,
+       std::memory_order_release, std::memory_order_acquire)) {
         routine();
+        atomic_store_explicit(acontrol, 2, std::memory_order_release);
+        return 0;
+    }
+    if(c == 2) {
+        return 0;
+    }
+    while(atomic_load_explicit(acontrol, std::memory_order_acquire) == 1) {
+        std::this_thread::yield();
     }
     return 0;
 }
