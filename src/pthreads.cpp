@@ -16,7 +16,6 @@
 #if defined(__GLIBC__) && !(__GLIBC__ < 2 || __GLIBC__ == 2 && __GLIBC_MINOR__ < 42)
 #define HAS_PTHERAD_GETTID_NP 1
 #endif
-#else
 #endif
 
 using namespace shim;
