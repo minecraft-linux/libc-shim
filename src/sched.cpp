@@ -1,11 +1,11 @@
 #include "sched.h"
 
-int shim::sched_setaffinity(pid_t pid, size_t cpusetsize, const void *mask) {
-    int ret;
+int shim::sched_setaffinity(pid_t pid, size_t cpusetsize, const void* mask) {
+    int ret = 0;
 #ifdef __linux__
-    ret = ::sched_setaffinity(pid, cpusetsize, (cpu_set_t *)mask);
-#else
-    ret = 0;
+#if defined(__GLIBC__) && !(__GLIBC__ < 2 || __GLIBC__ == 2 && __GLIBC_MINOR__ < 42)
+    ret = ::sched_setaffinity(pid, cpusetsize, (cpu_set_t*)mask);
+#endif
 #endif
     return ret;
 }

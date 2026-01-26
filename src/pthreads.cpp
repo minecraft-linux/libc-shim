@@ -10,6 +10,14 @@
 #include <pthread_np.h>
 #endif
 
+#ifdef __linux__
+// glibc introduced pthread_gettid_np in 2.42
+#if defined(__GLIBC__) && !(__GLIBC__ < 2 || __GLIBC__ == 2 && __GLIBC_MINOR__ < 42)
+#define HAS_PTHERAD_GETTID_NP 1
+#endif
+#else
+#endif
+
 using namespace shim;
 
 thread_local bionic::pthread_cleanup_holder bionic::cleanup;
@@ -452,6 +460,12 @@ int shim::pthread_once(pthread_once_t *control, void (*routine)()) {
 }
 
 pid_t shim::pthread_gettid_np(pthread_t thread) {
+#ifdef HAS_PTHERAD_GETTID_NP
+    return ::pthread_gettid_np(thread);
+#endif
+    if(thread == pthread_self()) {
+        return gettid();
+    }
 #ifdef __linux__
     pid_t ret = thread;
 #elif defined(__FreeBSD__)
