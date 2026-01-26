@@ -6,6 +6,7 @@
 #include <signal.h>
 #include "pthreads.h"
 #include "errno.h"
+#include "common.h"
 #ifdef __FreeBSD__
 #include <pthread_np.h>
 #endif
@@ -464,7 +465,7 @@ pid_t shim::pthread_gettid_np(pthread_t thread) {
     return ::pthread_gettid_np(thread);
 #endif
     if(thread == pthread_self()) {
-        return gettid();
+        return shim::gettid();
     }
 #ifdef __linux__
     pid_t ret = thread;
