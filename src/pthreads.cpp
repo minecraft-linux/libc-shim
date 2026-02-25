@@ -320,7 +320,7 @@ int shim::pthread_mutex_destroy(pthread_mutex_t *wrapper) {
     if (!bionic::is_mutex_initialized(v))
         return 0;
     auto ret = ::pthread_mutex_destroy((::pthread_mutex_t *)v);
-    atomic_store(p, 0);
+    atomic_store(p, (uintptr_t)0);
     free((void *)v);
     return bionic::translate_errno_from_host(ret);
 }
@@ -381,7 +381,7 @@ int shim::pthread_cond_destroy(pthread_cond_t *cond) {
     if (!bionic::is_cond_initialized(v))
         return 0;
     auto ret = ::pthread_cond_destroy((::pthread_cond_t *)v);
-    atomic_store(p, 0);
+    atomic_store(p, (uintptr_t)0);
     free((void *)v);
     return bionic::translate_errno_from_host(ret);
 }
@@ -449,7 +449,7 @@ int shim::pthread_rwlock_destroy(pthread_rwlock_t *rwlock) {
     if (!bionic::is_rwlock_initialized(v))
         return 0;
     auto ret = ::pthread_rwlock_destroy((::pthread_rwlock_t *)v);
-    atomic_store(p, 0);
+    atomic_store(p, (uintptr_t)0);
     free((void *)v);
     return bionic::translate_errno_from_host(ret);
 }
