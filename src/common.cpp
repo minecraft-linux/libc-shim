@@ -865,72 +865,67 @@ void shim::add_signal_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 }
 
 void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
-    list.insert(list.end(), {
-        /* string.h */
-        {"memccpy", ::memccpy},
-        {"memchr", (void *(*)(void *, int, size_t)) ::memchr},
-        {"memcmp", (int (*)(const void *, const void *, size_t)) ::memcmp},
-        {"memcpy", ::memcpy},
-        {"__memcpy_chk", __memcpy_chk},
-        {"memmove", ::memmove},
-        {"__memmove_chk", __memmove_chk},
-        {"memset", ::memset},
-        {"__memset_chk", ::__memset_chk},
-        {"memmem", ::memmem},
-#if LIBC_SHIM_DEFINE_VARIADIC
-        {"__vsprintf_chk", __vsprintf_chk},
-#endif
-        {"strchr", (char *(*)(char *, int)) ::strchr},
-        {"strrchr", (char *(*)(char *, int)) ::strrchr},
-        {"strlen", ::strlen},
-        {"__strlen_chk", strlen_chk},
-        {"__strchr_chk", strchr_chk},
-        {"__strrchr_chk", strrchr_chk},
-        {"strcmp", ::strcmp},
-        {"strcpy", ::strcpy},
-        {"__strcpy_chk", __strcpy_chk},
-        {"strcat", ::strcat},
-        {"strdup", ::strdup},
-        {"strstr", (char *(*)(char *, const char *)) ::strstr},
-        {"strtok", ::strtok},
-        {"strtok_r", ::strtok_r},
-        {"strerror", strerror},
-        {"strerror_r", strerror_r},
-        {"strnlen", ::strnlen},
-        {"strncat", ::strncat},
-        {"strndup", ::strndup},
-        {"strncmp", ::strncmp},
-        {"strncpy", ::strncpy},
-        {"__strcat_chk", __strcat_chk},
-        {"__strncat_chk", __strncat_chk},
-        {"__strncpy_chk", __strncpy_chk},
-        {"__strncpy_chk2", __strncpy_chk2},
-		{"__strlcpy_chk", __strlcpy_chk},
-        {"strlcpy", bionic::strlcpy},
-        {"strcspn", ::strcspn},
-        {"strpbrk", (char *(*)(char *, const char *)) ::strpbrk},
-        {"strsep", ::strsep},
-        {"strspn", ::strspn},
-        {"strsignal", ::strsignal},
-        {"strcoll", ::strcoll},
-        {"strxfrm", ::strxfrm},
-        {"strcoll_l", ::strcoll_l},
-        {"strxfrm_l", ::strxfrm_l},
-        {"islower_l", ::islower_l},
-        {"isupper_l", ::isupper_l},
-        {"tolower_l", ::tolower_l},
-        {"toupper_l", ::toupper_l},
-
-        /* strings.h */
-        {"bcmp", ::bcmp},
-        {"bcopy", ::bcopy},
-        {"bzero", ::bzero},
-        {"ffs", ::ffs},
-        {"index", ::index},
-        {"rindex", ::rindex},
-        {"strcasecmp", ::strcasecmp},
-        {"strncasecmp", ::strncasecmp},
-    });
+    std::vector<shim::shimmed_symbol> extra;
+    extra.emplace_back("memccpy", ::memccpy);
+    extra.emplace_back("memchr", (void *(*)(void *, int, size_t)) ::memchr);
+    extra.emplace_back("memcmp", (int (*)(const void *, const void *, size_t)) ::memcmp);
+    extra.emplace_back("memcpy", ::memcpy);
+    extra.emplace_back("__memcpy_chk", __memcpy_chk);
+    extra.emplace_back("memmove", ::memmove);
+    extra.emplace_back("__memmove_chk", __memmove_chk);
+    extra.emplace_back("memset", ::memset);
+    extra.emplace_back("__memset_chk", ::__memset_chk);
+    extra.emplace_back("memmem", ::memmem);
+    extra.emplace_back("__vsprintf_chk", __vsprintf_chk);
+    extra.emplace_back("strchr", (char *(*)(char *, int)) ::strchr);
+    extra.emplace_back("strrchr", (char *(*)(char *, int)) ::strrchr);
+    extra.emplace_back("strlen", ::strlen);
+    extra.emplace_back("__strlen_chk", strlen_chk);
+    extra.emplace_back("__strchr_chk", strchr_chk);
+    extra.emplace_back("__strrchr_chk", strrchr_chk);
+    extra.emplace_back("strcmp", ::strcmp);
+    extra.emplace_back("strcpy", ::strcpy);
+    extra.emplace_back("__strcpy_chk", __strcpy_chk);
+    extra.emplace_back("strcat", ::strcat);
+    extra.emplace_back("strdup", ::strdup);
+    extra.emplace_back("strstr", (char *(*)(char *, const char *)) ::strstr);
+    extra.emplace_back("strtok", ::strtok);
+    extra.emplace_back("strtok_r", ::strtok_r);
+    extra.emplace_back("strerror", strerror);
+    extra.emplace_back("strerror_r", strerror_r);
+    extra.emplace_back("strnlen", ::strnlen);
+    extra.emplace_back("strncat", ::strncat);
+    extra.emplace_back("strndup", ::strndup);
+    extra.emplace_back("strncmp", ::strncmp);
+    extra.emplace_back("strncpy", ::strncpy);
+    extra.emplace_back("__strcat_chk", __strcat_chk);
+    extra.emplace_back("__strncat_chk", __strncat_chk);
+    extra.emplace_back("__strncpy_chk", __strncpy_chk);
+    extra.emplace_back("__strncpy_chk2", __strncpy_chk2);
+    extra.emplace_back("__strlcpy_chk", __strlcpy_chk);
+    extra.emplace_back("strlcpy", bionic::strlcpy);
+    extra.emplace_back("strcspn", ::strcspn);
+    extra.emplace_back("strpbrk", (char *(*)(char *, const char *)) ::strpbrk);
+    extra.emplace_back("strsep", ::strsep);
+    extra.emplace_back("strspn", ::strspn);
+    extra.emplace_back("strsignal", ::strsignal);
+    extra.emplace_back("strcoll", ::strcoll);
+    extra.emplace_back("strxfrm", ::strxfrm);
+    extra.emplace_back("strcoll_l", ::strcoll_l);
+    extra.emplace_back("strxfrm_l", ::strxfrm_l);
+    extra.emplace_back("islower_l", ::islower_l);
+    extra.emplace_back("isupper_l", ::isupper_l);
+    extra.emplace_back("tolower_l", ::tolower_l);
+    extra.emplace_back("toupper_l", ::toupper_l);
+    extra.emplace_back("bcmp", ::bcmp);
+    extra.emplace_back("bcopy", ::bcopy);
+    extra.emplace_back("bzero", ::bzero);
+    extra.emplace_back("ffs", ::ffs);
+    extra.emplace_back("index", (void*)+[](const char *s, int c) -> const char* { return ::index(s, c); });
+    extra.emplace_back("rindex", (void*)+[](const char *s, int c) -> const char* { return ::rindex(s, c); });
+    extra.emplace_back("strcasecmp", ::strcasecmp);
+    extra.emplace_back("strncasecmp", ::strncasecmp);
+    list.insert(list.end(), extra.begin(), extra.end());
 }
 
 void shim::add_socket_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {

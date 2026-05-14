@@ -407,7 +407,8 @@ int shim::pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, c
 }
 
 int shim::pthread_condattr_init(pthread_condattr_t *attr) {
-    *attr = {false, bionic::clock_type::MONOTONIC};
+    attr->shared = false;
+    attr->clock = bionic::clock_type::MONOTONIC;
     return 0;
 }
 
