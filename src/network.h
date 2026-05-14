@@ -91,7 +91,7 @@ namespace shim {
         size_t get_bionic_len(const ::sockaddr *in);
 
         struct addrinfo {
-            ai_flags ai_flags;
+            ai_flags ai_flags_val;
             af_family ai_family;
             socktype ai_socktype;
             ipproto ai_protocol;

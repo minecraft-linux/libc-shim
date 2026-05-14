@@ -147,7 +147,7 @@ namespace shim {
             void* stack_base;
             size_t stack_size;
             size_t guard_size;
-            sched_policy sched_policy;
+            sched_policy sched_policy_val;
             int sched_priority;
 #if defined(__LP64__)
             int64_t priv[2];

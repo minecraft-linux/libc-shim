@@ -192,7 +192,7 @@ bionic::addrinfo* bionic::from_host_alloc(const ::addrinfo *in) {
 
     auto out = new addrinfo;
     try {
-        out->ai_flags = from_host_ai_flags(in->ai_flags);
+        out->ai_flags_val = from_host_ai_flags(in->ai_flags);
         out->ai_family = from_host_af_family(in->ai_family);
         out->ai_socktype = from_host_socktype(in->ai_socktype);
         out->ai_protocol = from_host_ipproto(in->ai_protocol);
@@ -232,7 +232,7 @@ void bionic::free_bionic_list(bionic::addrinfo *list) {
         return nullptr;
 
     auto out = new ::addrinfo;
-    out->ai_flags = to_host_ai_flags(in->ai_flags);
+    out->ai_flags = to_host_ai_flags(in->ai_flags_val);
     out->ai_family = to_host_af_family(in->ai_family);
     // ai_socktype == 0 is only allowed here, see man getaddrinfo
     out->ai_socktype = in->ai_socktype != (bionic::socktype)0 ? to_host_socktype(in->ai_socktype) : 0;
