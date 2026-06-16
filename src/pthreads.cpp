@@ -590,6 +590,9 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
         {"__pthread_cleanup_pop", pthread_cleanup_pop_impl},
 
         {"pthread_once", pthread_once},
-        {"pthread_gettid_np", pthread_gettid_np}
+        {"pthread_gettid_np", pthread_gettid_np},
+        {"pthread_sigmask", +[](int how, const void* set, void* oset) -> int {
+            return ::pthread_sigmask(how, (const sigset_t*)set, (sigset_t*)oset);
+        }},
     });
 }
