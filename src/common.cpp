@@ -587,6 +587,8 @@ void shim::add_stdlib_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"realpath", realpath},
         {"bsearch", bsearch},
         {"qsort", qsort},
+        {"ldiv", ::ldiv},
+        {"lldiv", ::lldiv},
         {"mblen", mblen},
         {"mbtowc", mbtowc},
         {"wctomb", wctomb},
