@@ -210,6 +210,14 @@ namespace shim {
 
     };
 
+    // Darwin condvars can only wait on CLOCK_REALTIME, so the clock a condvar was created with is kept beside
+    // it and monotonic deadlines are turned into relative waits; a monotonic deadline passed straight through
+    // reads as 1970 and times out instantly, which spins every thread that polls one.
+    struct host_cond {
+        ::pthread_cond_t cond;
+        clockid_t clock;
+    };
+
     struct host_condattr {
 
         ::pthread_condattr_t attr;
@@ -254,6 +262,7 @@ namespace shim {
     int pthread_cond_broadcast(pthread_cond_t *cond);
     int pthread_cond_signal(pthread_cond_t *cond);
     int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, const struct timespec *ts);
+    int pthread_cond_timedwait_monotonic_np(pthread_cond_t *cond, pthread_mutex_t *mutex, const struct timespec *ts);
 
     int pthread_condattr_init(pthread_condattr_t *attr);
     int pthread_condattr_destroy(pthread_condattr_t *attr);
