@@ -896,6 +896,11 @@ void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"strtok_r", ::strtok_r},
         {"strerror", strerror},
         {"strerror_r", strerror_r},
+#ifdef __GLIBC__
+        {"__gnu_strerror_r", +[](int err, char* buf, size_t len) -> char* {
+            return ::strerror_r(bionic::translate_errno_to_host(err), buf, len);
+        }},
+#endif
         {"strnlen", ::strnlen},
         {"strncat", ::strncat},
         {"strndup", ::strndup},
