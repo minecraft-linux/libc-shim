@@ -77,6 +77,9 @@
 #include "variadic.h"
 #include <chrono>
 #include <unistd.h>
+#include <netinet/in.h>
+#include <arpa/nameser.h>
+#include <resolv.h>
 
 #ifdef __linux__
 // glibc introduced arc4random_buf in 2.36
@@ -308,6 +311,14 @@ int shim::prctl(bionic::prctl_num opt, unsigned long a2, unsigned long a3, unsig
 #endif
 }
 
+void* shim::__memchr_chk(const void *src, int c, size_t len, size_t src_len) {
+    if (len > src_len) {
+        fprintf(stderr, "detected read past buffer size");
+        abort();
+    }
+    return const_cast<void*>(::memchr(src, c, len));
+}
+
 void* shim::__memcpy_chk(void *dst, const void *src, size_t size, size_t max_len) {
     if (size > max_len) {
         fprintf(stderr, "detected copy past buffer size");
@@ -368,7 +379,23 @@ size_t shim::__strlcpy_chk(char *dst, const char *src, size_t size,
 int shim::sendfile(int src, int dst, bionic::off_t *offset, size_t count) {
     off_t c = offset ? (off_t)offset : 0;
 #ifdef __APPLE__
-    auto ret = ::sendfile(src, dst, c, offset ? &c : nullptr, nullptr, 0);
+    struct stat st;
+    if (fstat(dst, &st) < 0)
+        return -1;
+
+    off_t remaining = st.st_size - c;
+
+    off_t len;
+    if (count == (size_t)-1) {
+        len = remaining;  // send all remaining bytes
+    } else {
+        len = (off_t)count;
+        if (len > remaining)
+            len = remaining;
+    }
+    auto ret = ::sendfile(dst, src, c, &len, nullptr, 0);
+    // append the written count
+    c += len;
 #elif defined(__FreeBSD__)
     auto ret = ::sendfile(src, dst, c, count, nullptr, 0, 0);
 #else
@@ -860,15 +887,48 @@ void shim::add_signal_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         }},
         {"sigdelset", +[](void *__set, int __signo) -> int {
             return 0;
-        }}
+        }},
+        {"sigdelset", +[](void *__set, int __signo) -> int {
+            return 0;
+        }},
+        {"sigismember", +[](const void *__set, int __signo) -> int {
+            return 0;
+        }},
+        {"strsignal", ::strsignal},
+        {"setegid", ::setegid},
+        {"seteuid", ::seteuid},
+        {"setgid", ::setgid},
+        {"setregid", ::setregid},
+        {"setresgid", +[](gid_t rgid, gid_t egid, gid_t sgid) -> int {
+            return 0;
+        }},
+        {"setresuid", +[](uid_t ruid, uid_t euid, uid_t suid) -> int {
+            return 0;
+        }},
+        {"setuid", ::setuid},
+        {"setreuid", ::setreuid},
+        {"setgroups", ::setgroups},
+        {"res_init", ::res_init},
+        {"res_close", ::res_close},
+        {"res_search", ::res_search},
+        {"res_isourserver", ::res_isourserver},
+        {"res_mkquery", ::res_mkquery},
+        {"res_query", ::res_query},
+        {"res_querydomain", ::res_querydomain},
+        {"res_send", ::res_send},
+        {"res_sendsigned", ::res_sendsigned},
     });
 }
+
+extern char **environ;
 
 void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
         /* string.h */
         {"memccpy", ::memccpy},
+        {"environ", environ},
         {"memchr", (void *(*)(void *, int, size_t)) ::memchr},
+        {"__memchr_chk", __memchr_chk},
         {"memcmp", (int (*)(const void *, const void *, size_t)) ::memcmp},
         {"memcpy", ::memcpy},
         {"__memcpy_chk", __memcpy_chk},
@@ -896,6 +956,7 @@ void shim::add_string_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"strtok_r", ::strtok_r},
         {"strerror", strerror},
         {"strerror_r", strerror_r},
+        {"__gnu_strerror_r", strerror_r},
         {"strnlen", ::strnlen},
         {"strncat", ::strncat},
         {"strndup", ::strndup},

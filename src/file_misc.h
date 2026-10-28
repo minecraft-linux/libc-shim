@@ -64,6 +64,7 @@ namespace shim {
     int fcntl(int fd, bionic::fcntl_index cmd, void *arg);
 
     int poll_via_select(pollfd *fds, nfds_t nfds, int timeout);
+    int __poll_chk(pollfd *fds, nfds_t nfds, int timeout, size_t fdslen);
 
     int __FD_ISSET_chk(int fd, fd_set *set);
     void __FD_CLR_chk(int fd, fd_set *set);

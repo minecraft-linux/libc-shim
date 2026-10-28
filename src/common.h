@@ -110,6 +110,8 @@ namespace shim {
 
     int sendfile(int src, int dst, bionic::off_t *offset, size_t count);
 
+    void *__memchr_chk(const void *src, int c, size_t len, size_t src_len);
+
     void *__memcpy_chk(void *dst, const void *src, size_t size, size_t max_len);
 
     void *__memmove_chk(void *dst, const void *src, size_t size, size_t max_len);
