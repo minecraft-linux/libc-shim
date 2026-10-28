@@ -19,10 +19,6 @@ if(APPLE)
     target_sources(libc-shim PUBLIC src/osx10_10_compat.c)
 endif()
 
-if(LINUX OR APPLE)
-    target_link_libraries(libc-shim PRIVATE resolv)
-endif()
-
 include(CheckCXXSourceCompiles)
 
 check_cxx_source_compiles("

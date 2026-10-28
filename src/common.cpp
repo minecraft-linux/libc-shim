@@ -79,7 +79,9 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <arpa/nameser.h>
+#if 0
 #include <resolv.h>
+#endif
 #include <grp.h>
 
 #ifdef __linux__
@@ -912,6 +914,7 @@ void shim::add_signal_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"setuid", ::setuid},
         {"setreuid", ::setreuid},
         {"setgroups", ::setgroups},
+#if 0
         {"res_init", ::res_init},
         {"res_close", ::res_close},
         {"res_search", ::res_search},
@@ -922,6 +925,7 @@ void shim::add_signal_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"res_send", ::res_send},
 #ifdef __APPLE__
         {"res_sendsigned", ::res_sendsigned},
+#endif
 #endif
     });
 }
