@@ -25,6 +25,8 @@
 #include <arpa/inet.h>
 #include <cstring>
 #include <ifaddrs.h>
+#include <chrono>
+#include <poll.h>
 
 using namespace shim;
 
@@ -358,6 +360,18 @@ int shim::socket(bionic::af_family domain, bionic::socktype type, bionic::ipprot
     return ::socket(bionic::to_host_af_family(domain), bionic::to_host_socktype(type), bionic::to_host_ipproto(proto));
 }
 
+int shim::socketpair(bionic::af_family domain, bionic::socktype type, bionic::ipproto proto, int sv[2]) {
+    return ::socketpair(
+        bionic::to_host_af_family(domain),
+        bionic::to_host_socktype(type),
+        bionic::to_host_ipproto(proto),
+        sv);
+}
+
+int *shim::__get_h_errno(void) {
+    return &h_errno;
+}
+
 int shim::getaddrinfo(const char *node, const char *service, const bionic::addrinfo *hints, bionic::addrinfo **res) {
     auto hhints = bionic::to_host_alloc(hints);
     ::addrinfo *hres;
@@ -588,6 +602,17 @@ ssize_t shim::sendmsg(int sockfd, const msghdr *data, int flags) {
     return ::sendmsg(sockfd, data, hflags.flags);
 }
 
+int shim::sendmmsg(int sockfd, const struct mmsghdr *msgvec, unsigned int vlen, int flags) {
+    detail::sock_send_flags hflags(sockfd, flags);
+    for (unsigned int i = 0; i < vlen; ++i) {
+        ssize_t ret = ::sendmsg(sockfd, &msgvec[i].msg_hdr, hflags.flags);
+        if (ret < 0)
+            return i == 0 ? -1 : (int)i;
+        const_cast<struct mmsghdr&>(msgvec[i]).msg_len = (unsigned int)ret;
+    }
+    return (int)vlen;
+}
+
 ssize_t shim::recv(int sockfd, void *buf, size_t len, int flags) {
     int nflags = 0;
     if(flags & 0x4000) {
@@ -614,7 +639,67 @@ ssize_t shim::recvmsg(int sockfd, struct msghdr *data, int flags) {
     if(val > 0 && name) {
         haddr.apply(name, &data->msg_namelen);
     }
+    data->msg_controllen = 0;
     return val;
+}
+
+int shim::recvmmsg(int sockfd, struct mmsghdr *msgvec, unsigned int vlen, int flags, const struct timespec *timeout) {
+    int nflags = 0;
+    if (flags & 0x4000)
+        nflags |= MSG_DONTWAIT;
+    if (flags & 2)
+        nflags |= MSG_PEEK;
+    if ((flags & ~(0x4000 | 2)) != 0)
+        handle_runtime_error("recvmmsg with unsupported flags %d", flags);
+
+    using clock = std::chrono::steady_clock;
+    clock::time_point deadline;
+    bool use_timeout = timeout != nullptr;
+    if (use_timeout) {
+        deadline = clock::now() + std::chrono::seconds(timeout->tv_sec) +
+            std::chrono::nanoseconds(timeout->tv_nsec);
+    }
+
+    for (unsigned int i = 0; i < vlen; ++i) {
+        if (i > 0 && use_timeout && (nflags & MSG_DONTWAIT) == 0) {
+            auto now = clock::now();
+            if (now >= deadline)
+                return (int)i;
+
+            auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(deadline - now);
+            pollfd pfd {};
+            pfd.fd = sockfd;
+            pfd.events = POLLIN;
+            int poll_ret = ::poll(&pfd, 1, (int)remaining.count());
+            if (poll_ret < 0)
+                return i == 0 ? -1 : (int)i;
+            if (poll_ret == 0)
+                return (int)i;
+        }
+
+        msghdr host_msg = msgvec[i].msg_hdr;
+        auto name = (bionic::sockaddr*)host_msg.msg_name;
+        auto addrlen = host_msg.msg_namelen;
+        detail::sockaddr_out haddr;
+        if (name) {
+            host_msg.msg_name = haddr.ptr();
+            host_msg.msg_namelen = haddr.len;
+        }
+
+        ssize_t ret = ::recvmsg(sockfd, &host_msg, nflags);
+        if (ret < 0)
+            return i == 0 ? -1 : (int)i;
+
+        if (name)
+            haddr.apply(name, &addrlen);
+
+        msgvec[i].msg_hdr.msg_namelen = addrlen;
+        msgvec[i].msg_hdr.msg_flags = host_msg.msg_flags;
+        msgvec[i].msg_hdr.msg_controllen = 0;
+        msgvec[i].msg_len = (unsigned int)ret;
+    }
+
+    return (int)vlen;
 }
 
 ssize_t shim::sendto(int sockfd, const void *buf, size_t len, int flags, const bionic::sockaddr *addr, socklen_t addrlen) {
@@ -624,12 +709,12 @@ ssize_t shim::sendto(int sockfd, const void *buf, size_t len, int flags, const b
 }
 
 ssize_t shim::recvfrom(int sockfd, void *buf, size_t len, int flags, bionic::sockaddr *addr, socklen_t *addrlen) {
-    if (flags != 0 && flags != 0x4000)
+    if (flags != 0 && flags != 0x4000) /* MSG_NOSIGNAL */
         handle_runtime_error("recvfrom with unsupported flags %d", flags);
     if (addr == nullptr)
-        return ::recvfrom(sockfd, buf, len, flags, nullptr, nullptr);
+        return ::recvfrom(sockfd, buf, len, flags == 0x4000 ? MSG_NOSIGNAL : 0, nullptr, nullptr);
     detail::sockaddr_out haddr;
-    int ret = ::recvfrom(sockfd, buf, len, flags, haddr.ptr(), &haddr.len);
+    int ret = ::recvfrom(sockfd, buf, len, flags == 0x4000 ? MSG_NOSIGNAL : 0, haddr.ptr(), &haddr.len);
     if (ret >= 0)
         haddr.apply(addr, addrlen);
         return ret;
@@ -721,13 +806,16 @@ void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) 
     list.insert(list.end(), {
         /* socket.h */
         {"socket", WithErrnoUpdate(socket)},
+        {"socketpair", WithErrnoUpdate(socketpair)},
         {"bind", WithErrnoUpdate(bind)},
         {"connect", WithErrnoUpdate(connect)},
         {"send", WithErrnoUpdate(send)},
         {"sendmsg", WithErrnoUpdate(sendmsg)},
+        {"sendmmsg", WithErrnoUpdate(sendmmsg)},
         {"sendto", WithErrnoUpdate(sendto)},
         {"recv", WithErrnoUpdate(recv)},
         {"recvmsg", WithErrnoUpdate(recvmsg)},
+        {"recvmmsg", WithErrnoUpdate(recvmmsg)},
         {"recvfrom", WithErrnoUpdate(recvfrom)},
         {"getsockname", WithErrnoUpdate(getsockname)},
         {"getpeername", WithErrnoUpdate(getpeername)},
@@ -739,6 +827,7 @@ void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) 
         {"shutdown", WithErrnoUpdate(shutdown)},
 
         /* netdb.h */
+        {"__get_h_errno", __get_h_errno},
         {"getaddrinfo", getaddrinfo},
         {"freeaddrinfo", freeaddrinfo},
         {"getnameinfo", getnameinfo},
@@ -747,6 +836,7 @@ void shim::add_network_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) 
         {"gethostbyaddr", gethostbyaddr},
         {"gethostbyname", gethostbyname},
         {"gethostbyname2", gethostbyname2},
+        {"getservbyname", getservbyname},
         {"gethostent", gethostent},
 
         /* arpa/inet.h */

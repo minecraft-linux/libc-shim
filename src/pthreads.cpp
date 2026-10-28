@@ -116,6 +116,7 @@ int bionic::to_host_mutex_type(bionic::mutex_type type) {
 int bionic::to_host_sched_policy(shim::bionic::sched_policy type) {
     switch (type) {
         case sched_policy::OTHER: return SCHED_OTHER;
+        case sched_policy::FIFO: return SCHED_FIFO;
         default: handle_runtime_error("Invalid sched policy");
     }
 }
@@ -174,6 +175,10 @@ int shim::pthread_create(pthread_t *thread, const shim::pthread_attr_t *attr, vo
     host_pthread_attr hattr (attr);
     int ret = pthread_create(thread, &hattr.attr, fn, arg);
     return bionic::translate_errno_from_host(ret);
+}
+
+void shim::pthread_exit(void *retval) {
+    ::pthread_exit(retval);
 }
 
 int shim::pthread_setschedparam(pthread_t thread, bionic::sched_policy policy, const shim::bionic::sched_param *param) {
@@ -529,6 +534,7 @@ pid_t shim::pthread_gettid_np(pthread_t thread) {
 void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
     list.insert(list.end(), {
         {"pthread_create", pthread_create},
+        {"pthread_exit", pthread_exit},
         {"pthread_equal", ::pthread_equal},
         {"pthread_join", ::pthread_join},
         {"pthread_detach", ::pthread_detach},

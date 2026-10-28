@@ -134,7 +134,8 @@ namespace shim {
         };
 
         enum class sched_policy {
-            OTHER = 0
+            OTHER = 0,
+            FIFO = 1
         };
 
         static int to_host_sched_policy(sched_policy type);
@@ -221,6 +222,7 @@ namespace shim {
     };
 
     int pthread_create(pthread_t *thread, pthread_attr_t const *attr, void* (*fn)(void *), void *arg);
+    void pthread_exit(void *retval);
     int pthread_setschedparam(pthread_t thread, bionic::sched_policy policy, const bionic::sched_param *param);
     int pthread_getschedparam(pthread_t thread, bionic::sched_policy *policy, bionic::sched_param *param);
     int pthread_getattr_np(pthread_t th, pthread_attr_t* attr);

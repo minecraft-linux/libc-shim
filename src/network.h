@@ -15,6 +15,13 @@
 #include <arpa/inet.h>
 #endif
 
+#if defined(__APPLE__) || defined(__FreeBSD__)
+struct mmsghdr {
+    struct msghdr msg_hdr;
+    unsigned int msg_len;
+};
+#endif
+
 namespace shim {
 
     namespace bionic {
@@ -161,6 +168,8 @@ namespace shim {
     }
 
     int socket(bionic::af_family domain, bionic::socktype type, bionic::ipproto proto);
+    int socketpair(bionic::af_family domain, bionic::socktype type, bionic::ipproto proto, int sv[2]);
+    int *__get_h_errno(void);
 
     int getaddrinfo(const char *node, const char *service, const bionic::addrinfo *hints, bionic::addrinfo **res);
 
@@ -176,10 +185,12 @@ namespace shim {
     ssize_t send(int sockfd, const void *buf, size_t len, int flags);
 
     ssize_t sendmsg(int sockfd, const msghdr *data, int flags);
+    int sendmmsg(int sockfd, const struct mmsghdr *msgvec, unsigned int vlen, int flags);
 
     ssize_t recv(int sockfd, void *buf, size_t len, int flags);
 
     ssize_t recvmsg(int sockfd, struct msghdr *data, int flags);
+    int recvmmsg(int sockfd, struct mmsghdr *msgvec, unsigned int vlen, int flags, const struct timespec *timeout);
 
     ssize_t sendto(int sockfd, const void *buf, size_t len, int flags, const bionic::sockaddr *addr, socklen_t addrlen);
 

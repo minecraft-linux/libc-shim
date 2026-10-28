@@ -138,6 +138,32 @@ char *shim::__fgets_chk(char *dst, int len, bionic::FILE *stream, size_t max_len
     return ::fgets(dst, len, stream->wrapped);
 }
 
+size_t shim::__fread_chk(void *buf, size_t size, size_t count, bionic::FILE *stream, size_t buf_size) {
+    if (size != 0 && count > SIZE_MAX / size)
+        return ::fread(buf, size, count, stream->wrapped);
+
+    size_t total = size * count;
+    if (total > buf_size) {
+        fprintf(stderr, "detected write past buffer");
+        abort();
+    }
+    size_t ret = ::fread(buf, size, count, stream->wrapped);
+    update_feof(stream);
+    return ret;
+}
+
+size_t shim::__fwrite_chk(const void *buf, size_t size, size_t count, bionic::FILE *stream, size_t buf_size) {
+    if (size != 0 && count > SIZE_MAX / size)
+        return ::fwrite(buf, size, count, stream->wrapped);
+
+    size_t total = size * count;
+    if (total > buf_size) {
+        fprintf(stderr, "detected read past buffer");
+        abort();
+    }
+    return ::fwrite(buf, size, count, stream->wrapped);
+}
+
 void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     bionic::init_standard_files();
 
@@ -168,7 +194,9 @@ void shim::add_cstdio_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"fputc", AutoArgRewritten(::fputc)},
         {"fputs", AutoArgRewritten(::fputs)},
         {"fread", fread},
+        {"__fread_chk", __fread_chk},
         {"fwrite", AutoArgRewritten(::fwrite)},
+        {"__fwrite_chk", __fwrite_chk},
 #if LIBC_SHIM_DEFINE_VARIADIC
         {"fprintf", fprintf},
         {"vfprintf", AutoArgRewritten(::vfprintf)},

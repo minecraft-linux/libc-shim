@@ -223,6 +223,16 @@ int shim::poll_via_select(pollfd *fds, nfds_t nfds, int timeout) {
     return ret;
 }
 
+int shim::__poll_chk(pollfd *fds, nfds_t nfds, int timeout, size_t /*fdslen*/) {
+#ifdef __APPLE__
+    int ret = poll_via_select(fds, nfds, timeout);
+#else
+    int ret = ::poll(fds, nfds, timeout);
+#endif
+    bionic::update_errno();
+    return ret;
+}
+
 int shim::__FD_ISSET_chk(int fd, fd_set *set) {
     return FD_ISSET(fd, set);
 }
@@ -262,6 +272,7 @@ void shim::add_poll_select_shimmed_symbols(std::vector<shim::shimmed_symbol> &li
 #else
         {"poll", WithErrnoUpdate(::poll)},
 #endif
+        {"__poll_chk", __poll_chk},
         {"select", WithErrnoUpdate(::select)},
 
         {"__FD_ISSET_chk", __FD_ISSET_chk},
