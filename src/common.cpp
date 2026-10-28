@@ -80,6 +80,7 @@
 #include <netinet/in.h>
 #include <arpa/nameser.h>
 #include <resolv.h>
+#include <grp.h>
 
 #ifdef __linux__
 // glibc introduced arc4random_buf in 2.36
@@ -174,6 +175,9 @@ int bionic::to_host_mmap_flags(bionic::mmap_flags flags) {
     return ret;
 }
 
+#ifdef NOFILE
+#undef NOFILE
+#endif
 int bionic::to_host_rlimit_resource(shim::bionic::rlimit_resource r) {
     switch (r) {
         case rlimit_resource::NOFILE: return RLIMIT_NOFILE;
@@ -916,7 +920,9 @@ void shim::add_signal_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"res_query", ::res_query},
         {"res_querydomain", ::res_querydomain},
         {"res_send", ::res_send},
+#ifdef __APPLE__
         {"res_sendsigned", ::res_sendsigned},
+#endif
     });
 }
 

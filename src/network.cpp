@@ -602,6 +602,17 @@ ssize_t shim::sendmsg(int sockfd, const msghdr *data, int flags) {
     return ::sendmsg(sockfd, data, hflags.flags);
 }
 
+int shim::sendmmsg(int sockfd, const struct mmsghdr *msgvec, unsigned int vlen, int flags) {
+    detail::sock_send_flags hflags(sockfd, flags);
+    for (unsigned int i = 0; i < vlen; ++i) {
+        ssize_t ret = ::sendmsg(sockfd, &msgvec[i].msg_hdr, hflags.flags);
+        if (ret < 0)
+            return i == 0 ? -1 : (int)i;
+        const_cast<struct mmsghdr&>(msgvec[i]).msg_len = (unsigned int)ret;
+    }
+    return (int)vlen;
+}
+
 ssize_t shim::recv(int sockfd, void *buf, size_t len, int flags) {
     int nflags = 0;
     if(flags & 0x4000) {
