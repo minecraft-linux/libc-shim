@@ -66,8 +66,10 @@ bionic::pthread_cleanup_holder::~pthread_cleanup_holder() {
     if((uintptr_t)p % alignof(::pthread_cond_t *) != 0) {
         handle_runtime_error("unaligned cond");
     }
-    ::pthread_cond_t *cond_ptr = (::pthread_cond_t *)malloc(sizeof(::pthread_cond_t));
-    
+    auto host = (host_cond *)malloc(sizeof(host_cond));
+    host->clock = CLOCK_REALTIME;
+    ::pthread_cond_t *cond_ptr = &host->cond;
+
     if (::pthread_cond_init(cond_ptr, nullptr) != 0)
         handle_runtime_error("Failed to init cond");
     
@@ -368,15 +370,16 @@ int shim::pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type) 
 
 int shim::pthread_cond_init(pthread_cond_t *cond, const shim::pthread_condattr_t *attr) {
     host_condattr hattr (attr);
-    ::pthread_cond_t *cond_ptr = (::pthread_cond_t *)malloc(sizeof(::pthread_cond_t));
+    auto host = (host_cond *)malloc(sizeof(host_cond));
+    host->clock = attr ? bionic::to_host_clock_type(attr->clock) : CLOCK_REALTIME;
 
-    int ret = ::pthread_cond_init(cond_ptr, &hattr.attr);
+    int ret = ::pthread_cond_init(&host->cond, &hattr.attr);
     if (ret != 0) {
-        free(cond_ptr);
+        free(host);
         return bionic::translate_errno_from_host(ret);
     }
 
-    atomic_store(bionic::get_payload_pointer(cond), (uintptr_t)cond_ptr);
+    atomic_store(bionic::get_payload_pointer(cond), (uintptr_t)&host->cond);
     return bionic::translate_errno_from_host(0);
 }
 
@@ -406,8 +409,34 @@ int shim::pthread_cond_signal(pthread_cond_t *cond) {
     return bionic::translate_errno_from_host(ret);
 }
 
+static int cond_timedwait_on_clock(::pthread_cond_t *cond, ::pthread_mutex_t *mutex, const struct timespec *ts, clockid_t clock) {
+#ifdef __APPLE__
+    if (clock != CLOCK_REALTIME) {
+        struct timespec now, rel;
+        ::clock_gettime(clock, &now);
+        rel.tv_sec = ts->tv_sec - now.tv_sec;
+        rel.tv_nsec = ts->tv_nsec - now.tv_nsec;
+        if (rel.tv_nsec < 0) {
+            rel.tv_sec--;
+            rel.tv_nsec += 1000000000L;
+        }
+        if (rel.tv_sec < 0)
+            return ETIMEDOUT;
+        return ::pthread_cond_timedwait_relative_np(cond, mutex, &rel);
+    }
+#endif
+    return ::pthread_cond_timedwait(cond, mutex, ts);
+}
+
 int shim::pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, const struct timespec *ts) {
-    int ret = ::pthread_cond_timedwait(bionic::to_host(cond), bionic::to_host(mutex), ts);
+    auto host = (host_cond *)bionic::to_host(cond);
+    int ret = cond_timedwait_on_clock(&host->cond, bionic::to_host(mutex), ts, host->clock);
+    return bionic::translate_errno_from_host(ret);
+}
+
+int shim::pthread_cond_timedwait_monotonic_np(pthread_cond_t *cond, pthread_mutex_t *mutex, const struct timespec *ts) {
+    auto host = (host_cond *)bionic::to_host(cond);
+    int ret = cond_timedwait_on_clock(&host->cond, bionic::to_host(mutex), ts, CLOCK_MONOTONIC);
     return bionic::translate_errno_from_host(ret);
 }
 
@@ -573,7 +602,7 @@ void shim::add_pthread_shimmed_symbols(std::vector<shimmed_symbol> &list) {
         {"pthread_cond_signal", pthread_cond_signal},
         {"pthread_cond_timedwait", pthread_cond_timedwait},
         // TODO figure out how to implement this correctly, this will use the default clock of the cond variable
-        {"pthread_cond_timedwait_monotonic_np", pthread_cond_timedwait},
+        {"pthread_cond_timedwait_monotonic_np", pthread_cond_timedwait_monotonic_np},
         {"pthread_condattr_init", pthread_condattr_init},
         {"pthread_condattr_destroy", pthread_condattr_destroy},
         {"pthread_condattr_setclock", pthread_condattr_setclock},
