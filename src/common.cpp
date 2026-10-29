@@ -625,7 +625,11 @@ void shim::add_stdlib_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"wctomb", wctomb},
         {"mbstowcs", mbstowcs},
         {"wcstombs", wcstombs},
-        {"wcsrtombs", wcsrtombs}
+        {"wcsrtombs", wcsrtombs},
+
+        {"ldiv", ::ldiv},
+        {"lldiv", ::lldiv},
+        {"imaxdiv", ::imaxdiv}
     });
 }
 
