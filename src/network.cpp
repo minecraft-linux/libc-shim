@@ -124,23 +124,37 @@ void bionic::from_host(const ::sockaddr *in, bionic::sockaddr *out) {
         case AF_UNIX:
             ((bionic::sockaddr_un *)out)->family = ((::sockaddr_un *)in)->sun_family;
             memcpy(((bionic::sockaddr_un *)out)->sun_path, ((::sockaddr_un *)in)->sun_path, 108);
-            break;    
+            break;
         case AF_INET:
             out->family = (uint16_t) af_family::INET;
-            ((bionic::sockaddr_in *) out)->port = ((::sockaddr_in*) in)->sin_port;
-            ((bionic::sockaddr_in *) out)->addr = ((::sockaddr_in*) in)->sin_addr.s_addr;
+            ((bionic::sockaddr_in *)out)->port = ((::sockaddr_in*)in)->sin_port;
+            ((bionic::sockaddr_in *)out)->addr = ((::sockaddr_in*)in)->sin_addr.s_addr;
             break;
-        case AF_INET6:
-            out->family = (uint16_t) af_family::INET6;
-            ((bionic::sockaddr_in6 *) out)->port = ((::sockaddr_in6*) in)->sin6_port;
-            ((bionic::sockaddr_in6 *) out)->flow_info = ((::sockaddr_in6*) in)->sin6_flowinfo;
-            memcpy(((bionic::sockaddr_in6 *) out)->addr, ((::sockaddr_in6*) in)->sin6_addr.s6_addr, 16);
-            ((bionic::sockaddr_in6 *) out)->scope = ((::sockaddr_in6*) in)->sin6_scope_id;
+        case AF_INET6: {
+            auto src = (const ::sockaddr_in6*)in;
+            auto ip = src->sin6_addr.s6_addr;
+            static const unsigned char prefix[12] = {
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff
+            };
+            if (memcmp(ip, prefix, 12) == 0) {
+                auto dst = (bionic::sockaddr_in*)out;
+                dst->family = (uint16_t) af_family::INET;
+                dst->port = src->sin6_port;
+                memcpy(&dst->addr, ip + 12, 4);
+            } else {
+                auto dst = (bionic::sockaddr_in6*)out;
+                dst->family = (uint16_t) af_family::INET6;
+                dst->port = src->sin6_port;
+                dst->flow_info = src->sin6_flowinfo;
+                memcpy(dst->addr, ip, 16);
+                dst->scope = src->sin6_scope_id;
+            }
             break;
-        default: handle_runtime_error("Unknown socket family when converting sockaddr from host %d", (int)in->sa_family);
+        }
+        default:
+            handle_runtime_error("Unknown socket family when converting sockaddr from host %d", (int)in->sa_family);
     }
 }
-
 void bionic::to_host(const bionic::sockaddr *in, ::sockaddr *out) {
     switch ((af_family) in->family) {
         case af_family::UNSPEC:
@@ -627,22 +641,30 @@ ssize_t shim::recv(int sockfd, void *buf, size_t len, int flags) {
 ssize_t shim::recvmsg(int sockfd, struct msghdr *data, int flags) {
     if (flags != 0)
         handle_runtime_error("recvmsg with unsupported flags %d", flags);
+
     auto name = (bionic::sockaddr*)data->msg_name;
     auto addrlen = data->msg_namelen;
     detail::sockaddr_out haddr;
-    if(name) {
+
+    if (name) {
         data->msg_name = haddr.ptr();
         data->msg_namelen = haddr.len;
     }
 
     auto val = ::recvmsg(sockfd, data, flags);
-    if(val > 0 && name) {
-        haddr.apply(name, &data->msg_namelen);
+
+    if (name) {
+        if (val >= 0)
+            haddr.apply(name, &data->msg_namelen);
+        else
+            data->msg_namelen = addrlen;
+
+        data->msg_name = name;
     }
+
     data->msg_controllen = 0;
     return val;
 }
-
 int shim::recvmmsg(int sockfd, struct mmsghdr *msgvec, unsigned int vlen, int flags, const struct timespec *timeout) {
     int nflags = 0;
     if (flags & 0x4000)
