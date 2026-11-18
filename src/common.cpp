@@ -598,6 +598,7 @@ void shim::add_stdlib_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
 
         {"atof", ARMHFREWRITE(atof)},
         {"atoi", atoi},
+        {"ldiv", ldiv},
         {"atol", atol},
         {"atoll", atoll},
         {"strtod", ARMHFREWRITE(WithErrnoUpdate(strtod))},
@@ -677,6 +678,34 @@ void shim::add_ctype_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     });
 }
 
+
+#if defined(__aarch64__) || defined(__x86_64__)
+// Android's long double on 64 bit is an IEEE quad, passed in a vector register; the host's is a
+// double, so frexpl works on the quad's bits: 1 sign, 15 exponent (bias 16383), 112 mantissa
+typedef uint64_t android_quad __attribute__((vector_size(16)));
+static android_quad android_frexpl(android_quad x, int *e) {
+    uint64_t lo = x[0], hi = x[1];
+    int exp = (hi >> 48) & 0x7fff;
+    *e = 0;
+    if (exp == 0x7fff || (exp == 0 && lo == 0 && (hi & 0xffffffffffffULL) == 0))
+        return x;  // inf, nan, zero
+    if (exp == 0) {  // subnormal: shift the mantissa up until it has its leading 1
+        exp = 1;
+        while (!(hi & (1ULL << 48))) {
+            hi = (hi << 1) | (lo >> 63);
+            lo <<= 1;
+            exp--;
+        }
+        hi &= ~(1ULL << 48);
+        hi = (x[1] & (1ULL << 63)) | (hi & 0xffffffffffffULL);
+    }
+    *e = exp - 16382;
+    hi = (hi & ~(0x7fffULL << 48)) | (16382ULL << 48);
+    android_quad r = {lo, hi};
+    return r;
+}
+#endif
+
 void shim::add_math_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
     list.insert(list.end(), {
 #if defined(__i386__) || defined(__arm__)
@@ -685,6 +714,9 @@ void shim::add_math_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
         {"__divdi3", __divdi3},
 #endif
         {"ldexp", ARMHFREWRITE(((double(&)(double, int)) ::ldexp))},
+#if defined(__aarch64__) || defined(__x86_64__)
+        {"frexpl", android_frexpl},
+#endif
     });
 }
 
@@ -880,6 +912,9 @@ void shim::add_signal_shimmed_symbols(std::vector<shim::shimmed_symbol> &list) {
             return 0;
         }},
         {"sigprocmask", +[](int __how, const void * __set, void * __oset) -> int {
+            return 0;
+        }},
+        {"pthread_sigmask", +[](int __how, const void * __set, void * __oset) -> int {
             return 0;
         }},
         {"sigemptyset", +[](void*) -> int {
